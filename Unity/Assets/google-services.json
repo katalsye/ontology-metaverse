@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616295277126",
+    "project_id": "ontology-metaverse",
+    "storage_bucket": "ontology-metaverse.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616295277126:android:5d4addf6ffdff3374d2047",
+        "android_client_info": {
+          "package_name": "com.ontology.metaverse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc8vswJg8B8MOJQGX8G42RMUKTjBFF360"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
