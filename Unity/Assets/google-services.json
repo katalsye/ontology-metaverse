@@ -12,7 +12,20 @@
           "package_name": "com.ontology.metaverse"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "616295277126-gpjqvvq3e0ff0tiaril65s9k8af0lvda.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ontology.metaverse",
+            "certificate_hash": "c3eb3c6efd87c20934f370785b93360ebbfd0cd6"
+          }
+        },
+        {
+          "client_id": "616295277126-o19i1e2jblr5otfdkh8b843olvo4rv04.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDc8vswJg8B8MOJQGX8G42RMUKTjBFF360"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "616295277126-o19i1e2jblr5otfdkh8b843olvo4rv04.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
