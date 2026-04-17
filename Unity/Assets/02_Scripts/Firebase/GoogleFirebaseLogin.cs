@@ -20,10 +20,18 @@ public class GoogleFirebaseLogin : MonoBehaviour
     private void Start()
     {
         androidLoginButton.onClick.AddListener(GoogleSignInClick);
-        
+
+        GoogleSignIn.Configuration = new GoogleSignInConfiguration()
+        {
+            WebClientId = "616295277126-o19i1e2jblr5otfdkh8b843olvo4rv04.apps.googleusercontent.com",
+            RequestIdToken = true,
+            UseGameSignIn = false,
+            RequestEmail = true,
+        };
+
         InitFirebase();
     }
-    
+
     private void InitFirebase()
     {
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -32,6 +40,14 @@ public class GoogleFirebaseLogin : MonoBehaviour
             {
                 auth = FirebaseAuth.DefaultInstance;
                 Debug.Log($"Firebase Auth initialized successfully.");
+
+                // 이미 로그인된 유저가 있으면 유저 문서 생성 체크
+                if (auth.CurrentUser != null)
+                {
+                    user = auth.CurrentUser;
+                    Debug.Log($"자동 로그인: {user.DisplayName}");
+                    GetComponent<UserManager>().CreateUserIfNotExists();
+                }
             }
             else
             {
@@ -44,21 +60,13 @@ public class GoogleFirebaseLogin : MonoBehaviour
     {
         try
         {
-            GoogleSignIn.Configuration = new GoogleSignInConfiguration()
-            {
-                WebClientId = "616295277126-o19i1e2jblr5otfdkh8b843olvo4rv04.apps.googleusercontent.com",
-                RequestIdToken = true,
-                UseGameSignIn = false,
-                RequestEmail = true,
-            };
-    
             GoogleSignIn.DefaultInstance.SignIn().ContinueWith(task =>
             {
                 if (task.IsFaulted)
                 {
                     Debug.LogError($"SignIn Error: {task.Exception}");
                 }
-                else if(task.IsCanceled)
+                else if (task.IsCanceled)
                 {
                     Debug.LogError($"SignIn Canceled: ");
                 }
@@ -105,6 +113,8 @@ public class GoogleFirebaseLogin : MonoBehaviour
     
                 userIdTMP.text = $"Google UserId: {user.UserId}";
                 userNameTMP.text = $"User Name: {user.DisplayName}";
+
+                GetComponent<UserManager>().CreateUserIfNotExists();
             });
         }
     }
