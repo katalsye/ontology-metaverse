@@ -11,6 +11,7 @@ using UnityEngine.UI;
 public class GoogleFirebaseLogin : MonoBehaviour
 {
     [SerializeField] private Button androidLoginButton;
+    [SerializeField] private Button logoutButton;
     [SerializeField] private TextMeshProUGUI userIdTMP;
     [SerializeField] private TextMeshProUGUI userNameTMP;
     
@@ -20,6 +21,7 @@ public class GoogleFirebaseLogin : MonoBehaviour
     private void Start()
     {
         androidLoginButton.onClick.AddListener(GoogleSignInClick);
+        logoutButton.onClick.AddListener(SignOut);
 
         GoogleSignIn.Configuration = new GoogleSignInConfiguration()
         {
@@ -39,19 +41,22 @@ public class GoogleFirebaseLogin : MonoBehaviour
             if (task.Result == DependencyStatus.Available)
             {
                 auth = FirebaseAuth.DefaultInstance;
-                Debug.Log($"Firebase Auth initialized successfully.");
+                Debug.Log("Firebase Auth initialized successfully.");
 
-                // 이미 로그인된 유저가 있으면 유저 문서 생성 체크
                 if (auth.CurrentUser != null)
                 {
                     user = auth.CurrentUser;
-                    Debug.Log($"자동 로그인: {user.DisplayName}");
+                    Debug.Log("자동 로그인: " + user.DisplayName);
+
+                    userIdTMP.text = "Google UserId: " + user.UserId;
+                    userNameTMP.text = "User Name: " + user.DisplayName;
+
                     GetComponent<UserManager>().CreateUserIfNotExists();
                 }
             }
             else
             {
-                Debug.LogError($"Could not resolve Firebase dependencies: {task.Result}");
+                Debug.LogError("Could not resolve Firebase dependencies: " + task.Result);
             }
         });
     }
@@ -117,5 +122,17 @@ public class GoogleFirebaseLogin : MonoBehaviour
                 GetComponent<UserManager>().CreateUserIfNotExists();
             });
         }
+    }
+
+    public void SignOut()
+    {
+        GoogleSignIn.DefaultInstance.SignOut();
+        auth.SignOut();
+        user = null;
+
+        userIdTMP.text = "";
+        userNameTMP.text = "";
+
+        Debug.Log("로그아웃 완료");
     }
 }
