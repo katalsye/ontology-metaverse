@@ -1,0 +1,259 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix prod: <http://7team.dev/ontology#> .
+
+# ─── Ontology Declaration ───────────────────────────────────────────────────
+
+<http://7team.dev/ontology>
+    a owl:Ontology ;
+    rdfs:label "Personal Productivity Ontology" ;
+    rdfs:comment "7조 종합설계 — 온톨로지 기반 개인 생산성 향상 플랫폼" .
+
+# ─── Classes ────────────────────────────────────────────────────────────────
+
+prod:User a owl:Class ;
+    rdfs:label "User" .
+
+prod:SleepData a owl:Class ;
+    rdfs:label "SleepData" .
+
+prod:StepCount a owl:Class ;
+    rdfs:label "StepCount" .
+
+prod:AppUsage a owl:Class ;
+    rdfs:label "AppUsage" .
+
+prod:GalleryPhoto a owl:Class ;
+    rdfs:label "GalleryPhoto" .
+
+prod:Location a owl:Class ;
+    rdfs:label "Location" .
+
+prod:Activity a owl:Class ;
+    rdfs:label "Activity" .
+
+prod:Quest a owl:Class ;
+    rdfs:label "Quest" .
+
+prod:Reward a owl:Class ;
+    rdfs:label "Reward" .
+
+prod:Persona a owl:Class ;
+    rdfs:label "Persona" .
+
+prod:RoomObject a owl:Class ;
+    rdfs:label "RoomObject" .
+
+# Inferred state classes
+prod:FatigueRisk a owl:Class ;
+    rdfs:label "FatigueRisk" .
+
+prod:BurnoutWarning a owl:Class ;
+    rdfs:label "BurnoutWarning" .
+
+prod:SedentaryPattern a owl:Class ;
+    rdfs:label "SedentaryPattern" .
+
+prod:PlaceHabit a owl:Class ;
+    rdfs:label "PlaceHabit" .
+
+# ─── Object Properties ──────────────────────────────────────────────────────
+
+prod:hasSleepData a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:SleepData .
+
+prod:hasStepCount a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:StepCount .
+
+prod:hasAppUsage a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:AppUsage .
+
+prod:hasGalleryPhoto a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:GalleryPhoto .
+
+prod:hasLocation a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Location .
+
+prod:hasActivity a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Activity .
+
+prod:hasPersona a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Persona .
+
+prod:receivesQuest a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Quest .
+
+prod:triggeredBy a owl:ObjectProperty ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  prod:Quest .
+
+prod:gives a owl:ObjectProperty ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  prod:Reward .
+
+prod:hasState a owl:ObjectProperty ;
+    rdfs:domain prod:User .
+
+# ─── Datatype Properties — User ─────────────────────────────────────────────
+
+prod:uid a owl:DatatypeProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:string .
+
+prod:name a owl:DatatypeProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — SleepData ────────────────────────────────────────
+
+prod:duration a owl:DatatypeProperty ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:float .
+
+prod:quality a owl:DatatypeProperty ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:integer .
+
+prod:deepSleepRatio a owl:DatatypeProperty ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:float .
+
+prod:timestamp a owl:DatatypeProperty ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — StepCount ────────────────────────────────────────
+
+prod:count a owl:DatatypeProperty ;
+    rdfs:domain prod:StepCount ;
+    rdfs:range  xsd:integer .
+
+prod:date a owl:DatatypeProperty ;
+    rdfs:range  xsd:date .
+
+# ─── Datatype Properties — AppUsage ─────────────────────────────────────────
+
+prod:appName a owl:DatatypeProperty ;
+    rdfs:domain prod:AppUsage ;
+    rdfs:range  xsd:string .
+
+prod:usageDuration a owl:DatatypeProperty ;
+    rdfs:domain prod:AppUsage ;
+    rdfs:range  xsd:integer .
+
+# ─── Datatype Properties — GalleryPhoto ─────────────────────────────────────
+
+prod:latitude a owl:DatatypeProperty ;
+    rdfs:range  xsd:float .
+
+prod:longitude a owl:DatatypeProperty ;
+    rdfs:range  xsd:float .
+
+prod:foodType a owl:DatatypeProperty ;
+    rdfs:domain prod:GalleryPhoto ;
+    rdfs:range  xsd:string .
+
+prod:placeType a owl:DatatypeProperty ;
+    rdfs:domain prod:GalleryPhoto ;
+    rdfs:range  xsd:string .
+
+prod:analyzedBy a owl:DatatypeProperty ;
+    rdfs:domain prod:GalleryPhoto ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Location ─────────────────────────────────────────
+
+prod:placeName a owl:DatatypeProperty ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
+
+prod:visitTime a owl:DatatypeProperty ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:dateTime .
+
+prod:visitCount a owl:DatatypeProperty ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:integer .
+
+# ─── Datatype Properties — Activity ─────────────────────────────────────────
+
+prod:activityType a owl:DatatypeProperty ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Quest ─────────────────────────────────────────────
+
+prod:title a owl:DatatypeProperty ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:string .
+
+prod:questType a owl:DatatypeProperty ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:string .
+
+prod:isCompleted a owl:DatatypeProperty ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:boolean .
+
+prod:createdAt a owl:DatatypeProperty ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — Reward ────────────────────────────────────────────
+
+prod:amount a owl:DatatypeProperty ;
+    rdfs:domain prod:Reward ;
+    rdfs:range  xsd:integer .
+
+prod:rewardType a owl:DatatypeProperty ;
+    rdfs:domain prod:Reward ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Persona ───────────────────────────────────────────
+
+prod:energyType a owl:DatatypeProperty ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:socialPreference a owl:DatatypeProperty ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:lifePattern a owl:DatatypeProperty ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:updatedAt a owl:DatatypeProperty ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — RoomObject ────────────────────────────────────────
+
+prod:objectType a owl:DatatypeProperty ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .
+
+prod:positionX a owl:DatatypeProperty ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:positionY a owl:DatatypeProperty ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:positionZ a owl:DatatypeProperty ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:inferredFrom a owl:DatatypeProperty ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .

@@ -1,0 +1,180 @@
+# inference_rules.sparql
+# SPARQL CONSTRUCT 기반 추론 규칙
+# 실행 순서: ontology_engine.py 에서 순서대로 apply_rule() 호출
+# 네임스페이스: prod: <http://7team.dev/ontology#>
+
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 1 — FatigueRisk
+# 수면 6시간 미만 + 카페인(커피류 앱/장소) 2잔 초과
+# → prod:FatigueRisk 상태 부여
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: fatigue_risk
+CONSTRUCT {
+    ?user prod:hasState prod:FatigueRisk .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 수면 6시간 미만
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:duration ?dur .
+    FILTER (?dur < 6.0)
+
+    # 카페인 섭취 2회 초과 (appName 또는 placeType = "cafe")
+    {
+        SELECT ?user (COUNT(?photo) AS ?cafeCnt)
+        WHERE {
+            ?user prod:hasGalleryPhoto ?photo .
+            ?photo prod:placeType "cafe" .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?cafeCnt > 2)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 2 — BurnoutWarning + 삶 개선형 퀘스트
+# prod:FatigueRisk 상태 + 운동 퀘스트 미완료 3일 이상
+# → prod:BurnoutWarning 생성, 스트레칭 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: burnout_warning
+CONSTRUCT {
+    ?user prod:hasState prod:BurnoutWarning .
+    _:q   a prod:Quest ;
+          prod:title "가벼운 스트레칭 10분" ;
+          prod:questType "삶 개선형" ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user prod:hasState prod:FatigueRisk .
+
+    # 운동 퀘스트 미완료 3건 이상
+    {
+        SELECT ?user (COUNT(?q) AS ?pendingCnt)
+        WHERE {
+            ?user prod:receivesQuest ?q .
+            ?q    prod:questType "운동" ;
+                  prod:isCompleted false .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?pendingCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 3 — SedentaryPattern + 산책 퀘스트
+# 걸음수 3000보 미만 3일 연속
+# → prod:SedentaryPattern, "30분 산책하기" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: sedentary_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:SedentaryPattern .
+    _:q   a prod:Quest ;
+          prod:title "30분 산책하기" ;
+          prod:questType "삶 개선형" ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 최근 3일 걸음수 기록이 모두 3000 미만
+    {
+        SELECT ?user (COUNT(?s) AS ?lowDayCnt)
+        WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s    prod:count ?cnt .
+            FILTER (?cnt < 3000)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?lowDayCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 4 — PlaceHabit + RoomObject 추가
+# 같은 장소 주 3회 이상 방문
+# → prod:PlaceHabit, room_objects에 해당 장소 관련 오브젝트 추가
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: place_habit
+CONSTRUCT {
+    ?user prod:hasState prod:PlaceHabit .
+    _:obj a prod:RoomObject ;
+          prod:objectType ?place ;
+          prod:inferredFrom "PlaceHabit" ;
+          prod:positionX 0.0 ;
+          prod:positionY 0.0 ;
+          prod:positionZ 0.0 .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?place (COUNT(?loc) AS ?visitCnt)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeName   ?place .
+        }
+        GROUP BY ?user ?place
+    }
+    FILTER (?visitCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 5 — 카페인 → 수면 질 저하 인과 추론 + 퀘스트
+# 카페인 섭취 오후 6시 이후 + 수면질 60 미만
+# → "오후엔 디카페인 어때요?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: late_caffeine_sleep_quality
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "오후엔 디카페인 어때요?" ;
+        prod:questType "삶 개선형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 수면질 60 미만
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+
+    # 오후 6시(18:00) 이후 카페 방문 기록
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeType  "cafe" ;
+          prod:visitTime  ?vt .
+    BIND(HOURS(?vt) AS ?h)
+    FILTER (?h >= 18)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6 — 빈 노드 감지 → 데이터 보완형 퀘스트
+# 방문 장소는 있는데 동행자(companion) 정보 없음
+# → "오늘 [장소] 누구랑 갔어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_companion
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeName ?place .
+
+    # companion 속성이 없는 위치 노드만 선택
+    FILTER NOT EXISTS { ?loc prod:companion ?anyone }
+
+    BIND(CONCAT("오늘 ", ?place, " 누구랑 갔어?") AS ?questTitle)
+}

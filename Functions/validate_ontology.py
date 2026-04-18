@@ -1,0 +1,144 @@
+"""
+validate_ontology.py
+온톨로지 수정 후 반드시 실행 — 구조/무결성 검증 스크립트
+
+검사 항목:
+  1. core.ttl 파싱 성공 여부
+  2. 필수 클래스 존재 확인
+  3. 필수 속성(도메인/범위) 존재 확인
+  4. SPARQL 추론 규칙 파싱 성공 여부
+  5. 간단한 CONSTRUCT 쿼리 실행 가능 여부
+
+Usage:
+    python validate_ontology.py
+"""
+
+import sys
+import re
+from pathlib import Path
+
+from rdflib import Graph, Namespace, RDF, OWL
+
+PROD = Namespace("http://7team.dev/ontology#")
+TTL_PATH = Path("Functions/ontology/core.ttl")
+RULES_PATH = Path("Functions/ontology/rules/inference_rules.sparql")
+
+REQUIRED_CLASSES = [
+    "User", "SleepData", "StepCount", "AppUsage",
+    "GalleryPhoto", "Location", "Activity", "Quest",
+    "Reward", "Persona", "RoomObject",
+    "FatigueRisk", "BurnoutWarning", "SedentaryPattern", "PlaceHabit",
+]
+
+REQUIRED_PROPERTIES = [
+    "uid", "name", "duration", "quality", "count", "date",
+    "appName", "usageDuration", "placeName", "visitCount",
+    "activityType", "title", "questType", "isCompleted",
+    "amount", "rewardType", "energyType", "objectType",
+    "hasSleepData", "hasStepCount", "receivesQuest", "gives",
+]
+
+RULE_IDS = [
+    "fatigue_risk", "burnout_warning", "sedentary_pattern",
+    "place_habit", "late_caffeine_sleep_quality", "missing_companion",
+]
+
+
+def check(condition: bool, msg: str) -> bool:
+    status = "OK  " if condition else "FAIL"
+    print(f"  [{status}] {msg}")
+    return condition
+
+
+def validate_ttl(g: Graph) -> int:
+    print("\n[1] core.ttl 클래스 존재 확인")
+    failures = 0
+    for cls in REQUIRED_CLASSES:
+        ok = (PROD[cls], RDF.type, OWL.Class) in g
+        if not check(ok, cls):
+            failures += 1
+
+    print("\n[2] core.ttl 속성 존재 확인")
+    for prop in REQUIRED_PROPERTIES:
+        exists = (PROD[prop], None, None) in g
+        if not check(exists, prop):
+            failures += 1
+    return failures
+
+
+def validate_rules(rules_text: str) -> int:
+    print("\n[3] SPARQL 규칙 ID 존재 확인")
+    failures = 0
+    for rule_id in RULE_IDS:
+        found = bool(re.search(rf"RULE_ID:\s*{rule_id}", rules_text))
+        if not check(found, rule_id):
+            failures += 1
+    return failures
+
+
+def validate_sparql_syntax(g: Graph, rules_text: str) -> int:
+    """CONSTRUCT 블록별 파싱 시도."""
+    print("\n[4] SPARQL CONSTRUCT 블록 파싱 확인")
+    failures = 0
+    pattern = re.compile(
+        r"#\s*RULE_ID:\s*(\w+)\s*\n(CONSTRUCT[\s\S]+?)(?=\n#\s*RULE_ID:|\Z)"
+    )
+    for m in pattern.finditer(rules_text):
+        rule_id = m.group(1)
+        sparql = m.group(2).strip()
+        try:
+            g.query(sparql)
+            check(True, f"{rule_id} — CONSTRUCT 실행 OK")
+        except Exception as exc:
+            check(False, f"{rule_id} — {exc}")
+            failures += 1
+    return failures
+
+
+def main() -> None:
+    total_fail = 0
+
+    # core.ttl 로드
+    print("=" * 60)
+    print("validate_ontology.py — 온톨로지 무결성 검증")
+    print("=" * 60)
+
+    print("\n[0] core.ttl 파싱")
+    if not TTL_PATH.exists():
+        print(f"  [FAIL] 파일 없음: {TTL_PATH}")
+        sys.exit(1)
+
+    g = Graph()
+    g.bind("prod", PROD)
+    try:
+        g.parse(str(TTL_PATH), format="turtle")
+        check(True, f"파싱 성공 — {len(g)} 트리플")
+    except Exception as exc:
+        check(False, f"파싱 실패: {exc}")
+        sys.exit(1)
+
+    total_fail += validate_ttl(g)
+
+    # 추론 규칙 파일 로드
+    print("\n[RULES] inference_rules.sparql 로드")
+    if not RULES_PATH.exists():
+        print(f"  [FAIL] 파일 없음: {RULES_PATH}")
+        sys.exit(1)
+
+    rules_text = RULES_PATH.read_text(encoding="utf-8")
+    check(True, "파일 로드 성공")
+
+    total_fail += validate_rules(rules_text)
+    total_fail += validate_sparql_syntax(g, rules_text)
+
+    # 결과
+    print("\n" + "=" * 60)
+    if total_fail == 0:
+        print("결과: 모든 검사 통과")
+    else:
+        print(f"결과: {total_fail}개 항목 실패 — 온톨로지를 수정 후 재실행하세요.")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
