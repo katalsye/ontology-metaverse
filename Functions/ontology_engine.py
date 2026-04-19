@@ -3,13 +3,18 @@ ontology_engine.py
 Cloud Functions Python — Stateless 온톨로지 추론 엔진
 
 흐름:
-  1. Firebase Storage에서 기존 .ttl 그래프 로드
+  1. Firebase Storage에서 graphs/{uid}/latest.ttl 로드
   2. Firestore temp_triples에서 새 트리플 로드 후 그래프에 추가
-  3. DuckDB로 집계/패턴 분석
-  4. SPARQL CONSTRUCT 추론 규칙 순서대로 실행
-  5. 추론 결과를 Firestore(room_objects, quests, users/{uid}/persona)에 저장
-  6. 갱신된 그래프 Storage에 직렬화 저장 후 temp_triples 삭제
-  7. 새 퀘스트가 있으면 FCM으로 알림 전송
+  3. 새 트리플 그래프에 병합
+  4. DuckDB 집계 → pre-computed 트리플 주입 (연속 저보행 일수 등)
+  5. SPARQL CONSTRUCT 추론 규칙 순서대로 실행
+  6. 추론 결과를 Firestore(room_objects, quests, users/{uid}/persona)에 저장
+  7. 버전 파일(YYYY-MM-DD-HH.ttl) + latest.ttl 저장, 7일 이전 버전 삭제
+  8. temp_triples 삭제 → FCM 퀘스트 알림 전송
+
+버전 관리 공개 API:
+  list_graph_versions(uid, bucket_name)    → 저장된 버전 목록(최신순)
+  restore_graph_version(uid, version_str, bucket_name) → 특정 버전을 latest로 복원
 """
 
 from __future__ import annotations
@@ -17,6 +22,7 @@ from __future__ import annotations
 import re
 import io
 import logging
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 import duckdb
@@ -72,11 +78,11 @@ def _init_firebase() -> None:
 # ── 그래프 로드 ──────────────────────────────────────────────────────────────
 
 def _load_graph_from_storage(bucket_name: str, uid: str) -> Graph:
-    """Storage에서 사용자별 .ttl 로드. 없으면 빈 그래프 반환."""
+    """Storage에서 graphs/{uid}/latest.ttl 로드. 없으면 빈 그래프 반환."""
     g = Graph()
     g.bind("prod", PROD)
     bucket = storage.bucket(bucket_name)
-    blob = bucket.blob(f"graphs/{uid}.ttl")
+    blob = bucket.blob(f"graphs/{uid}/latest.ttl")
     if blob.exists():
         ttl_bytes = blob.download_as_bytes()
         g.parse(data=ttl_bytes.decode(), format="turtle")
@@ -344,12 +350,41 @@ def _send_quest_notifications(uid: str, quest_titles: list[str]) -> None:
 
 # ── 그래프 저장 / 정리 ───────────────────────────────────────────────────────
 
+def _prune_old_versions(bucket: Any, uid: str, now: datetime) -> None:
+    """7일 이전 버전 파일 삭제. latest.ttl은 건드리지 않음."""
+    cutoff = now - timedelta(days=7)
+    prefix = f"graphs/{uid}/"
+    for blob in bucket.list_blobs(prefix=prefix):
+        name = blob.name[len(prefix):]          # e.g. "2026-04-12-10.ttl"
+        if name in ("latest.ttl", ""):
+            continue
+        try:
+            version_dt = datetime.strptime(name[:-4], "%Y-%m-%d-%H").replace(
+                tzinfo=timezone.utc
+            )
+        except ValueError:
+            continue
+        if version_dt < cutoff:
+            blob.delete()
+            logger.info("Pruned old version: %s", blob.name)
+
+
 def _save_graph_to_storage(g: Graph, bucket_name: str, uid: str) -> None:
+    """버전 파일(YYYY-MM-DD-HH.ttl)과 latest.ttl을 동시에 저장.
+    저장 후 7일 이전 버전을 자동 삭제한다.
+    """
     ttl_bytes = g.serialize(format="turtle").encode()
     bucket = storage.bucket(bucket_name)
-    blob = bucket.blob(f"graphs/{uid}.ttl")
-    blob.upload_from_file(io.BytesIO(ttl_bytes), content_type="text/turtle")
-    logger.info("Graph saved: %d triples", len(g))
+    now = datetime.now(timezone.utc)
+    version_str = now.strftime("%Y-%m-%d-%H")
+
+    for path in (f"graphs/{uid}/{version_str}.ttl", f"graphs/{uid}/latest.ttl"):
+        bucket.blob(path).upload_from_file(
+            io.BytesIO(ttl_bytes), content_type="text/turtle"
+        )
+
+    logger.info("Graph saved: %d triples (version=%s)", len(g), version_str)
+    _prune_old_versions(bucket, uid, now)
 
 
 def _delete_temp_triples(db: firestore.Client, uid: str) -> None:
@@ -359,6 +394,41 @@ def _delete_temp_triples(db: firestore.Client, uid: str) -> None:
     for doc in items_ref.stream():
         doc.reference.delete()
     db.collection("temp_triples").document(uid).delete()
+
+
+# ── 버전 관리 공개 API ───────────────────────────────────────────────────────
+
+def list_graph_versions(uid: str, bucket_name: str) -> list[str]:
+    """저장된 버전 날짜 목록을 최신순으로 반환. latest.ttl 제외.
+
+    반환 형식: ["2026-04-19-14", "2026-04-18-08", ...]
+    """
+    _init_firebase()
+    bucket = storage.bucket(bucket_name)
+    prefix = f"graphs/{uid}/"
+    versions = []
+    for blob in bucket.list_blobs(prefix=prefix):
+        name = blob.name[len(prefix):]
+        if name in ("latest.ttl", "") or not name.endswith(".ttl"):
+            continue
+        versions.append(name[:-4])
+    return sorted(versions, reverse=True)
+
+
+def restore_graph_version(uid: str, version_str: str, bucket_name: str) -> bool:
+    """특정 버전(YYYY-MM-DD-HH)을 latest.ttl로 복원. 성공 시 True 반환."""
+    _init_firebase()
+    bucket = storage.bucket(bucket_name)
+    src_blob = bucket.blob(f"graphs/{uid}/{version_str}.ttl")
+    if not src_blob.exists():
+        logger.error("Version not found: graphs/%s/%s.ttl", uid, version_str)
+        return False
+    ttl_bytes = src_blob.download_as_bytes()
+    bucket.blob(f"graphs/{uid}/latest.ttl").upload_from_file(
+        io.BytesIO(ttl_bytes), content_type="text/turtle"
+    )
+    logger.info("Restored version %s → latest for uid=%s", version_str, uid)
+    return True
 
 
 # ── 메인 진입점 ──────────────────────────────────────────────────────────────
