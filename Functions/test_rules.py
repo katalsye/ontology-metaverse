@@ -218,22 +218,19 @@ def test_burnout_warning(rules: dict[str, str]) -> bool:
 
 
 # ── Test 4: sedentary_pattern ─────────────────────────────────────────────────
+# Rule 3은 DuckDB 전처리 결과인 prod:hasConsecutiveLowStepDays 트리플을 읽는다.
+# 테스트에서는 그 트리플을 직접 주입해 SPARQL 규칙만 독립적으로 검증한다.
 
 def test_sedentary_pattern(rules: dict[str, str]) -> bool:
     print("\n[Test 3] sedentary_pattern")
     results = []
 
-    # 정례: 연속 3일 3000보 미만 → SedentaryPattern + 퀘스트
+    # 정례: DuckDB가 계산한 연속 3일 주입 → SedentaryPattern + 퀘스트
     g = load_base_graph()
     user = _add_user(g, "r3a")
-    for i, cnt in enumerate([1200, 2500, 800]):
-        sc = PROD[f"sc_r3a_{i}"]
-        g.add((sc, RDF.type, PROD.StepCount))
-        g.add((sc, PROD["count"], Literal(cnt, datatype=XSD.integer)))
-        g.add((sc, PROD.date, Literal(f"2026-04-{17+i}", datatype=XSD.date)))
-        g.add((user, PROD.hasStepCount, sc))
+    g.add((user, PROD.hasConsecutiveLowStepDays, Literal(3, datatype=XSD.integer)))
     apply_rule(g, rules["sedentary_pattern"])
-    results.append(check("연속 3일 3000보 미만 → SedentaryPattern",
+    results.append(check("연속 3일 저보행 → SedentaryPattern",
                          (user, PROD.hasState, PROD.SedentaryPattern) in g))
     results.append(check("→ '30분 산책하기' 퀘스트 생성",
                          "30분 산책하기" in quest_titles(g)))
@@ -241,30 +238,27 @@ def test_sedentary_pattern(rules: dict[str, str]) -> bool:
                          any((q, PROD.title, Literal("30분 산책하기")) in g
                              for q in g.objects(user, PROD.receivesQuest))))
 
-    # 반례 A: 비연속(하루 건너뜀) → 미생성
+    # 정례 B: 5일 연속 → 역시 발동
+    g = load_base_graph()
+    user = _add_user(g, "r3d")
+    g.add((user, PROD.hasConsecutiveLowStepDays, Literal(5, datatype=XSD.integer)))
+    apply_rule(g, rules["sedentary_pattern"])
+    results.append(check("연속 5일 저보행 → SedentaryPattern",
+                         (user, PROD.hasState, PROD.SedentaryPattern) in g))
+
+    # 반례 A: 연속 2일 → 미생성
     g = load_base_graph()
     user = _add_user(g, "r3b")
-    for date_, cnt in [("2026-04-17", 800), ("2026-04-19", 900), ("2026-04-21", 700)]:
-        sc = PROD[f"sc_r3b_{date_}"]
-        g.add((sc, RDF.type, PROD.StepCount))
-        g.add((sc, PROD["count"], Literal(cnt, datatype=XSD.integer)))
-        g.add((sc, PROD.date, Literal(date_, datatype=XSD.date)))
-        g.add((user, PROD.hasStepCount, sc))
+    g.add((user, PROD.hasConsecutiveLowStepDays, Literal(2, datatype=XSD.integer)))
     apply_rule(g, rules["sedentary_pattern"])
-    results.append(check("하루 건너뜀 → SedentaryPattern 미생성 (반례)",
+    results.append(check("연속 2일 → SedentaryPattern 미생성 (반례)",
                          (user, PROD.hasState, PROD.SedentaryPattern) not in g))
 
-    # 반례 B: 3일 중 1일은 3000보 초과
+    # 반례 B: hasConsecutiveLowStepDays 트리플 없음 (DuckDB 미실행 시뮬레이션)
     g = load_base_graph()
     user = _add_user(g, "r3c")
-    for i, cnt in enumerate([800, 5000, 900]):
-        sc = PROD[f"sc_r3c_{i}"]
-        g.add((sc, RDF.type, PROD.StepCount))
-        g.add((sc, PROD["count"], Literal(cnt, datatype=XSD.integer)))
-        g.add((sc, PROD.date, Literal(f"2026-04-{17+i}", datatype=XSD.date)))
-        g.add((user, PROD.hasStepCount, sc))
     apply_rule(g, rules["sedentary_pattern"])
-    results.append(check("3일 중 1일 5000보 → SedentaryPattern 미생성 (반례)",
+    results.append(check("hasConsecutiveLowStepDays 없음 → SedentaryPattern 미생성 (반례)",
                          (user, PROD.hasState, PROD.SedentaryPattern) not in g))
 
     return all(results)

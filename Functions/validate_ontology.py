@@ -46,6 +46,8 @@ REQUIRED_PROPERTIES = [
     "listensTo", "hasCalendarEvent", "hasWeather",
     # 빈 노드 감지용 선택 속성
     "emotion", "purpose", "mood", "cause", "review",
+    # DuckDB 전처리 결과 주입 속성
+    "hasConsecutiveLowStepDays",
 ]
 
 DISJOINT_PAIRS = [
