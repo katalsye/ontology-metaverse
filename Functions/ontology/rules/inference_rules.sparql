@@ -265,3 +265,107 @@ WHERE {
     }
     FILTER (?totalMin >= 120)
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── 다단계 인과 추론 체인 (Rules 10–13) ──────────────────────────────────────
+#
+#  [카페인 오후 섭취]
+#       ↓ Rule 10
+#  SleepQualityImpaired
+#       ↓ Rule 11
+#  ExerciseSkipped
+#       ↓ Rule 12
+#  WeeklyActivityLow
+#       ↓ Rule 13
+#  BurnoutWarning + 퀘스트
+#
+# 각 규칙은 이전 단계의 hasState 결과에 의존.
+# RULE_ORDER에서 10→11→12→13 순서 고정 필수.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule 10 — SleepQualityImpaired ───────────────────────────────────────────
+# 카페인 섭취 오후 6시 이후 + 수면 질 60 미만
+# → prod:SleepQualityImpaired (Rule 11의 선행 조건)
+# RULE_ID: causal_sleep_impaired
+CONSTRUCT {
+    ?user prod:hasState prod:SleepQualityImpaired .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 오후 6시 이후 카페 방문 (카페인 섭취 프록시)
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeType  "cafe" ;
+          prod:visitTime  ?vt .
+    BIND(HOURS(?vt) AS ?h)
+    FILTER (?h >= 18)
+
+    # 수면 질 60 미만
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+}
+
+# ── Rule 11 — ExerciseSkipped ─────────────────────────────────────────────────
+# SleepQualityImpaired 상태 + 운동 Activity 기록 없음
+# → prod:ExerciseSkipped (Rule 12의 선행 조건)
+# RULE_ID: causal_exercise_skipped
+CONSTRUCT {
+    ?user prod:hasState prod:ExerciseSkipped .
+}
+WHERE {
+    # Rule 10 결과에 의존
+    ?user prod:hasState prod:SleepQualityImpaired .
+
+    # 운동 Activity 기록이 없는 경우
+    FILTER NOT EXISTS {
+        ?user prod:hasActivity ?act .
+        ?act  prod:activityType ?atype .
+        FILTER (
+            CONTAINS(LCASE(STR(?atype)), "운동") ||
+            CONTAINS(LCASE(STR(?atype)), "exercise") ||
+            CONTAINS(LCASE(STR(?atype)), "workout")
+        )
+    }
+}
+
+# ── Rule 12 — WeeklyActivityLow ──────────────────────────────────────────────
+# ExerciseSkipped 상태 + 걸음수 3000 미만 3일 이상 (주간 활동량 저하 프록시)
+# → prod:WeeklyActivityLow (Rule 13의 선행 조건)
+# RULE_ID: causal_weekly_activity_low
+CONSTRUCT {
+    ?user prod:hasState prod:WeeklyActivityLow .
+}
+WHERE {
+    # Rule 11 결과에 의존
+    ?user prod:hasState prod:ExerciseSkipped .
+
+    {
+        SELECT ?user (COUNT(?s) AS ?lowDayCnt)
+        WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s    prod:count ?cnt .
+            FILTER (?cnt < 3000)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?lowDayCnt >= 3)
+}
+
+# ── Rule 13 — BurnoutWarning (인과 체인 종점) ─────────────────────────────────
+# WeeklyActivityLow 상태
+# → prod:BurnoutWarning + 삶 개선형 퀘스트
+# (Rule 2의 BurnoutWarning과 다른 인과 경로 — 카페인→수면→운동→활동량)
+# RULE_ID: causal_burnout_from_chain
+CONSTRUCT {
+    ?user prod:hasState prod:BurnoutWarning .
+    _:q   a prod:Quest ;
+          prod:title "이번 주 활동량이 많이 줄었어요. 짧은 산책부터 시작해볼까요?" ;
+          prod:questType "삶 개선형" ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    # Rule 12 결과에 의존
+    ?user prod:hasState prod:WeeklyActivityLow .
+}

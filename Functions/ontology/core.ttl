@@ -292,6 +292,16 @@ prod:Routine a owl:Class ;
 prod:MusicMood a owl:Class ;
     rdfs:label "MusicMood" .
 
+# 다단계 인과 체인 중간 상태 클래스
+prod:SleepQualityImpaired a owl:Class ;
+    rdfs:label "SleepQualityImpaired" .
+
+prod:ExerciseSkipped a owl:Class ;
+    rdfs:label "ExerciseSkipped" .
+
+prod:WeeklyActivityLow a owl:Class ;
+    rdfs:label "WeeklyActivityLow" .
+
 # ─── Object Properties — 확장 ───────────────────────────────────────────────
 
 prod:listensTo a owl:ObjectProperty ;

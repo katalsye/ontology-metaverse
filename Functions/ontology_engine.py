@@ -31,15 +31,21 @@ RULES_PATH = "Functions/ontology/rules/inference_rules.sparql"
 
 # 추론 규칙 ID 실행 순서 — Rule 2는 Rule 1 결과에 의존하므로 순서 고정
 RULE_ORDER = [
-    "fatigue_risk",
-    "burnout_warning",
-    "sedentary_pattern",
-    "place_habit",
-    "late_caffeine_sleep_quality",
-    "missing_companion",
-    "indoor_day_pattern",
-    "routine_detection",
-    "music_mood",
+    # 독립 규칙
+    "fatigue_risk",             # Rule 1
+    "burnout_warning",          # Rule 2  (Rule 1 결과 의존)
+    "sedentary_pattern",        # Rule 3
+    "place_habit",              # Rule 4
+    "late_caffeine_sleep_quality",  # Rule 5
+    "missing_companion",        # Rule 6
+    "indoor_day_pattern",       # Rule 7
+    "routine_detection",        # Rule 8
+    "music_mood",               # Rule 9
+    # 다단계 인과 체인 — 순서 고정 필수
+    "causal_sleep_impaired",        # Rule 10
+    "causal_exercise_skipped",      # Rule 11 (Rule 10 의존)
+    "causal_weekly_activity_low",   # Rule 12 (Rule 11 의존)
+    "causal_burnout_from_chain",    # Rule 13 (Rule 12 의존)
 ]
 
 
