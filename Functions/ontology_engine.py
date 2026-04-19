@@ -123,38 +123,81 @@ def _add_triples_to_graph(g: Graph, triples: list[dict]) -> None:
 
 # ── DuckDB 집계 ──────────────────────────────────────────────────────────────
 
-def _aggregate_with_duckdb(triples: list[dict]) -> dict[str, Any]:
-    """DuckDB로 집계 분석 — 현재는 로깅 및 향후 연속일 체크에 활용."""
-    if not triples:
-        return {}
+def _aggregate_with_duckdb(g: Graph) -> list[tuple]:
+    """DuckDB로 연속 저보행 일수 계산 → pre-computed 트리플 반환.
+
+    gaps-and-islands 기법으로 사용자별 최대 연속 저보행(< 3000보) 일수를 구해
+    prod:hasConsecutiveLowStepDays 트리플을 생성한다.
+    sedentary_pattern 규칙(Rule 3)이 이 트리플을 읽어 판단한다.
+    """
+    from rdflib import URIRef, Literal
+    from rdflib.namespace import XSD
+
+    rows = list(g.query("""
+        PREFIX prod: <http://7team.dev/ontology#>
+        SELECT ?user ?date ?count WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s prod:count ?count ;
+               prod:date  ?date .
+        }
+    """))
+
+    if not rows:
+        logger.info("DuckDB: no step data in graph")
+        return []
+
     con = duckdb.connect()
-    con.execute(
-        "CREATE TABLE triples (subject VARCHAR, predicate VARCHAR, object VARCHAR)"
-    )
-    con.executemany(
-        "INSERT INTO triples VALUES (?, ?, ?)",
-        [(t["subject"], t["predicate"], t["object"]) for t in triples],
-    )
+    try:
+        con.execute("""
+            CREATE TABLE steps (
+                user_uri  VARCHAR,
+                step_date DATE,
+                step_cnt  INTEGER
+            )
+        """)
+        con.executemany(
+            "INSERT INTO steps VALUES (?, TRY_CAST(? AS DATE), TRY_CAST(? AS INTEGER))",
+            [(str(r[0]), str(r[1]), str(r[2])) for r in rows],
+        )
 
-    step_agg = con.execute(
-        "SELECT subject, COUNT(*) as low_day_cnt "
-        "FROM triples "
-        "WHERE predicate = 'http://7team.dev/ontology#count' "
-        "  AND TRY_CAST(object AS INTEGER) < 3000 "
-        "GROUP BY subject"
-    ).fetchall()
+        # gaps-and-islands: 연속된 날짜는 (epoch_days - row_number)가 동일
+        results = con.execute("""
+            WITH low_days AS (
+                SELECT user_uri, step_date
+                FROM steps
+                WHERE step_cnt < 3000
+            ),
+            ranked AS (
+                SELECT
+                    user_uri,
+                    step_date,
+                    (step_date - DATE '1970-01-01') -
+                    CAST(ROW_NUMBER() OVER (PARTITION BY user_uri ORDER BY step_date) AS INTEGER)
+                    AS island_id
+                FROM low_days
+            ),
+            islands AS (
+                SELECT user_uri, island_id, COUNT(*) AS consecutive_days
+                FROM ranked
+                GROUP BY user_uri, island_id
+            )
+            SELECT user_uri, MAX(consecutive_days) AS max_consecutive
+            FROM islands
+            GROUP BY user_uri
+        """).fetchall()
 
-    app_agg = con.execute(
-        "SELECT object, SUM(TRY_CAST(object AS INTEGER)) as total_min "
-        "FROM triples "
-        "WHERE predicate = 'http://7team.dev/ontology#usageDuration' "
-        "GROUP BY object"
-    ).fetchall()
+        logger.info("DuckDB consecutive low-step days: %s", results)
 
-    con.close()
-    result = {"step_low_days": step_agg, "app_usage": app_agg}
-    logger.info("DuckDB aggregation: %s", result)
-    return result
+        return [
+            (
+                URIRef(user_uri_str),
+                PROD.hasConsecutiveLowStepDays,
+                Literal(int(max_consec), datatype=XSD.integer),
+            )
+            for user_uri_str, max_consec in results
+        ]
+    finally:
+        con.close()
 
 
 # ── SPARQL 추론 ──────────────────────────────────────────────────────────────
@@ -334,11 +377,14 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
         logger.info("No new triples for uid=%s — skipping", uid)
         return {"status": "no_new_triples"}
 
-    # 3. DuckDB 집계 (로깅 및 향후 연속일 체크용)
-    _aggregate_with_duckdb(temp_triples)
-
-    # 4. 새 트리플 그래프에 추가
+    # 3. 새 트리플 그래프에 추가
     _add_triples_to_graph(g, temp_triples)
+
+    # 4. DuckDB 집계 → pre-computed 트리플 그래프에 주입
+    #    (Rule 3 sedentary_pattern이 hasConsecutiveLowStepDays를 읽으므로
+    #     반드시 SPARQL 추론 전에 실행해야 함)
+    for triple in _aggregate_with_duckdb(g):
+        g.add(triple)
 
     # 5. SPARQL 추론 실행
     rules = _parse_rules(rules_sparql)

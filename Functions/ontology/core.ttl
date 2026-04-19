@@ -88,6 +88,12 @@ prod:hasStepCount a owl:ObjectProperty ;
     rdfs:domain prod:User ;
     rdfs:range  prod:StepCount .
 
+prod:hasConsecutiveLowStepDays a owl:DatatypeProperty ;
+    rdfs:label   "hasConsecutiveLowStepDays" ;
+    rdfs:comment "DuckDB 전처리로 계산한 최대 연속 저보행(3000보 미만) 일수. 단위: 일(integer). sedentary_pattern 규칙이 읽음." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:integer .
+
 prod:hasAppUsage a owl:ObjectProperty ;
     rdfs:label   "hasAppUsage" ;
     rdfs:comment "User → AppUsage 연결. 사용자의 앱 사용 기록 참조." ;

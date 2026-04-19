@@ -91,11 +91,9 @@ WHERE {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Rule 3 — SedentaryPattern + 산책 퀘스트 (연속성 체크 강화)
-# 걸음수 3000보 미만 3일 연속 — 날짜 간격 P1D 검증
-# ── 단순 COUNT(≥3) → 3-way 날짜 조인으로 교체
-# ── 각 날짜 간격이 정확히 1일(P1D)인지 xsd:duration으로 비교
-# ── 월 경계(예: 4/30→5/1) 케이스는 DuckDB 전처리가 보완
+# Rule 3 — SedentaryPattern + 산책 퀘스트
+# DuckDB 전처리(_aggregate_with_duckdb)가 연속 저보행 일수를
+# prod:hasConsecutiveLowStepDays 트리플로 주입한 뒤 이 규칙이 읽음.
 # → prod:SedentaryPattern, "30분 산책하기" 퀘스트 생성
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: sedentary_pattern
@@ -109,24 +107,8 @@ CONSTRUCT {
 }
 WHERE {
     ?user a prod:User .
-
-    # 3-way 조인: 걸음수 3000 미만인 StepCount 3개 선택
-    ?user prod:hasStepCount ?s1, ?s2, ?s3 .
-    FILTER (?s1 != ?s2 && ?s1 != ?s3 && ?s2 != ?s3)
-
-    ?s1 prod:count ?c1 ; prod:date ?d1 .
-    ?s2 prod:count ?c2 ; prod:date ?d2 .
-    ?s3 prod:count ?c3 ; prod:date ?d3 .
-
-    FILTER (?c1 < 3000 && ?c2 < 3000 && ?c3 < 3000)
-
-    # 날짜 순서 고정 (STR 비교 — ISO 형식 xsd:date 는 사전순 = 시간순)
-    FILTER (STR(?d1) < STR(?d2) && STR(?d2) < STR(?d3))
-
-    # 연속성: 각 날짜 간격이 정확히 1일(P1D)
-    BIND ((?d2 - ?d1) AS ?gap1)
-    BIND ((?d3 - ?d2) AS ?gap2)
-    FILTER (?gap1 = "P1D"^^xsd:duration && ?gap2 = "P1D"^^xsd:duration)
+    ?user prod:hasConsecutiveLowStepDays ?n .
+    FILTER (?n >= 3)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
