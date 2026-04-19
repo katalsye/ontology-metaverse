@@ -270,3 +270,106 @@ prod:inferredFrom a owl:DatatypeProperty ;
 
 # inferredFromConcept: RoomObject → 유래 개념 URI (PlaceHabit, Persona 등)
 # inferredFrom(string)과 병행 — 엔진이 두 속성 모두 기록
+
+# ─── Classes — 확장 데이터 소스 ─────────────────────────────────────────────
+
+prod:MusicListening a owl:Class ;
+    rdfs:label "MusicListening" .
+
+prod:CalendarEvent a owl:Class ;
+    rdfs:label "CalendarEvent" .
+
+prod:Weather a owl:Class ;
+    rdfs:label "Weather" .
+
+# Inferred state classes — 확장
+prod:IndoorDayPattern a owl:Class ;
+    rdfs:label "IndoorDayPattern" .
+
+prod:Routine a owl:Class ;
+    rdfs:label "Routine" .
+
+prod:MusicMood a owl:Class ;
+    rdfs:label "MusicMood" .
+
+# ─── Object Properties — 확장 ───────────────────────────────────────────────
+
+prod:listensTo a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:MusicListening .
+
+prod:hasCalendarEvent a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:CalendarEvent .
+
+prod:hasWeather a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Weather .
+
+# ─── Datatype Properties — MusicListening ───────────────────────────────────
+
+prod:trackName a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:artist a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:genre a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:playedAt a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:dateTime .
+
+prod:listenDuration a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:integer .
+
+# ─── Datatype Properties — CalendarEvent ────────────────────────────────────
+
+prod:eventTitle a owl:DatatypeProperty ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:string .
+
+prod:startTime a owl:DatatypeProperty ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:dateTime .
+
+prod:endTime a owl:DatatypeProperty ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:dateTime .
+
+prod:isRecurring a owl:DatatypeProperty ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:boolean .
+
+# ─── Datatype Properties — Weather ──────────────────────────────────────────
+
+prod:temperature a owl:DatatypeProperty ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:float .
+
+prod:condition a owl:DatatypeProperty ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:string .
+
+prod:humidity a owl:DatatypeProperty ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:float .
+
+prod:recordedAt a owl:DatatypeProperty ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — Routine / MusicMood ──────────────────────────────
+
+prod:routineHour a owl:DatatypeProperty ;
+    rdfs:domain prod:Routine ;
+    rdfs:range  xsd:integer .
+
+prod:moodGenre a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicMood ;
+    rdfs:range  xsd:string .

@@ -37,6 +37,9 @@ RULE_ORDER = [
     "place_habit",
     "late_caffeine_sleep_quality",
     "missing_companion",
+    "indoor_day_pattern",
+    "routine_detection",
+    "music_mood",
 ]
 
 

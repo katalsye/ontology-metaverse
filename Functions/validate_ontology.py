@@ -28,6 +28,8 @@ REQUIRED_CLASSES = [
     "GalleryPhoto", "Location", "Activity", "Quest",
     "Reward", "Persona", "RoomObject",
     "FatigueRisk", "BurnoutWarning", "SedentaryPattern", "PlaceHabit",
+    "MusicListening", "CalendarEvent", "Weather",
+    "IndoorDayPattern", "Routine", "MusicMood",
 ]
 
 REQUIRED_PROPERTIES = [
@@ -36,11 +38,17 @@ REQUIRED_PROPERTIES = [
     "activityType", "title", "questType", "isCompleted",
     "amount", "rewardType", "energyType", "objectType",
     "hasSleepData", "hasStepCount", "receivesQuest", "gives",
+    # 확장
+    "trackName", "artist", "genre", "playedAt", "listenDuration",
+    "eventTitle", "startTime", "endTime", "isRecurring",
+    "temperature", "condition", "humidity", "recordedAt",
+    "listensTo", "hasCalendarEvent", "hasWeather",
 ]
 
 RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
+    "indoor_day_pattern", "routine_detection", "music_mood",
 ]
 
 

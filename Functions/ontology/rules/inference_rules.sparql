@@ -180,3 +180,88 @@ WHERE {
 
     BIND(CONCAT("오늘 ", ?place, " 누구랑 갔어?") AS ?questTitle)
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 7 — IndoorDayPattern
+# 비오는 날 + 외출 위치 2곳 미만
+# → prod:IndoorDayPattern 상태 부여
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: indoor_day_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:IndoorDayPattern .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 비오는 날씨 기록
+    ?user prod:hasWeather ?w .
+    ?w    prod:condition   ?cond .
+    FILTER (CONTAINS(LCASE(STR(?cond)), "rain"))
+
+    # 집 외 방문 장소 2곳 미만
+    {
+        SELECT ?user (COUNT(?loc) AS ?outCnt)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeName   ?place .
+            FILTER (
+                !CONTAINS(LCASE(STR(?place)), "home") &&
+                !CONTAINS(LCASE(STR(?place)), "집")
+            )
+        }
+        GROUP BY ?user
+    }
+    FILTER (?outCnt < 2)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 8 — Routine
+# 같은 시간대(hour) 일정이 주 3회 이상
+# → prod:Routine 상태 부여, routineHour 기록
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: routine_detection
+CONSTRUCT {
+    ?user prod:hasState prod:Routine .
+    _:r   a prod:Routine ;
+          prod:routineHour ?hour .
+    ?user prod:hasRoomObject _:r .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user (HOURS(?st) AS ?hour) (COUNT(?evt) AS ?evtCnt)
+        WHERE {
+            ?user prod:hasCalendarEvent ?evt .
+            ?evt  prod:startTime        ?st .
+        }
+        GROUP BY ?user (HOURS(?st))
+    }
+    FILTER (?evtCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 9 — MusicMood
+# 특정 장르 하루 총 청취 120분(2시간) 이상
+# → prod:MusicMood 상태 부여, moodGenre 기록
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: music_mood
+CONSTRUCT {
+    ?user prod:hasState prod:MusicMood .
+    _:mm  a prod:MusicMood ;
+          prod:moodGenre ?genre .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?genre (SUM(?dur) AS ?totalMin)
+        WHERE {
+            ?user prod:listensTo     ?ml .
+            ?ml   prod:genre         ?genre ;
+                  prod:listenDuration ?dur .
+        }
+        GROUP BY ?user ?genre
+    }
+    FILTER (?totalMin >= 120)
+}
