@@ -370,7 +370,8 @@ WHERE {
 # Rule 7 — IndoorDayPattern (계절/날씨 가중치 반영)
 # 조건 A: 비오는 날(rain 포함) + 외출 2곳 미만
 # 조건 B: 겨울(12·1·2월) + 외출 2곳 미만 (계절 가중치)
-# ── UNION으로 두 조건을 병합 — 어느 하나라도 충족 시 IndoorDayPattern 부여
+# ── UNION 대신 OPTIONAL + FILTER로 합산: RDFLib UNION Branch에서
+#    triple 없는 FILTER만 쓸 때 outer scope 변수가 전달되지 않는 버그 우회
 # ── 맑은 날 실내 패턴은 Rule 14(sunny_indoor_quest)에서 별도 강화 퀘스트 생성
 # → prod:IndoorDayPattern 상태 부여
 # ══════════════════════════════════════════════════════════════════════════════
@@ -383,32 +384,29 @@ WHERE {
     ?user prod:hasWeather ?w .
     ?w    prod:recordedAt ?recAt .
 
-    {
-        # 조건 A: 비오는 날씨
-        ?w prod:condition ?cond .
-        FILTER (CONTAINS(LCASE(STR(?cond)), "rain"))
-    }
-    UNION
-    {
-        # 조건 B: 겨울(12월·1월·2월) — 계절적 실내 성향 가중
-        BIND (MONTH(?recAt) AS ?mon)
-        FILTER (?mon = 12 || ?mon = 1 || ?mon = 2)
-    }
+    # condition은 선택 속성 — OPTIONAL로 읽어 unbound 시 ""로 처리
+    OPTIONAL { ?w prod:condition ?cond }
 
-    # 공통 조건: 집 외 방문 장소 2곳 미만
-    {
-        SELECT ?user (COUNT(?loc) AS ?outCnt)
-        WHERE {
-            ?user prod:hasLocation ?loc .
-            ?loc  prod:placeName   ?place .
-            FILTER (
-                !CONTAINS(LCASE(STR(?place)), "home") &&
-                !CONTAINS(LCASE(STR(?place)), "집")
-            )
-        }
-        GROUP BY ?user
+    # 비 또는 겨울 중 하나라도 충족
+    FILTER (
+        (BOUND(?cond) && CONTAINS(LCASE(STR(?cond)), "rain")) ||
+        MONTH(?recAt) = 12 || MONTH(?recAt) = 1 || MONTH(?recAt) = 2
+    )
+
+    # 집 외 방문 장소 2곳 미만 — FILTER NOT EXISTS로 "2곳 동시 존재 여부" 반전
+    FILTER NOT EXISTS {
+        ?user prod:hasLocation ?loc1 .
+        ?user prod:hasLocation ?loc2 .
+        FILTER (?loc1 != ?loc2)
+        ?loc1 prod:placeName ?p1 .
+        ?loc2 prod:placeName ?p2 .
+        FILTER (
+            !CONTAINS(LCASE(STR(?p1)), "home") &&
+            !CONTAINS(LCASE(STR(?p1)), "집")  &&
+            !CONTAINS(LCASE(STR(?p2)), "home") &&
+            !CONTAINS(LCASE(STR(?p2)), "집")
+        )
     }
-    FILTER (?outCnt < 2)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -454,12 +452,14 @@ WHERE {
     ?user a prod:User .
 
     {
-        SELECT ?user (HOURS(?st) AS ?hour) (COUNT(?evt) AS ?evtCnt)
+        # ── GROUP BY 표현식 대신 BIND로 변수화 후 그룹핑 (RDFLib 호환)
+        SELECT ?user ?hour (COUNT(?evt) AS ?evtCnt)
         WHERE {
             ?user prod:hasCalendarEvent ?evt .
             ?evt  prod:startTime        ?st .
+            BIND (HOURS(?st) AS ?hour)
         }
-        GROUP BY ?user (HOURS(?st))
+        GROUP BY ?user ?hour
     }
     FILTER (?evtCnt >= 3)
 }
