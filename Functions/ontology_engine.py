@@ -104,15 +104,34 @@ def _load_temp_triples(db: firestore.Client, uid: str) -> list[dict]:
     return [d.to_dict() for d in docs]
 
 
+# 모듈 수준 lazy validator — cold start에서 한 번만 초기화됨 (read-only이므로 Stateless 위반 아님)
+_validator: Any = None
+
+
+def _get_validator() -> Any:
+    global _validator
+    if _validator is None:
+        try:
+            from triple_validator import TripleValidator
+            _validator = TripleValidator()
+        except Exception as exc:
+            logger.error("TripleValidator 로드 실패: %s — 검증 없이 진행", exc)
+    return _validator
+
+
 def _add_triples_to_graph(g: Graph, triples: list[dict]) -> None:
     """Gemma 3n 트리플 dict를 RDFLib 그래프에 추가.
 
-    object 필드 우선순위:
+    triple_validator.validate() 통과한 트리플만 추가한다.
+    object 필드 우선순위 (검증 후):
       1. "datatype" 키가 있으면 타입 지정 Literal
-      2. "http"로 시작하면 URIRef
-      3. 나머지는 plain Literal (추론 FILTER에서 비교 불가할 수 있으므로
-         Gemma 3n이 datatype을 함께 전송하도록 권장)
+      2. "http"로 시작하면 URIRef (Object Property 대상)
+      3. 나머지는 plain Literal
     """
+    validator = _get_validator()
+    if validator is not None:
+        triples, _ = validator.validate(triples)
+
     for t in triples:
         s = URIRef(t["subject"])
         p = URIRef(t["predicate"])
