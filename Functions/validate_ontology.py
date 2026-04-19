@@ -50,6 +50,7 @@ RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
     "indoor_day_pattern", "routine_detection", "music_mood",
+    "sunny_indoor_quest",
     "causal_sleep_impaired", "causal_exercise_skipped",
     "causal_weekly_activity_low", "causal_burnout_from_chain",
 ]

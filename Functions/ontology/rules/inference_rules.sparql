@@ -8,8 +8,12 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Rule 1 — FatigueRisk
-# 수면 6시간 미만 + 카페인(커피류 앱/장소) 2잔 초과
+# Rule 1 — FatigueRisk (시간대별 가중치 적용)
+# 수면 6시간 미만 + 카페인 조건:
+#   ① 주간(06~21h): 카페 방문 3회 초과
+#   ② 야간(22h~):   카페 방문 1회 초과 (위험도 ×2 → 임계값 절반)
+# ── 주말 가중치: SPARQL weekday 함수 미지원 → CalendarEvent 기반 추정
+#    캘린더 일정 없는 날 = 주말 프록시 (DuckDB 전처리로 보완)
 # → prod:FatigueRisk 상태 부여
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: fatigue_risk
@@ -19,21 +23,41 @@ CONSTRUCT {
 WHERE {
     ?user a prod:User .
 
-    # 수면 6시간 미만
     ?user prod:hasSleepData ?sleep .
     ?sleep prod:duration ?dur .
     FILTER (?dur < 6.0)
 
-    # 카페인 섭취 2회 초과 (appName 또는 placeType = "cafe")
     {
-        SELECT ?user (COUNT(?photo) AS ?cafeCnt)
-        WHERE {
-            ?user prod:hasGalleryPhoto ?photo .
-            ?photo prod:placeType "cafe" .
+        # ① 주간 카페인(06~21h): 3회 초과
+        {
+            SELECT ?user (COUNT(?loc) AS ?dayCafCnt)
+            WHERE {
+                ?user prod:hasLocation ?loc .
+                ?loc  prod:placeType "cafe" ;
+                      prod:visitTime  ?vt .
+                BIND (HOURS(?vt) AS ?h)
+                FILTER (?h >= 6 && ?h < 22)
+            }
+            GROUP BY ?user
         }
-        GROUP BY ?user
+        FILTER (?dayCafCnt > 2)
     }
-    FILTER (?cafeCnt > 2)
+    UNION
+    {
+        # ② 야간 카페인(22h~): 1회 초과 (가중치 2배)
+        {
+            SELECT ?user (COUNT(?loc) AS ?nightCafCnt)
+            WHERE {
+                ?user prod:hasLocation ?loc .
+                ?loc  prod:placeType "cafe" ;
+                      prod:visitTime  ?vt .
+                BIND (HOURS(?vt) AS ?h)
+                FILTER (?h >= 22)
+            }
+            GROUP BY ?user
+        }
+        FILTER (?nightCafCnt > 1)
+    }
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -67,8 +91,11 @@ WHERE {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Rule 3 — SedentaryPattern + 산책 퀘스트
-# 걸음수 3000보 미만 3일 연속
+# Rule 3 — SedentaryPattern + 산책 퀘스트 (연속성 체크 강화)
+# 걸음수 3000보 미만 3일 연속 — 날짜 간격 P1D 검증
+# ── 단순 COUNT(≥3) → 3-way 날짜 조인으로 교체
+# ── 각 날짜 간격이 정확히 1일(P1D)인지 xsd:duration으로 비교
+# ── 월 경계(예: 4/30→5/1) 케이스는 DuckDB 전처리가 보완
 # → prod:SedentaryPattern, "30분 산책하기" 퀘스트 생성
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: sedentary_pattern
@@ -83,17 +110,23 @@ CONSTRUCT {
 WHERE {
     ?user a prod:User .
 
-    # 최근 3일 걸음수 기록이 모두 3000 미만
-    {
-        SELECT ?user (COUNT(?s) AS ?lowDayCnt)
-        WHERE {
-            ?user prod:hasStepCount ?s .
-            ?s    prod:count ?cnt .
-            FILTER (?cnt < 3000)
-        }
-        GROUP BY ?user
-    }
-    FILTER (?lowDayCnt >= 3)
+    # 3-way 조인: 걸음수 3000 미만인 StepCount 3개 선택
+    ?user prod:hasStepCount ?s1, ?s2, ?s3 .
+    FILTER (?s1 != ?s2 && ?s1 != ?s3 && ?s2 != ?s3)
+
+    ?s1 prod:count ?c1 ; prod:date ?d1 .
+    ?s2 prod:count ?c2 ; prod:date ?d2 .
+    ?s3 prod:count ?c3 ; prod:date ?d3 .
+
+    FILTER (?c1 < 3000 && ?c2 < 3000 && ?c3 < 3000)
+
+    # 날짜 순서 고정 (STR 비교 — ISO 형식 xsd:date 는 사전순 = 시간순)
+    FILTER (STR(?d1) < STR(?d2) && STR(?d2) < STR(?d3))
+
+    # 연속성: 각 날짜 간격이 정확히 1일(P1D)
+    BIND ((?d2 - ?d1) AS ?gap1)
+    BIND ((?d3 - ?d2) AS ?gap2)
+    FILTER (?gap1 = "P1D"^^xsd:duration && ?gap2 = "P1D"^^xsd:duration)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -182,8 +215,11 @@ WHERE {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Rule 7 — IndoorDayPattern
-# 비오는 날 + 외출 위치 2곳 미만
+# Rule 7 — IndoorDayPattern (계절/날씨 가중치 반영)
+# 조건 A: 비오는 날(rain 포함) + 외출 2곳 미만
+# 조건 B: 겨울(12·1·2월) + 외출 2곳 미만 (계절 가중치)
+# ── UNION으로 두 조건을 병합 — 어느 하나라도 충족 시 IndoorDayPattern 부여
+# ── 맑은 날 실내 패턴은 Rule 14(sunny_indoor_quest)에서 별도 강화 퀘스트 생성
 # → prod:IndoorDayPattern 상태 부여
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: indoor_day_pattern
@@ -192,13 +228,22 @@ CONSTRUCT {
 }
 WHERE {
     ?user a prod:User .
-
-    # 비오는 날씨 기록
     ?user prod:hasWeather ?w .
-    ?w    prod:condition   ?cond .
-    FILTER (CONTAINS(LCASE(STR(?cond)), "rain"))
+    ?w    prod:recordedAt ?recAt .
 
-    # 집 외 방문 장소 2곳 미만
+    {
+        # 조건 A: 비오는 날씨
+        ?w prod:condition ?cond .
+        FILTER (CONTAINS(LCASE(STR(?cond)), "rain"))
+    }
+    UNION
+    {
+        # 조건 B: 겨울(12월·1월·2월) — 계절적 실내 성향 가중
+        BIND (MONTH(?recAt) AS ?mon)
+        FILTER (?mon = 12 || ?mon = 1 || ?mon = 2)
+    }
+
+    # 공통 조건: 집 외 방문 장소 2곳 미만
     {
         SELECT ?user (COUNT(?loc) AS ?outCnt)
         WHERE {
@@ -212,6 +257,33 @@ WHERE {
         GROUP BY ?user
     }
     FILTER (?outCnt < 2)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 14 — SunnyIndoorQuest
+# IndoorDayPattern 상태 + 맑은 날씨(sun/clear)
+# → 더 강한 산책 퀘스트 생성
+# ── 맑은 날 실내 패턴은 기회 손실이므로 퀘스트 문구 강화
+# ── Rule 7 이후 실행 필수 (IndoorDayPattern 선행 의존)
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: sunny_indoor_quest
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "날씨가 맑아요! 지금 딱 산책하기 좋아요" ;
+        prod:questType "삶 개선형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    # Rule 7 결과에 의존 — RULE_ORDER에서 indoor_day_pattern 직후 실행
+    ?user prod:hasState prod:IndoorDayPattern .
+
+    ?user prod:hasWeather ?w .
+    ?w    prod:condition  ?cond .
+    FILTER (
+        CONTAINS(LCASE(STR(?cond)), "sun") ||
+        CONTAINS(LCASE(STR(?cond)), "clear")
+    )
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

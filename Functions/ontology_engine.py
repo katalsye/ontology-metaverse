@@ -39,6 +39,7 @@ RULE_ORDER = [
     "late_caffeine_sleep_quality",  # Rule 5
     "missing_companion",        # Rule 6
     "indoor_day_pattern",       # Rule 7
+    "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
     "routine_detection",        # Rule 8
     "music_mood",               # Rule 9
     # 다단계 인과 체인 — 순서 고정 필수
