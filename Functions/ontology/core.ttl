@@ -383,3 +383,106 @@ prod:routineHour a owl:DatatypeProperty ;
 prod:moodGenre a owl:DatatypeProperty ;
     rdfs:domain prod:MusicMood ;
     rdfs:range  xsd:string .
+
+# ─── OWL 제약조건 ────────────────────────────────────────────────────────────
+
+# ── 클래스 분리 선언 (owl:disjointWith) ──────────────────────────────────────
+
+prod:SleepData      owl:disjointWith prod:StepCount .
+prod:Quest          owl:disjointWith prod:Reward .
+prod:FatigueRisk    owl:disjointWith prod:BurnoutWarning .
+prod:CalendarEvent  owl:disjointWith prod:MusicListening .
+
+# ── 데이터 범위 제약 (owl:allValuesFrom + owl:withRestrictions) ───────────────
+
+# SleepData.duration: 0.0 ~ 24.0 (시간)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:duration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float  ]
+            [ xsd:maxInclusive "24.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# SleepData.quality: 0 ~ 100 (정수)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:quality ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer   ]
+            [ xsd:maxInclusive "100"^^xsd:integer ]
+        )
+    ]
+] .
+
+# StepCount.count: 0 이상 (비음수)
+prod:StepCount rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:count ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Weather.temperature: -50 ~ 60 (섭씨)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:temperature ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-50.0"^^xsd:float ]
+            [ xsd:maxInclusive "60.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# Weather.humidity: 0 ~ 100 (퍼센트)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:humidity ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float   ]
+            [ xsd:maxInclusive "100.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# ── 필수 속성 선언 (owl:minCardinality 1) ────────────────────────────────────
+
+# User는 반드시 uid를 가져야 함
+prod:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:uid ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Quest는 반드시 title을 가져야 함
+prod:Quest rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:title ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# SleepData는 반드시 duration을 가져야 함
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:duration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .

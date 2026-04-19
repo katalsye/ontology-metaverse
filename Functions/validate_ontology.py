@@ -46,6 +46,27 @@ REQUIRED_PROPERTIES = [
     "listensTo", "hasCalendarEvent", "hasWeather",
 ]
 
+DISJOINT_PAIRS = [
+    ("SleepData",     "StepCount"),
+    ("Quest",         "Reward"),
+    ("FatigueRisk",   "BurnoutWarning"),
+    ("CalendarEvent", "MusicListening"),
+]
+
+MIN_CARDINALITY_1 = [
+    ("User",      "uid"),
+    ("Quest",     "title"),
+    ("SleepData", "duration"),
+]
+
+RANGE_CONSTRAINTS = [
+    ("SleepData", "duration"),
+    ("SleepData", "quality"),
+    ("StepCount", "count"),
+    ("Weather",   "temperature"),
+    ("Weather",   "humidity"),
+]
+
 RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
@@ -85,6 +106,56 @@ def validate_rules(rules_text: str) -> int:
         found = bool(re.search(rf"RULE_ID:\s*{rule_id}", rules_text))
         if not check(found, rule_id):
             failures += 1
+    return failures
+
+
+def _ask(g: Graph, sparql: str) -> bool:
+    return bool(g.query(sparql))
+
+
+def validate_owl_constraints(g: Graph) -> int:
+    failures = 0
+
+    print("\n[5] owl:disjointWith 선언 확인")
+    for a, b in DISJOINT_PAIRS:
+        ok = (
+            (PROD[a], OWL.disjointWith, PROD[b]) in g or
+            (PROD[b], OWL.disjointWith, PROD[a]) in g
+        )
+        if not check(ok, f"{a} ↔ {b}"):
+            failures += 1
+
+    print("\n[6] owl:minCardinality ≥ 1 확인")
+    for cls, prop in MIN_CARDINALITY_1:
+        sparql = f"""
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+ASK {{
+    prod:{cls} rdfs:subClassOf ?r .
+    ?r owl:onProperty prod:{prop} ;
+       owl:minCardinality ?n .
+    FILTER (?n >= 1)
+}}"""
+        if not check(_ask(g, sparql), f"{cls}.{prop}"):
+            failures += 1
+
+    print("\n[7] 데이터 범위 제약(owl:withRestrictions) 확인")
+    for cls, prop in RANGE_CONSTRAINTS:
+        sparql = f"""
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+ASK {{
+    prod:{cls} rdfs:subClassOf ?r .
+    ?r owl:onProperty prod:{prop} ;
+       owl:allValuesFrom ?dt .
+    ?dt owl:withRestrictions ?list .
+}}"""
+        if not check(_ask(g, sparql), f"{cls}.{prop}"):
+            failures += 1
+
     return failures
 
 
@@ -130,6 +201,7 @@ def main() -> None:
         sys.exit(1)
 
     total_fail += validate_ttl(g)
+    total_fail += validate_owl_constraints(g)
 
     # 추론 규칙 파일 로드
     print("\n[RULES] inference_rules.sparql 로드")
