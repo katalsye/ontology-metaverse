@@ -104,6 +104,13 @@ prod:gives a owl:ObjectProperty ;
 prod:hasState a owl:ObjectProperty ;
     rdfs:domain prod:User .
 
+prod:hasRoomObject a owl:ObjectProperty ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:RoomObject .
+
+prod:inferredFromConcept a owl:ObjectProperty ;
+    rdfs:domain prod:RoomObject .
+
 # ─── Datatype Properties — User ─────────────────────────────────────────────
 
 prod:uid a owl:DatatypeProperty ;
@@ -163,7 +170,6 @@ prod:foodType a owl:DatatypeProperty ;
     rdfs:range  xsd:string .
 
 prod:placeType a owl:DatatypeProperty ;
-    rdfs:domain prod:GalleryPhoto ;
     rdfs:range  xsd:string .
 
 prod:analyzedBy a owl:DatatypeProperty ;
@@ -183,6 +189,10 @@ prod:visitTime a owl:DatatypeProperty ;
 prod:visitCount a owl:DatatypeProperty ;
     rdfs:domain prod:Location ;
     rdfs:range  xsd:integer .
+
+prod:companion a owl:DatatypeProperty ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
 
 # ─── Datatype Properties — Activity ─────────────────────────────────────────
 
@@ -257,3 +267,6 @@ prod:positionZ a owl:DatatypeProperty ;
 prod:inferredFrom a owl:DatatypeProperty ;
     rdfs:domain prod:RoomObject ;
     rdfs:range  xsd:string .
+
+# inferredFromConcept: RoomObject → 유래 개념 URI (PlaceHabit, Persona 등)
+# inferredFrom(string)과 병행 — 엔진이 두 속성 모두 기록

@@ -107,9 +107,11 @@ CONSTRUCT {
     _:obj a prod:RoomObject ;
           prod:objectType ?place ;
           prod:inferredFrom "PlaceHabit" ;
+          prod:inferredFromConcept prod:PlaceHabit ;
           prod:positionX 0.0 ;
           prod:positionY 0.0 ;
           prod:positionZ 0.0 .
+    ?user prod:hasRoomObject _:obj .
 }
 WHERE {
     ?user a prod:User .
