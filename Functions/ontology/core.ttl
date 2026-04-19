@@ -135,6 +135,10 @@ prod:deepSleepRatio a owl:DatatypeProperty ;
     rdfs:domain prod:SleepData ;
     rdfs:range  xsd:float .
 
+prod:cause a owl:DatatypeProperty ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:string .
+
 prod:timestamp a owl:DatatypeProperty ;
     rdfs:range  xsd:dateTime .
 
@@ -194,9 +198,17 @@ prod:companion a owl:DatatypeProperty ;
     rdfs:domain prod:Location ;
     rdfs:range  xsd:string .
 
+prod:purpose a owl:DatatypeProperty ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
+
 # ─── Datatype Properties — Activity ─────────────────────────────────────────
 
 prod:activityType a owl:DatatypeProperty ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  xsd:string .
+
+prod:emotion a owl:DatatypeProperty ;
     rdfs:domain prod:Activity ;
     rdfs:range  xsd:string .
 
@@ -338,6 +350,10 @@ prod:listenDuration a owl:DatatypeProperty ;
     rdfs:domain prod:MusicListening ;
     rdfs:range  xsd:integer .
 
+prod:mood a owl:DatatypeProperty ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
 # ─── Datatype Properties — CalendarEvent ────────────────────────────────────
 
 prod:eventTitle a owl:DatatypeProperty ;
@@ -355,6 +371,10 @@ prod:endTime a owl:DatatypeProperty ;
 prod:isRecurring a owl:DatatypeProperty ;
     rdfs:domain prod:CalendarEvent ;
     rdfs:range  xsd:boolean .
+
+prod:review a owl:DatatypeProperty ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:string .
 
 # ─── Datatype Properties — Weather ──────────────────────────────────────────
 

@@ -38,6 +38,11 @@ RULE_ORDER = [
     "place_habit",              # Rule 4
     "late_caffeine_sleep_quality",  # Rule 5
     "missing_companion",        # Rule 6
+    "missing_emotion",          # Rule 6-B (감정 빈 노드)
+    "missing_purpose",          # Rule 6-C (의도 빈 노드)
+    "missing_music_mood",       # Rule 6-D (음악 맥락 빈 노드)
+    "missing_sleep_cause",      # Rule 6-E (수면 원인 빈 노드)
+    "missing_event_review",     # Rule 6-F (일정 후기 빈 노드)
     "indoor_day_pattern",       # Rule 7
     "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
     "routine_detection",        # Rule 8

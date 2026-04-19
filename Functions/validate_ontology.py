@@ -44,6 +44,8 @@ REQUIRED_PROPERTIES = [
     "eventTitle", "startTime", "endTime", "isRecurring",
     "temperature", "condition", "humidity", "recordedAt",
     "listensTo", "hasCalendarEvent", "hasWeather",
+    # 빈 노드 감지용 선택 속성
+    "emotion", "purpose", "mood", "cause", "review",
 ]
 
 DISJOINT_PAIRS = [
@@ -71,6 +73,8 @@ RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
     "indoor_day_pattern", "routine_detection", "music_mood",
+    "missing_emotion", "missing_purpose", "missing_music_mood",
+    "missing_sleep_cause", "missing_event_review",
     "sunny_indoor_quest",
     "causal_sleep_impaired", "causal_exercise_skipped",
     "causal_weekly_activity_low", "causal_burnout_from_chain",

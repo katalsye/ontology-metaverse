@@ -215,6 +215,158 @@ WHERE {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-B — missing_emotion (감정 빈 노드)
+# Activity는 있는데 emotion 속성 없음
+# → "오늘 [activityType] 어떤 기분이었어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_emotion
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # Activity 중 emotion 없는 것만 (장르별로 한 번씩)
+    {
+        SELECT ?user ?atype
+        WHERE {
+            ?user prod:hasActivity ?act .
+            ?act  prod:activityType ?atype .
+            FILTER NOT EXISTS { ?act prod:emotion ?e }
+        }
+        GROUP BY ?user ?atype
+    }
+
+    BIND (CONCAT("오늘 ", STR(?atype), " 어떤 기분이었어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-C — missing_purpose (의도 빈 노드)
+# 같은 장소 3회 이상 방문했는데 purpose 속성 없음
+# → "[장소]에 자주 가는 이유가 있어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_purpose
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 3회 이상 방문한 장소
+    {
+        SELECT ?user ?place (COUNT(?loc) AS ?visitCnt)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeName   ?place .
+        }
+        GROUP BY ?user ?place
+    }
+    FILTER (?visitCnt >= 3)
+
+    # 해당 장소의 방문 기록 중 purpose 없는 것이 하나라도 존재
+    FILTER EXISTS {
+        ?user prod:hasLocation ?loc2 .
+        ?loc2 prod:placeName ?place .
+        FILTER NOT EXISTS { ?loc2 prod:purpose ?p }
+    }
+
+    BIND (CONCAT(STR(?place), "에 자주 가는 이유가 있어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-D — missing_music_mood (음악 맥락 빈 노드)
+# MusicListening은 있는데 mood 속성 없음
+# → "요즘 [genre] 음악 자주 듣네, 어떤 기분일 때 들어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_music_mood
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # mood 없는 MusicListening을 장르별로 한 번만
+    {
+        SELECT ?user ?genre
+        WHERE {
+            ?user prod:listensTo ?ml .
+            ?ml   prod:genre     ?genre .
+            FILTER NOT EXISTS { ?ml prod:mood ?m }
+        }
+        GROUP BY ?user ?genre
+    }
+
+    BIND (CONCAT("요즘 ", STR(?genre), " 음악 자주 듣네, 어떤 기분일 때 들어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-E — missing_sleep_cause (수면 원인 빈 노드)
+# SleepData.quality 60 미만인데 cause 속성 없음
+# → "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" 퀘스트 생성
+# ── 같은 User에서 중복 생성 방지: 미완료 동일 퀘스트가 없는 경우에만
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_sleep_cause
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+    FILTER NOT EXISTS { ?sleep prod:cause ?c }
+
+    # 동일 퀘스트가 이미 미완료 상태로 존재하면 중복 생성 억제
+    FILTER NOT EXISTS {
+        ?user prod:receivesQuest ?existing .
+        ?existing prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
+                  prod:isCompleted false .
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-F — missing_event_review (일정 후기 빈 노드)
+# CalendarEvent 종료(endTime < NOW())됐는데 review 속성 없음
+# → "[eventTitle] 어땠어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_event_review
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasCalendarEvent ?evt .
+    ?evt  prod:eventTitle ?evtTitle ;
+          prod:endTime     ?et .
+
+    # 이미 종료된 일정만
+    FILTER (?et < NOW())
+    FILTER NOT EXISTS { ?evt prod:review ?r }
+
+    BIND (CONCAT(STR(?evtTitle), " 어땠어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Rule 7 — IndoorDayPattern (계절/날씨 가중치 반영)
 # 조건 A: 비오는 날(rain 포함) + 외출 2곳 미만
 # 조건 B: 겨울(12·1·2월) + 외출 2곳 미만 (계절 가중치)
