@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python Functions/test_rules.py)",
+      "Bash(pip install *)",
+      "Bash(python -m pip install rdflib)"
+    ]
+  }
+}
