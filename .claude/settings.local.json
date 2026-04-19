@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python Functions/test_rules.py)",
       "Bash(pip install *)",
-      "Bash(python -m pip install rdflib)"
+      "Bash(python -m pip install rdflib)",
+      "Bash(python Functions/validate_ontology.py)"
     ]
   }
 }
