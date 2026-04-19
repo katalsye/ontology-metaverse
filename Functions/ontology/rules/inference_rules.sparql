@@ -593,3 +593,159 @@ WHERE {
     # Rule 12 결과에 의존
     ?user prod:hasState prod:WeeklyActivityLow .
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── 페르소나 자동 생성 규칙 (Rules P1–P6) ─────────────────────────────────────
+#
+# 각 규칙이 독립적으로 prod:Persona 블랭크 노드를 생성 (hasPersona로 연결).
+# 동일 사용자에게 여러 규칙이 발동되면 복수 Persona 노드 생성됨.
+# ontology_engine.py의 _save_results_to_firestore에서 모든 노드를 순회해
+# energyType / socialPreference / lifePattern 을 병합 저장.
+# RULE_ORDER: P1~P6는 indoor_day_pattern·routine_detection 이후 실행.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule P1 — 활동적 페르소나 ─────────────────────────────────────────────────
+# 걸음수 7000보 이상 기록이 4일 이상
+# → energyType = "active"
+# RULE_ID: persona_active
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:energyType "active" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?s) AS ?activeDays)
+        WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s    prod:count ?c .
+            FILTER (?c >= 7000)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?activeDays >= 4)
+}
+
+# ── Rule P2 — 실내형 페르소나 ─────────────────────────────────────────────────
+# IndoorDayPattern 상태 활성화 (Rule 7 결과 의존)
+# → energyType = "indoor"
+# RULE_ID: persona_indoor
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:energyType "indoor" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user prod:hasState prod:IndoorDayPattern .
+    BIND(NOW() AS ?now)
+}
+
+# ── Rule P3 — 사교적 페르소나 ─────────────────────────────────────────────────
+# companion 속성 있는 방문 기록 3회 이상
+# → socialPreference = "social"
+# RULE_ID: persona_social
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:socialPreference "social" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?socialVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:companion   ?anyone .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?socialVisits >= 3)
+}
+
+# ── Rule P4 — 혼자 시간 선호 페르소나 ────────────────────────────────────────
+# companion 없는 방문이 전체 방문의 70% 이상
+# → socialPreference = "solitary"
+# ── 정수 산술로 부동소수점 비교 회피: soloVisits*10 >= totalVisits*7
+# RULE_ID: persona_solitary
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:socialPreference "solitary" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?totalVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+        }
+        GROUP BY ?user
+    }
+    {
+        SELECT ?user (COUNT(?locS) AS ?soloVisits)
+        WHERE {
+            ?user prod:hasLocation ?locS .
+            FILTER NOT EXISTS { ?locS prod:companion ?c }
+        }
+        GROUP BY ?user
+    }
+    FILTER (?totalVisits > 0 && (?soloVisits * 10 >= ?totalVisits * 7))
+}
+
+# ── Rule P5 — 루틴형 페르소나 ─────────────────────────────────────────────────
+# Routine 노드 2개 이상 (Rule 8 결과 의존)
+# → lifePattern = "routine"
+# RULE_ID: persona_routine
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:lifePattern "routine" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?r) AS ?routineCnt)
+        WHERE {
+            ?user prod:hasRoomObject ?r .
+            ?r    a prod:Routine .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?routineCnt >= 2)
+}
+
+# ── Rule P6 — 야행성 페르소나 ─────────────────────────────────────────────────
+# 밤 11시 이후 ~ 새벽 2시 사이 방문 기록 3회 이상
+# → lifePattern = "night_owl"
+# RULE_ID: persona_night_owl
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:lifePattern "night_owl" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?lateNightVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:visitTime   ?vt .
+            BIND(HOURS(?vt) AS ?h)
+            FILTER (?h >= 23 || ?h < 2)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?lateNightVisits >= 3)
+}

@@ -78,6 +78,8 @@ RULE_IDS = [
     "sunny_indoor_quest",
     "causal_sleep_impaired", "causal_exercise_skipped",
     "causal_weekly_activity_low", "causal_burnout_from_chain",
+    "persona_active", "persona_indoor", "persona_social",
+    "persona_solitary", "persona_routine", "persona_night_owl",
 ]
 
 

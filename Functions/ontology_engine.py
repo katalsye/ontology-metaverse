@@ -52,6 +52,13 @@ RULE_ORDER = [
     "causal_exercise_skipped",      # Rule 11 (Rule 10 의존)
     "causal_weekly_activity_low",   # Rule 12 (Rule 11 의존)
     "causal_burnout_from_chain",    # Rule 13 (Rule 12 의존)
+    # 페르소나 자동 생성 — 상태 규칙 이후 실행
+    "persona_active",               # Rule P1
+    "persona_indoor",               # Rule P2  (indoor_day_pattern 의존)
+    "persona_social",               # Rule P3
+    "persona_solitary",             # Rule P4
+    "persona_routine",              # Rule P5  (routine_detection 의존)
+    "persona_night_owl",            # Rule P6
 ]
 
 
@@ -243,15 +250,23 @@ def _save_results_to_firestore(
         )
         logger.info("Saved %d room_objects for uid=%s", len(room_objs), uid)
 
-    # persona — User 노드에 연결된 Persona 업데이트
-    persona_node = g.value(user_uri, PROD.hasPersona)
-    if persona_node:
-        persona = {
-            "energyType":       str(g.value(persona_node, PROD.energyType) or ""),
-            "socialPreference": str(g.value(persona_node, PROD.socialPreference) or ""),
-            "lifePattern":      str(g.value(persona_node, PROD.lifePattern) or ""),
-            "updatedAt":        str(g.value(persona_node, PROD.updatedAt) or ""),
+    # persona — 복수 Persona 노드를 순회해 속성 병합 저장
+    persona_nodes = list(g.objects(user_uri, PROD.hasPersona))
+    if persona_nodes:
+        persona: dict[str, str] = {
+            "energyType": "", "socialPreference": "", "lifePattern": "", "updatedAt": "",
         }
+        for pnode in persona_nodes:
+            for key, prop in [
+                ("energyType",       PROD.energyType),
+                ("socialPreference", PROD.socialPreference),
+                ("lifePattern",      PROD.lifePattern),
+                ("updatedAt",        PROD.updatedAt),
+            ]:
+                if not persona[key]:
+                    val = g.value(pnode, prop)
+                    if val:
+                        persona[key] = str(val)
         db.collection("users").document(uid).set({"persona": persona}, merge=True)
 
     return new_quest_titles
