@@ -81,6 +81,41 @@ public class RoomSnapshotManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
+    // 오늘 날짜로 스냅샷 저장
+    // ───────────────────────────────────────
+    public void SaveSnapshot(List<RoomObject> objects, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    {
+        string uid = auth.CurrentUser.UserId;
+        string today = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+        Dictionary<string, object> data = new Dictionary<string, object>
+        {
+            { "SnapshotId", today },
+            { "Date", today },
+            { "Objects", objects },
+            { "CreatedAt", FieldValue.ServerTimestamp }
+        };
+
+        db.Collection("room_snapshots")
+            .Document(uid)
+            .Collection("snapshots")
+            .Document(today)
+            .SetAsync(data)
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("스냅샷 저장 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+
+                Debug.Log("스냅샷 저장 완료: " + today);
+                onSuccess?.Invoke();
+            });
+    }
+
+    // ───────────────────────────────────────
     // 남의 방 스냅샷 조회
     // ───────────────────────────────────────
     public void GetOtherUserSnapshot(string targetUid, string date, System.Action<RoomSnapshot> onSuccess, System.Action<string> onFailure = null)
