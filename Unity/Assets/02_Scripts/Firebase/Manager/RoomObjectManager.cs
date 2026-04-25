@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Firebase.Auth;
 using Firebase.Firestore;
@@ -8,6 +9,8 @@ public class RoomObjectManager : MonoBehaviour
 {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private ListenerRegistration _roomListener;
+    public event Action<List<RoomObject>> OnRoomObjectsChanged;
 
     void Start()
     {
@@ -125,4 +128,47 @@ public class RoomObjectManager : MonoBehaviour
             onSuccess?.Invoke();
         });
     }
+    // ───────────────────────────────────────
+    // 내 방 실시간 리스너 시작
+    // ───────────────────────────────────────
+    public void StartRoomListener()
+    {
+        StopRoomListener();
+        string uid = auth.CurrentUser.UserId;
+        _roomListener = db.Collection("room_objects")
+            .Document(uid)
+            .Collection("objects")
+            .Listen(snapshot =>
+            {
+                List<RoomObject> objects = new List<RoomObject>();
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                    objects.Add(doc.ConvertTo<RoomObject>());
+                OnRoomObjectsChanged?.Invoke(objects);
+            });
+    }
+
+    // 남의 방 진입 시
+    public void StartVisitingRoomListener(string targetUid)
+    {
+        StopRoomListener();
+        _roomListener = db.Collection("room_objects")
+            .Document(targetUid)
+            .Collection("objects")
+            .Listen(snapshot =>
+            {
+                List<RoomObject> objects = new List<RoomObject>();
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                    objects.Add(doc.ConvertTo<RoomObject>());
+                OnRoomObjectsChanged?.Invoke(objects);
+            });
+    }
+
+    public void StopRoomListener()
+    {
+        _roomListener?.Stop();
+        _roomListener = null;
+    }
+
+    void OnDestroy() => StopRoomListener();
+
 }

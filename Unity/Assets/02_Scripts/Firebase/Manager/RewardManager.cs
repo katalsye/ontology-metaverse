@@ -54,7 +54,9 @@ public class RewardManager : MonoBehaviour
             return transaction.GetSnapshotAsync(rewardDoc).ContinueWithOnMainThread(task =>
             {
                 int current = task.Result.Exists ? task.Result.GetValue<int>("Amount") : 0;
-                transaction.Update(rewardDoc, "Amount", current + amount);
+                Dictionary<string, object> data = new Dictionary<string, object> { { "Amount", current + amount } };
+                if (task.Result.Exists) transaction.Update(rewardDoc, data);
+                else transaction.Set(rewardDoc, data);
                 return true;
             });
         }).ContinueWithOnMainThread(task =>

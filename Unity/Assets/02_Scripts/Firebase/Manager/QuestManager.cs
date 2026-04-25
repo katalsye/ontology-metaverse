@@ -1,14 +1,19 @@
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
-using System.Collections.Generic;
 
 public class QuestManager : MonoBehaviour
 {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private RewardManager rewardManager;
+
+    private ListenerRegistration _questListener;
+    public event Action<List<Quest>> OnQuestsChanged;
+    public event Action<int> OnUnreadQuestCountChanged;
 
     void Start()
     {
@@ -150,4 +155,37 @@ public class QuestManager : MonoBehaviour
             );
         });
     }
+
+    // ───────────────────────────────────────
+    // 퀘스트 실시간 리스너
+    // ───────────────────────────────────────
+    public void StartQuestListener()
+    {
+        _questListener?.Stop();
+        string uid = auth.CurrentUser.UserId;
+        _questListener = db.Collection("quests")
+            .Document(uid)
+            .Collection("userQuests")
+            .Listen(snapshot =>
+            {
+                List<Quest> quests = new List<Quest>();
+                int unread = 0;
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                {
+                    Quest q = doc.ConvertTo<Quest>();
+                    quests.Add(q);
+                    if (!q.IsCompleted) unread++;
+                }
+                OnQuestsChanged?.Invoke(quests);
+                OnUnreadQuestCountChanged?.Invoke(unread);  // 뱃지용
+            });
+    }
+
+    public void StopQuestListener()
+    {
+        _questListener?.Stop();
+        _questListener = null;
+    }
+
+    void OnDestroy() => StopQuestListener();
 }
