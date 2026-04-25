@@ -126,6 +126,10 @@ public class GoogleFirebaseLogin : MonoBehaviour
 
     public void SignOut()
     {
+        // 1. 리스너 먼저 정리 (CurrentUser가 null 되기 전에)
+        StopAllManagerListeners();
+
+        // 2. 로그아웃 처리
         GoogleSignIn.DefaultInstance.SignOut();
         auth.SignOut();
         user = null;
@@ -134,5 +138,17 @@ public class GoogleFirebaseLogin : MonoBehaviour
         userNameTMP.text = "";
 
         Debug.Log("로그아웃 완료");
+    }
+
+    private void StopAllManagerListeners()
+    {
+        // 같은 GameObject에 붙어있는 Manager들의 리스너 정리
+        var roomManager = GetComponent<RoomObjectManager>();
+        if (roomManager != null) roomManager.StopRoomListener();
+
+        var questManager = GetComponent<QuestManager>();
+        if (questManager != null) questManager.StopQuestListener();
+
+        Debug.Log("모든 리스너 정리 완료");
     }
 }

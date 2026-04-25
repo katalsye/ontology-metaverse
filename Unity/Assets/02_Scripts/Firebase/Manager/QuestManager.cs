@@ -12,14 +12,31 @@ public class QuestManager : MonoBehaviour
     private RewardManager rewardManager;
 
     private ListenerRegistration _questListener;
+
     public event Action<List<Quest>> OnQuestsChanged;
     public event Action<int> OnUnreadQuestCountChanged;
+    // public event Action<string> OnQuestListenerError; // 리스너 에러 알림
 
     void Start()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
         rewardManager = GetComponent<RewardManager>();
+
+        if (rewardManager == null)
+        {
+            Debug.LogError("QuestManager: RewardManager를 같은 GameObject에서 찾을 수 없음. ClaimReward가 작동하지 않습니다.");
+        }
+    }
+
+    void Update()
+    {
+        // 로그아웃 감지: 리스너 돌고 있는데 CurrentUser가 null이면 자동 정리
+        if (_questListener != null && auth?.CurrentUser == null)
+        {
+            Debug.Log("로그아웃 감지 → 퀘스트 리스너 자동 해제");
+            StopQuestListener();
+        }
     }
 
     // ───────────────────────────────────────
@@ -27,6 +44,13 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetQuests(bool completedFilter, System.Action<List<Quest>> onSuccess, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("GetQuests: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("quests")
             .Document(uid)
@@ -57,6 +81,13 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetQuest(string questId, System.Action<Quest> onSuccess, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("GetQuest: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("quests")
             .Document(uid)
@@ -88,6 +119,13 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void CompleteQuest(string questId, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("CompleteQuest: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         DocumentReference questDoc = db.Collection("quests")
             .Document(uid)
@@ -119,6 +157,20 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void ClaimReward(string questId, int rewardAmount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("ClaimReward: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
+        if (rewardManager == null)
+        {
+            Debug.LogError("ClaimReward: RewardManager 없음");
+            onFailure?.Invoke("RewardManager 미연결");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         DocumentReference questDoc = db.Collection("quests")
             .Document(uid)
@@ -161,30 +213,44 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void StartQuestListener()
     {
-        _questListener?.Stop();
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("StartQuestListener: 로그인 상태 아님");
+            return;
+        }
+
+        StopQuestListener();
         string uid = auth.CurrentUser.UserId;
+
         _questListener = db.Collection("quests")
             .Document(uid)
             .Collection("userQuests")
-            .Listen(snapshot =>
-            {
-                List<Quest> quests = new List<Quest>();
-                int unread = 0;
-                foreach (DocumentSnapshot doc in snapshot.Documents)
+            .Listen(
+                snapshot =>
                 {
-                    Quest q = doc.ConvertTo<Quest>();
-                    quests.Add(q);
-                    if (!q.IsCompleted) unread++;
-                }
-                OnQuestsChanged?.Invoke(quests);
-                OnUnreadQuestCountChanged?.Invoke(unread);  // 뱃지용
-            });
+                    List<Quest> quests = new List<Quest>();
+                    int unread = 0;
+                    foreach (DocumentSnapshot doc in snapshot.Documents)
+                    {
+                        Quest q = doc.ConvertTo<Quest>();
+                        quests.Add(q);
+                        if (!q.IsCompleted) unread++;
+                    }
+                    OnQuestsChanged?.Invoke(quests);
+                    OnUnreadQuestCountChanged?.Invoke(unread);  // 뱃지용
+                });
+
+        Debug.Log("퀘스트 리스너 시작: " + uid);
     }
 
     public void StopQuestListener()
     {
-        _questListener?.Stop();
-        _questListener = null;
+        if (_questListener != null)
+        {
+            _questListener.Stop();
+            _questListener = null;
+            Debug.Log("퀘스트 리스너 해제");
+        }
     }
 
     void OnDestroy() => StopQuestListener();
