@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ───────────────────────────────────────
+    // 헬퍼 함수
+    // ───────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // 팔로우 관계 확인: 현재 유저(viewer)가 ownerUid를 팔로우하고 있고, 수락된 상태인지
+    function isAcceptedFollower(ownerUid) {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/follows/$(request.auth.uid + '_' + ownerUid)) &&
+             get(/databases/$(database)/documents/follows/$(request.auth.uid + '_' + ownerUid)).data.Status == 'accepted';
+    }
+
+    // ───────────────────────────────────────
+    // users/{uid} — 프로필
+    // 본인: 항상 읽기/쓰기
+    // 타인: isPublic == true 이거나 팔로워인 경우 읽기
+    // ───────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isOwner(uid)
+                     || (isSignedIn() && resource.data.IsPublic == true)
+                     || isAcceptedFollower(uid);
+      allow create: if isOwner(uid);
+      allow update, delete: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // quests/{uid}/userQuests/{questId} — 퀘스트
+    // 본인만 읽기/쓰기
+    // ───────────────────────────────────────
+    match /quests/{uid}/userQuests/{questId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // rewards/{uid} — 재화 + 아이템
+    // 본인만 읽기/쓰기
+    // ───────────────────────────────────────
+    match /rewards/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // diary_entries/{uid}/entries/{date} — 일기
+    // 본인만 읽기/쓰기
+    // ───────────────────────────────────────
+    match /diary_entries/{uid}/entries/{date} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // room_objects/{uid}/objects/{objectId} — 방 오브젝트
+    // 본인: 읽기/쓰기
+    // 팔로워: 읽기
+    // ───────────────────────────────────────
+    match /room_objects/{uid}/objects/{objectId} {
+      allow read: if isOwner(uid) || isAcceptedFollower(uid);
+      allow write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // room_snapshots/{uid}/snapshots/{date} — 방 스냅샷
+    // 본인: 읽기/쓰기
+    // 팔로워: 읽기
+    // ───────────────────────────────────────
+    match /room_snapshots/{uid}/snapshots/{date} {
+      allow read: if isOwner(uid) || isAcceptedFollower(uid);
+      allow write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // follows/{fromUid_toUid} — 팔로우 관계
+    // 본인 관련된 것만 읽기 (보낸 사람 또는 받은 사람)
+    // 보낸 사람만 생성 가능
+    // 받은 사람만 status 변경 가능 (수락/거절)
+    // 양쪽 다 삭제 가능 (언팔로우 / 요청 취소)
+    // ───────────────────────────────────────
+    match /follows/{relationId} {
+      allow read: if isSignedIn() &&
+                     (resource.data.FromUid == request.auth.uid
+                      || resource.data.ToUid == request.auth.uid);
+
+      // 생성: 본인이 보내는 요청만, status는 pending이어야 함
+      allow create: if isSignedIn() &&
+                       request.resource.data.FromUid == request.auth.uid &&
+                       request.resource.data.Status == 'pending';
+
+      // 수정: 받은 사람만 status 변경 가능 (pending → accepted/rejected)
+      allow update: if isSignedIn() &&
+                       resource.data.ToUid == request.auth.uid &&
+                       request.resource.data.FromUid == resource.data.FromUid &&
+                       request.resource.data.ToUid == resource.data.ToUid;
+
+      // 삭제: 양쪽 당사자 모두 가능
+      allow delete: if isSignedIn() &&
+                       (resource.data.FromUid == request.auth.uid
+                        || resource.data.ToUid == request.auth.uid);
+    }
+
+    // ───────────────────────────────────────
+    // temp_triples/{uid}/... — 데이터 전처리 임시 트리플
+    // 본인만 읽기/쓰기 (Cloud Functions는 Admin SDK라 규칙 무시됨)
+    // ───────────────────────────────────────
+    match /temp_triples/{uid}/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+  }
+}
