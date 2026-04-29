@@ -290,6 +290,7 @@ MonoBehaviour:
   logoutButton: {fileID: 1779135682}
   userIdTMP: {fileID: 1528388414}
   userNameTMP: {fileID: 1112884174}
+  authConfig: {fileID: 11400000, guid: 360d143cc523ca44ca67086bf8c57f47, type: 2}
 --- !u!4 &773424889
 Transform:
   m_ObjectHideFlags: 0

@@ -114,3 +114,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# AuthConfig
+Assets/Config/AuthConfig.asset
+Assets/Config/AuthConfig.asset.meta

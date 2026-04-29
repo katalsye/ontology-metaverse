@@ -14,18 +14,24 @@ public class GoogleFirebaseLogin : MonoBehaviour
     [SerializeField] private Button logoutButton;
     [SerializeField] private TextMeshProUGUI userIdTMP;
     [SerializeField] private TextMeshProUGUI userNameTMP;
+    [SerializeField] private AuthConfig authConfig;
     
     private FirebaseAuth auth;
     private FirebaseUser user;
     
     private void Start()
     {
+        if (authConfig == null)
+        {
+            Debug.LogError("AuthConfig가 연결되지 않았습니다. 인스펙터에서 AuthConfig.asset을 드래그하세요.");
+            return;
+        }
         androidLoginButton.onClick.AddListener(GoogleSignInClick);
         logoutButton.onClick.AddListener(SignOut);
 
         GoogleSignIn.Configuration = new GoogleSignInConfiguration()
         {
-            WebClientId = "616295277126-o19i1e2jblr5otfdkh8b843olvo4rv04.apps.googleusercontent.com",
+            WebClientId = authConfig.webClientId,
             RequestIdToken = true,
             UseGameSignIn = false,
             RequestEmail = true,
