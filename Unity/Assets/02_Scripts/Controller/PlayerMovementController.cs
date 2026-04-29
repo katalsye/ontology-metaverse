@@ -13,6 +13,9 @@ public class PlayerMovementController : MonoBehaviour
     public float tileSize = 10f;
     public float moveSpeed = 100f;   // tileSize/moveSpeed = 이동 시간 (10/40 = 0.25초)
 
+    [Header("애니메이션")]
+    public Animator animator;        // Inspector에서 캐릭터의 Animator 연결
+
     private Rigidbody _rb;
     private Vector3 _startPos;
     private Vector3 _moveDir;
@@ -27,6 +30,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody>();
         _startPos = transform.position;
+        if (animator == null) animator = GetComponentInChildren<Animator>();
     }
 
     void FixedUpdate()
@@ -42,9 +46,11 @@ public class PlayerMovementController : MonoBehaviour
             _rb.linearVelocity = Vector3.zero;
             _isMoving = false;
 
-            // 조이스틱 계속 잡고 있으면 다음 칸 이동
+            // 조이스틱 계속 잡고 있으면 다음 칸 이동, 아니면 Idle
             if (_lastInput.magnitude >= 0.01f)
                 SetJoystickInput(_lastInput);
+            else
+                animator?.SetBool("isWalking", false);
         }
     }
 
@@ -73,10 +79,11 @@ public class PlayerMovementController : MonoBehaviour
 
         if (_isMoving) return;
 
-        // 조이스틱을 놓으면 막힘 방향 초기화 → 이후 이동 가능
+        // 조이스틱을 놓으면 막힘 방향 초기화 → Idle로 전환
         if (input.magnitude < 0.01f)
         {
             _blockedDir = Vector3.zero;
+            animator?.SetBool("isWalking", false);
             return;
         }
 
@@ -98,5 +105,6 @@ public class PlayerMovementController : MonoBehaviour
         _rb.linearVelocity = dir * moveSpeed;
 
         transform.rotation = Quaternion.LookRotation(dir);
+        animator?.SetBool("isWalking", true); // Walk 애니메이션 시작
     }
 }

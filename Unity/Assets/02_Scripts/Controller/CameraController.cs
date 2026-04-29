@@ -26,6 +26,10 @@ public class CameraController : MonoBehaviour
     public float minPitch = 10f;        // 상하 최소 각도
     public float maxPitch = 80f;        // 상하 최대 각도
 
+    [Header("카메라 충돌")]
+    public LayerMask obstacleLayer;      // 벽/천장으로 인식할 레이어 (Inspector에서 Obstacle 선택)
+    public float collisionRadius = 0.3f; // 카메라 충돌 감지 반경
+
     [Header("조이스틱 영역 (드래그 제외)")]
     public RectTransform joystickArea;
 
@@ -78,6 +82,15 @@ public class CameraController : MonoBehaviour
 
         // 카메라 위치 = pivot 중심에서 orbit 방향으로 distance만큼 떨어진 곳
         Vector3 desiredPos = pivotPos + camRot * new Vector3(0f, 0f, -distance);
+
+        // 벽 충돌 감지: pivot → desiredPos 방향으로 Raycast
+        // 벽에 맞으면 카메라를 벽 바로 앞까지 당겨옴
+        Vector3 dir = (desiredPos - pivotPos).normalized;
+        float maxDist = Vector3.Distance(pivotPos, desiredPos);
+        if (Physics.SphereCast(pivotPos, collisionRadius, dir, out RaycastHit hit, maxDist, obstacleLayer))
+        {
+            desiredPos = hit.point - dir * collisionRadius; // 벽에 닿기 직전 위치로 보정
+        }
 
         // 카메라 회전 = pivot을 정확히 바라보는 방향 (roll 없음)
         // camRot을 그대로 쓰면 카메라가 엉뚱한 방향을 보기 때문에 별도 계산
