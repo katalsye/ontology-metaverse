@@ -116,5 +116,5 @@ build/
 Thumbs.db
 
 # AuthConfig
-Assets/Config/AuthConfig.asset
-Assets/Config/AuthConfig.asset.meta
+Unity/Assets/02_Scripts/Config/AuthConfig.asset
+Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
