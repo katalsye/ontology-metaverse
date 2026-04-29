@@ -1,0 +1,216 @@
+using UnityEngine;
+using Firebase.Auth;
+using Firebase.Firestore;
+using Firebase.Extensions;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+public class UserManager : MonoBehaviour
+{
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+
+    void Start()
+    {
+        auth = FirebaseAuth.DefaultInstance;
+        db = FirebaseFirestore.DefaultInstance;
+    }
+
+    // ───────────────────────────────────────
+    // 내 프로필 읽기
+    // ───────────────────────────────────────
+    public void GetMyProfile(System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    {
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("프로필 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            UserProfile profile = task.Result.ConvertTo<UserProfile>();
+            onSuccess?.Invoke(profile);
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 닉네임 / 상태메시지 업데이트
+    // ───────────────────────────────────────
+    public void UpdateProfile(string nickname, string statusMessage, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    {
+        string uid = auth.CurrentUser.UserId;
+        Dictionary<string, object> updates = new Dictionary<string, object>
+        {
+            { "Nickname", nickname },
+            { "StatusMessage", statusMessage }
+        };
+
+        db.Collection("users").Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("프로필 업데이트 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            Debug.Log("프로필 업데이트 완료");
+            onSuccess?.Invoke();
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 페르소나 읽기
+    // ───────────────────────────────────────
+    public void GetPersona(System.Action<Persona> onSuccess, System.Action<string> onFailure = null)
+    {
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("페르소나 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            UserProfile profile = task.Result.ConvertTo<UserProfile>();
+            onSuccess?.Invoke(profile.Persona);
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 페르소나 쓰기 (기기 변경 시 복원용)
+    // ───────────────────────────────────────
+    public void UpdatePersona(Persona persona, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    {
+        string uid = auth.CurrentUser.UserId;
+        Dictionary<string, object> updates = new Dictionary<string, object>
+        {
+            { "Persona", persona }
+        };
+
+        db.Collection("users").Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("페르소나 업데이트 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            Debug.Log("페르소나 업데이트 완료");
+            onSuccess?.Invoke();
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 다른 유저 프로필 읽기
+    // ───────────────────────────────────────
+    public void GetUserProfile(string uid, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    {
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("유저 프로필 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            UserProfile profile = task.Result.ConvertTo<UserProfile>();
+
+            if (!profile.IsPublic)
+            {
+                Debug.LogWarning("비공개 계정입니다.");
+                onFailure?.Invoke("비공개 계정");
+                return;
+            }
+
+            onSuccess?.Invoke(profile);
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 닉네임 기반 유저 검색
+    // ───────────────────────────────────────
+    public void SearchUserByNickname(string nickname, System.Action<List<UserProfile>> onSuccess, System.Action<string> onFailure = null)
+    {
+        db.Collection("users")
+            .WhereEqualTo("IsPublic", true)
+            .WhereEqualTo("Nickname", nickname)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("유저 검색 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+
+                List<UserProfile> results = new List<UserProfile>();
+                foreach (DocumentSnapshot doc in task.Result.Documents)
+                {
+                    results.Add(doc.ConvertTo<UserProfile>());
+                }
+
+                onSuccess?.Invoke(results);
+            });
+    }
+
+    // ───────────────────────────────────────
+    // 신규 유저 문서 생성 (1단계에서 이어짐)
+    // ───────────────────────────────────────
+    public void CreateUserIfNotExists()
+    {
+        FirebaseUser user = auth.CurrentUser;
+        if (user == null)
+        {
+            Debug.LogError("로그인되지 않은 상태");
+            return;
+        }
+
+        DocumentReference userDoc = db.Collection("users").Document(user.UserId);
+        userDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("유저 조회 실패: " + task.Exception);
+                return;
+            }
+
+            if (!task.Result.Exists)
+            {
+                Dictionary<string, object> userData = new Dictionary<string, object>
+                {
+                    { "Uid", user.UserId },
+                    { "Nickname", user.DisplayName ?? "새로운 유저" },
+                    { "Email", user.Email ?? "" },
+                    { "ProfileImageUrl", user.PhotoUrl?.ToString() ?? "" },
+                    { "StatusMessage", "" },
+                    { "IsPublic", true },
+                    { "Persona", new Dictionary<string, object>() },
+                    { "CreatedAt", FieldValue.ServerTimestamp }
+                };
+
+                userDoc.SetAsync(userData).ContinueWithOnMainThread(setTask =>
+                {
+                    if (setTask.IsFaulted)
+                    {
+                        Debug.LogError("유저 문서 생성 실패: " + setTask.Exception);
+                        return;
+                    }
+                    Debug.Log("유저 문서 생성 완료");
+                });
+            }
+            else
+            {
+                Debug.Log("이미 존재하는 유저");
+            }
+        });
+    }
+}
