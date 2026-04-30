@@ -141,8 +141,14 @@ public class FcmManager : MonoBehaviour
     {
         FirebaseMessage msg = e.Message;
 
-        msg.Data?.TryGetValue("type", out string type);
-        msg.Data?.TryGetValue("payload", out string payload);
+        string type = "";
+        string payload = "";
+
+        if (msg.Data != null)
+        {
+            msg.Data.TryGetValue("type", out type);
+            msg.Data.TryGetValue("payload", out payload);
+        }
 
         NotificationData data = new NotificationData
         {
@@ -155,20 +161,17 @@ public class FcmManager : MonoBehaviour
 
         if (msg.NotificationOpened)
         {
-            // 백그라운드 / 앱 종료 상태에서 탭 → 화면 전환
             Debug.Log($"[FCM] 탭으로 앱 열림: type={type}");
             OnNotificationTapped?.Invoke(data);
         }
         else
         {
-            // 포그라운드 수신 → 인앱 배너 / 빨간 점
             Debug.Log($"[FCM] 포그라운드 수신: type={type}");
             OnForegroundNotification?.Invoke(data);
         }
 
         SaveNotificationToFirestore(data);
     }
-
     // ───────────────────────────────────────
     // 알림 Firestore 저장 (알림 내역)
     // ───────────────────────────────────────
