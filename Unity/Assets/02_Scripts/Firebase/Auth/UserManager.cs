@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
@@ -9,6 +10,18 @@ public class UserManager : MonoBehaviour
 {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    public event Action<Persona> OnPersonaRestored;
+
+    void Awake()
+    {
+        db = FirebaseFirestore.DefaultInstance;
+
+        // 오프라인 → 온라인 sync: 앱 재시작 없이 로컬 캐시에서 읽고, 연결 복구 시 Firestore와 자동 동기화
+        FirebaseFirestoreSettings settings = db.Settings;
+        settings.PersistenceEnabled = true;
+        db.Settings = settings;
+    }
 
     void Start()
     {
@@ -160,6 +173,34 @@ public class UserManager : MonoBehaviour
 
                 onSuccess?.Invoke(results);
             });
+    }
+
+    // ───────────────────────────────────────
+    // 새 기기 로그인 시 페르소나 복원
+    //   GetPersona로 읽은 뒤 OnPersonaRestored 이벤트 발행
+    //   로그인 완료 콜백에서 호출할 것
+    // ───────────────────────────────────────
+    public void RestorePersonaOnLogin()
+    {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("RestorePersonaOnLogin: 로그인 상태 아님");
+            return;
+        }
+
+        GetPersona(
+            onSuccess: persona =>
+            {
+                if (persona == null)
+                {
+                    Debug.LogWarning("RestorePersonaOnLogin: 저장된 페르소나 없음");
+                    return;
+                }
+                Debug.Log("페르소나 복원 완료");
+                OnPersonaRestored?.Invoke(persona);
+            },
+            onFailure: err => Debug.LogError("페르소나 복원 실패: " + err)
+        );
     }
 
     // ───────────────────────────────────────
