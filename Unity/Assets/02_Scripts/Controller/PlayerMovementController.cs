@@ -16,6 +16,9 @@ public class PlayerMovementController : MonoBehaviour
     [Header("애니메이션")]
     public Animator animator;        // Inspector에서 캐릭터의 Animator 연결
 
+    [Header("카메라 기준 이동")]
+    public Transform cameraTransform; // Inspector에서 Main Camera 연결
+
     private Rigidbody _rb;
     private Vector3 _startPos;
     private Vector3 _moveDir;
@@ -73,6 +76,15 @@ public class PlayerMovementController : MonoBehaviour
         }
     }
 
+    // 대각선 방향을 가장 가까운 4방향(앞/뒤/좌/우)으로 스냅
+    Vector3 SnapToGrid(Vector3 dir)
+    {
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.z))
+            return new Vector3(Mathf.Sign(dir.x), 0f, 0f);
+        else
+            return new Vector3(0f, 0f, Mathf.Sign(dir.z));
+    }
+
     public void SetJoystickInput(Vector2 input)
     {
         _lastInput = input;
@@ -87,11 +99,22 @@ public class PlayerMovementController : MonoBehaviour
             return;
         }
 
+        // 카메라 기준 앞뒤양옆 방향 계산
+        Vector3 camForward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
+        Vector3 camRight   = cameraTransform != null ? cameraTransform.right   : Vector3.right;
+
+        // Y축 무시 (수평 이동만)
+        camForward.y = 0f; camForward.Normalize();
+        camRight.y   = 0f; camRight.Normalize();
+
         Vector3 dir;
         if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
-            dir = input.x > 0 ? Vector3.right : Vector3.left;
+            dir = input.x > 0 ? camRight : -camRight;
         else
-            dir = input.y > 0 ? Vector3.forward : Vector3.back;
+            dir = input.y > 0 ? camForward : -camForward;
+
+        // 그리드 스냅 (4방향)
+        dir = SnapToGrid(dir);
 
         // 막힌 방향으로는 재시도 안 함 (벽에 박히는 현상 방지)
         if (dir == _blockedDir) return;

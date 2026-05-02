@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e04b92e6051337b4d8538462fd90c8c3
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 366130
+  packageName: FlexibleGlassDestructor
+  packageVersion: 1.0
+  assetPath: Assets/FlexibleGlassDestructor/Materials/GlassSG.shadergraph
+  uploadId: 881340
