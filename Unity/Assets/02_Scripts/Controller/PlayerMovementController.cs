@@ -9,125 +9,68 @@ using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
 {
-    [Header("그리드 설정")]
-    public float tileSize = 10f;
-    public float moveSpeed = 100f;   // tileSize/moveSpeed = 이동 시간 (10/40 = 0.25초)
+    [Header("이동 설정")]
+    public float moveSpeed = 8f;        // 초당 이동 속도
+    public float rotateSpeed = 15f;     // 방향 전환 부드러움 (높을수록 즉각 반응)
 
     [Header("애니메이션")]
-    public Animator animator;        // Inspector에서 캐릭터의 Animator 연결
+    public Animator animator;
 
     [Header("카메라 기준 이동")]
-    public Transform cameraTransform; // Inspector에서 Main Camera 연결
+    public Transform cameraTransform;
 
     private Rigidbody _rb;
-    private Vector3 _startPos;
-    private Vector3 _moveDir;
-    private bool _isMoving = false;
-    private Vector2 _lastInput;
-    private Vector3 _blockedDir = Vector3.zero; // 벽에 막힌 방향 (같은 방향으로 재시도 방지)
+    private Vector3 _moveDir = Vector3.zero;
 
-    public bool IsMoving => _isMoving;
-    public Vector3 TargetPosition => _startPos + _moveDir * tileSize;
+    public bool IsMoving => _moveDir.magnitude > 0.01f;
 
     void Start()
     {
         _rb = GetComponent<Rigidbody>();
-        _startPos = transform.position;
         if (animator == null) animator = GetComponentInChildren<Animator>();
     }
 
     void FixedUpdate()
     {
-        if (!_isMoving) return;
+        // 속도 직접 적용 (Y축 유지)
+        _rb.linearVelocity = new Vector3(
+            _moveDir.x * moveSpeed,
+            _rb.linearVelocity.y,
+            _moveDir.z * moveSpeed
+        );
 
-        float moved = Vector3.Dot(_rb.position - _startPos, _moveDir);
-
-        if (moved >= tileSize)
+        // 이동 방향으로 부드럽게 회전
+        if (_moveDir.magnitude > 0.01f)
         {
-            // 목표 위치에 정확히 스냅
-            _rb.position = _startPos + _moveDir * tileSize;
-            _rb.linearVelocity = Vector3.zero;
-            _isMoving = false;
-
-            // 조이스틱 계속 잡고 있으면 다음 칸 이동, 아니면 Idle
-            if (_lastInput.magnitude >= 0.01f)
-                SetJoystickInput(_lastInput);
-            else
-                animator?.SetBool("isWalking", false);
+            Quaternion targetRot = Quaternion.LookRotation(_moveDir);
+            _rb.rotation = Quaternion.Slerp(_rb.rotation, targetRot, rotateSpeed * Time.fixedDeltaTime);
         }
-    }
-
-    // 벽/가구에 부딪히면 이동 취소
-    void OnCollisionEnter(Collision collision)
-    {
-        if (!_isMoving) return;
-
-        foreach (ContactPoint contact in collision.contacts)
-        {
-            // 이동 방향 반대쪽에서 충돌 = 벽 (바닥/천장은 무시)
-            if (Vector3.Dot(contact.normal, _moveDir) < -0.5f)
-            {
-                _rb.linearVelocity = Vector3.zero;
-                _rb.position = _startPos; // 출발 위치로 복귀
-                _blockedDir = _moveDir;  // 막힌 방향 기록
-                _isMoving = false;
-                return;
-            }
-        }
-    }
-
-    // 대각선 방향을 가장 가까운 4방향(앞/뒤/좌/우)으로 스냅
-    Vector3 SnapToGrid(Vector3 dir)
-    {
-        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.z))
-            return new Vector3(Mathf.Sign(dir.x), 0f, 0f);
-        else
-            return new Vector3(0f, 0f, Mathf.Sign(dir.z));
     }
 
     public void SetJoystickInput(Vector2 input)
     {
-        _lastInput = input;
-
-        if (_isMoving) return;
-
-        // 조이스틱을 놓으면 막힘 방향 초기화 → Idle로 전환
         if (input.magnitude < 0.01f)
         {
-            _blockedDir = Vector3.zero;
+            _moveDir = Vector3.zero;
             animator?.SetBool("isWalking", false);
             return;
         }
 
-        // 카메라 기준 앞뒤양옆 방향 계산
+        // 상하좌우 4방향 스냅
+        if (Mathf.Abs(input.x) >= Mathf.Abs(input.y))
+            input = new Vector2(Mathf.Sign(input.x), 0f);
+        else
+            input = new Vector2(0f, Mathf.Sign(input.y));
+
+        // 카메라 기준 방향 계산
         Vector3 camForward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
         Vector3 camRight   = cameraTransform != null ? cameraTransform.right   : Vector3.right;
-
-        // Y축 무시 (수평 이동만)
         camForward.y = 0f; camForward.Normalize();
         camRight.y   = 0f; camRight.Normalize();
 
-        Vector3 dir;
-        if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
-            dir = input.x > 0 ? camRight : -camRight;
-        else
-            dir = input.y > 0 ? camForward : -camForward;
+        // 조이스틱 입력을 카메라 기준 월드 방향으로 변환
+        _moveDir = (camRight * input.x + camForward * input.y).normalized;
 
-        // 그리드 스냅 (4방향)
-        dir = SnapToGrid(dir);
-
-        // 막힌 방향으로는 재시도 안 함 (벽에 박히는 현상 방지)
-        if (dir == _blockedDir) return;
-
-        // 다른 방향으로 바꿨으면 막힘 해제
-        _blockedDir = Vector3.zero;
-
-        _startPos = _rb.position;
-        _moveDir = dir;
-        _isMoving = true;
-        _rb.linearVelocity = dir * moveSpeed;
-
-        transform.rotation = Quaternion.LookRotation(dir);
-        animator?.SetBool("isWalking", true); // Walk 애니메이션 시작
+        animator?.SetBool("isWalking", true);
     }
 }

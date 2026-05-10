@@ -16,7 +16,7 @@ MonoBehaviour:
   fogEnabled: 0
   fogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   fogDensity: 0.02
-  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightColor: {r: 1, g: 0.9910088, b: 0.95660377, a: 1}
   lightIntensity: 1
   ambientColor: {r: 0.2, g: 0.2, b: 0.25, a: 1}
   skyboxTint: {r: 1, g: 1, b: 1, a: 1}
