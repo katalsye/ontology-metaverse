@@ -1,0 +1,101 @@
+/* ============================================
+ * DiaryHistoryScreen.uss
+ * ============================================ */
+
+#history-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 월 선택 ── */
+.month-selector {
+    padding: 8px 20px 16px;
+    justify-content: center;
+    align-items: center;
+}
+
+.month-arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    cursor: link;
+}
+
+.month-arrow:active {
+    scale: 0.9;
+}
+
+.month-arrow-text {
+    font-size: 22px;
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+}
+
+.month-label {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin: 0 20px;
+    -unity-text-align: middle-center;
+}
+
+/* ── 일기 리스트 ── */
+.diary-list {
+    flex-grow: 1;
+    padding: 0 20px;
+}
+
+/* 일기 카드 */
+.diary-entry {
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    margin-bottom: 10px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+}
+
+.diary-entry-date {
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+}
+
+.diary-entry-text {
+    font-size: var(--fs-body);
+    color: var(--ink);
+    white-space: normal;
+    line-height: 22px;
+}
+
+/* 빈 상태 */
+.empty-state {
+    flex-grow: 1;
+    display: none;
+}
+
+.empty-state--visible {
+    display: flex;
+}
+
+.empty-emoji {
+    font-size: 48px;
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+.empty-title {
+    font-size: var(--fs-body);
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}

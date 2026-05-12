@@ -1,0 +1,88 @@
+/* ============================================
+ * UserProfileScreen.uss
+ * ============================================ */
+
+#profile-root {
+    background-color: var(--bg);
+}
+
+/* ── 프로필 카드 ── */
+.profile-card {
+    margin: 20px;
+    padding: 32px 24px;
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    border-width: 1px;
+    border-color: var(--line-faint);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    background-color: var(--butter-soft);
+    margin-bottom: 16px;
+}
+
+.profile-avatar-emoji {
+    font-size: 40px;
+    -unity-text-align: middle-center;
+}
+
+.profile-nickname {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 6px;
+    -unity-text-align: middle-center;
+}
+
+.profile-status {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    margin-bottom: 24px;
+    -unity-text-align: middle-center;
+}
+
+/* ── 통계 ── */
+.stats-row {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 24px;
+    padding: 16px 0;
+    background-color: var(--card-soft);
+    border-radius: var(--r-md);
+}
+
+.stat-item {
+    flex: 1;
+    padding: 0 20px;
+}
+
+.stat-count {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    -unity-text-align: middle-center;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 32px;
+    background-color: var(--line);
+}
+
+/* ── 팔로우 버튼 상태 ── */
+#btn-follow.following {
+    background-color: var(--card-soft);
+    color: var(--ink-muted);
+    border-width: 1px;
+    border-color: var(--line);
+}

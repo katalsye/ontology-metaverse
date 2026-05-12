@@ -1,0 +1,63 @@
+<!-- ============================================
+     4-3. DiaryScreen.uxml — 한줄일기 작성
+     날짜 + 연속 기록 뱃지 + 텍스트 입력 + 과거 열람
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="DiaryScreen.uss" />
+
+    <ui:VisualElement name="diary-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="한줄일기" class="text-heading" />
+            <ui:Button name="btn-history" class="icon-btn">
+                <ui:Label text="📖" class="icon-btn-text" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- 날짜 + 연속 기록 -->
+        <ui:VisualElement name="diary-header" class="diary-header center-content col">
+            <ui:Label name="diary-date" text="2026년 5월 4일 월요일" class="diary-date" />
+            <ui:VisualElement class="streak-badge row">
+                <ui:Label text="🔥" class="streak-icon" />
+                <ui:Label name="streak-count" text="7일 연속 기록 중!" class="streak-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 일기 입력 영역 -->
+        <ui:VisualElement name="diary-input-area" class="diary-input-area col">
+            <ui:Label text="오늘 하루를 한 줄로 남겨보세요" class="diary-prompt" />
+            <ui:TextField name="input-diary" multiline="true" class="diary-input" />
+            <ui:VisualElement class="diary-input-footer row">
+                <ui:Label name="char-count" text="0 / 100" class="text-tiny" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 오늘의 퀘스트 안내 -->
+        <ui:VisualElement name="quest-hint" class="quest-hint row">
+            <ui:VisualElement class="quest-hint-icon center-content">
+                <ui:Label text="✨" class="quest-hint-emoji" />
+            </ui:VisualElement>
+            <ui:VisualElement class="col">
+                <ui:Label text="일일 퀘스트" class="quest-hint-title" />
+                <ui:Label text="한줄일기를 작성하면 코인 10개를 받아요" class="quest-hint-desc" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 저장 버튼 -->
+        <ui:VisualElement class="diary-bottom">
+            <ui:Button name="btn-save" text="저장하기"
+                       class="btn btn--md btn--rose btn--full" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

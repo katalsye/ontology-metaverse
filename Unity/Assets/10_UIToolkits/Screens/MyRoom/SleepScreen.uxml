@@ -1,0 +1,91 @@
+<!-- ============================================
+     4-8. SleepScreen.uxml — 수면 정보 오버레이
+     수면 시간, 취침/기상, 질 게이지, 7일 패턴
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="SleepScreen.uss" />
+
+    <ui:VisualElement name="sleep-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="수면 정보" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <ui:ScrollView class="sleep-scroll">
+
+            <!-- 오늘의 수면 요약 카드 -->
+            <ui:VisualElement name="sleep-summary" class="card sleep-summary-card center-content col">
+                <ui:Label text="🌙" class="sleep-moon" />
+                <ui:Label name="sleep-hours" text="7시간 32분" class="sleep-hours" />
+                <ui:Label name="sleep-range" text="23:20 취침 → 06:52 기상" class="sleep-range" />
+            </ui:VisualElement>
+
+            <!-- 수면 질 -->
+            <ui:VisualElement name="quality-card" class="card quality-card col">
+                <ui:Label text="수면 질" class="section-label" />
+                <ui:VisualElement class="quality-bar-area row">
+                    <ui:VisualElement class="quality-bar-bg">
+                        <ui:VisualElement name="quality-bar-fill" class="quality-bar-fill" />
+                    </ui:VisualElement>
+                    <ui:Label name="quality-percent" text="82%" class="quality-percent" />
+                </ui:VisualElement>
+                <ui:Label name="quality-label" text="양호" class="quality-label" />
+            </ui:VisualElement>
+
+            <!-- 최근 7일 패턴 -->
+            <ui:VisualElement name="weekly-card" class="card weekly-card col">
+                <ui:Label text="최근 7일" class="section-label" />
+                <ui:VisualElement name="weekly-bars" class="weekly-bars row">
+                    <!-- C#에서 7개 바 동적 생성 -->
+                </ui:VisualElement>
+                <ui:VisualElement name="weekly-labels" class="weekly-labels row">
+                    <ui:Label text="월" class="weekly-day-label" />
+                    <ui:Label text="화" class="weekly-day-label" />
+                    <ui:Label text="수" class="weekly-day-label" />
+                    <ui:Label text="목" class="weekly-day-label" />
+                    <ui:Label text="금" class="weekly-day-label" />
+                    <ui:Label text="토" class="weekly-day-label" />
+                    <ui:Label text="일" class="weekly-day-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 상세 항목 -->
+            <ui:VisualElement name="detail-card" class="card detail-card col">
+                <ui:Label text="상세" class="section-label" />
+
+                <ui:VisualElement class="detail-row row">
+                    <ui:Label text="깊은 수면" class="detail-name" />
+                    <ui:Label name="detail-deep" text="2시간 10분" class="detail-value" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="detail-row row">
+                    <ui:Label text="얕은 수면" class="detail-name" />
+                    <ui:Label name="detail-light" text="4시간 05분" class="detail-value" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="detail-row row">
+                    <ui:Label text="REM 수면" class="detail-name" />
+                    <ui:Label name="detail-rem" text="1시간 17분" class="detail-value" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="detail-row row">
+                    <ui:Label text="깨어남" class="detail-name" />
+                    <ui:Label name="detail-awake" text="2회" class="detail-value" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+
+</ui:UXML>

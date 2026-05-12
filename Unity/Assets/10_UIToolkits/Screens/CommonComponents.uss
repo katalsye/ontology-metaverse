@@ -1,0 +1,206 @@
+/* ============================================
+ * CommonComponents.uss
+ * ============================================ */
+
+/* ── 7-5. 재화 바 ── */
+.currency-bar {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background-color: var(--card);
+    border-radius: var(--r-full);
+    padding: 4px 14px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+    align-items: center;
+}
+
+.currency-item {
+    align-items: center;
+}
+
+.currency-icon {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+.currency-value {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.currency-divider {
+    width: 1px;
+    height: 16px;
+    background-color: var(--line-faint);
+    margin: 0 10px;
+}
+
+/* ── 7-1. 하단 네비 ── */
+.bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--card);
+    border-top-width: 1px;
+    border-top-color: var(--line-faint);
+    padding: 8px 6px 6px;
+    justify-content: space-around;
+}
+
+.nav-tab {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 4px 0;
+    cursor: link;
+    position: relative;
+}
+
+.nav-indicator {
+    width: 0;
+    height: 3px;
+    border-radius: 2px;
+    background-color: var(--rose);
+    margin-bottom: 4px;
+    transition-property: width;
+    transition-duration: 200ms;
+}
+
+.nav-tab--active .nav-indicator {
+    width: 18px;
+}
+
+.nav-icon {
+    font-size: 22px;
+    -unity-text-align: middle-center;
+    margin-bottom: 3px;
+}
+
+.nav-label {
+    font-size: var(--fs-micro);
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}
+
+.nav-tab--active .nav-icon,
+.nav-tab--active .nav-label {
+    color: var(--rose);
+}
+
+.nav-tab--active .nav-label {
+    -unity-font-style: bold;
+}
+
+/* 뱃지 */
+.nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 25%;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--red);
+    border-width: 2px;
+    border-color: var(--card);
+}
+
+/* ── 7-4. 보상 팝업 ── */
+.reward-popup {
+    width: 280px;
+    padding: 28px 24px;
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    align-self: center;
+    margin: auto;
+}
+
+.reward-ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+    background-color: var(--butter-soft);
+    margin-bottom: 16px;
+}
+
+.reward-emoji {
+    font-size: 44px;
+}
+
+.reward-title {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 12px;
+    -unity-text-align: middle-center;
+}
+
+.reward-item-row {
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.reward-item-name {
+    font-size: var(--fs-body);
+    color: var(--ink);
+    margin-right: 8px;
+}
+
+.reward-item-amount {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--butter);
+}
+
+/* ── 7-3. 토스트 ── */
+.toast-container {
+    position: absolute;
+    top: 54px;
+    left: 14px;
+    right: 14px;
+    cursor: link;
+}
+
+.toast-card {
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    padding: 12px 14px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+    align-items: center;
+}
+
+.toast-icon-area {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background-color: var(--rose-soft);
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.toast-icon-emoji {
+    font-size: 18px;
+}
+
+.toast-text-area {
+    flex-grow: 1;
+}
+
+.toast-title {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+
+.toast-body {
+    font-size: var(--fs-tiny);
+    color: var(--ink-muted);
+}
