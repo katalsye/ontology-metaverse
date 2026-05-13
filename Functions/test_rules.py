@@ -59,6 +59,17 @@ def apply_rule(g: Graph, sparql: str) -> list:
     return result
 
 
+def apply_rule_with_trace(g: Graph, sparql: str) -> tuple:
+    """규칙 실행 후 (추가된 트리플 수, 쿼리 매칭 수) 반환"""
+    result = list(g.query(sparql))
+    added = 0
+    for triple in result:
+        if triple not in g:
+            g.add(triple)
+            added += 1
+    return (added, len(result))
+
+
 def check(label: str, condition: bool, detail: str = "") -> bool:
     tag = PASS if condition else FAIL
     suffix = f"  ↳ {detail}" if detail else ""
@@ -1365,7 +1376,17 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         g.add((loc, PROD.visitTime,
                Literal(f"2026-04-{17+i}T02:00:00", datatype=XSD.dateTime)))
         g.add((user, PROD.hasLocation, loc))
-    apply_rule(g, rules["persona_night_owl"])
+    added, matched = apply_rule_with_trace(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E5: 쿼리 실행됨 — h=2 조건 불충족으로 매칭 0건",
+        matched == 0,
+        f"matched={matched}"
+    ))
+    results.append(check(
+        "P6-E5: 새벽 02:00 방문 3회 → 트리플 추가 없음 (added == 0, 반례)",
+        added == 0,
+        f"added={added}"
+    ))
     results.append(check(
         "P6-E5: 새벽 02:00 방문 3회 → Persona 미발동 (h=2, h<2 조건 불충족, 반례)",
         not any(True for _ in g.objects(user, PROD.hasPersona))
