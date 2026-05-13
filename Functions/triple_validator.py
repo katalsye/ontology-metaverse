@@ -35,6 +35,8 @@ RANGE_BOUNDS: dict[str, tuple] = {
     "count":       (0,     None,  int),
     "temperature": (-50.0, 60.0,  float),
     "humidity":    (0.0,   100.0, float),
+    "latitude":    (-90.0, 90.0,  float),   # 위도: 남극(-90) ~ 북극(+90)
+    "longitude":   (-180.0, 180.0, float),  # 경도: -180 ~ +180
 }
 
 # 시간대 검증 대상 속성 (ISO 8601 dateTime 형식 필요)

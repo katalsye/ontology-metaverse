@@ -1,6 +1,6 @@
 """
 test_triple_validator.py
-TripleValidator 단위 테스트 — 7개 그룹, 40개 assertion
+TripleValidator 단위 테스트 — 11개 그룹, 104개 assertion
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -595,6 +595,127 @@ def test_timezone_millisecond_edge_cases() -> bool:
     return all(r)
 
 
+# ── Test 11: GPS 좌표 범위 검증 ───────────────────────────────────────────────
+
+def test_gps_coordinates() -> bool:
+    print("\n[Test 11] GPS 좌표 범위 검증 (latitude/longitude)")
+    v = V()
+    r = []
+
+    photo = PROD + "photo_gps"
+
+    # ── latitude 검증 ──
+
+    # 정례: 서울 위도 (37.5665)
+    valid, _ = v.validate([{"subject": photo, "predicate": "latitude", "object": "37.5665"}])
+    r.append(check("latitude=37.5665 (서울) → 통과", len(valid) == 1))
+
+    # 정례: 뉴욕 위도 (40.7128)
+    valid, _ = v.validate([{"subject": photo, "predicate": "latitude", "object": "40.7128"}])
+    r.append(check("latitude=40.7128 (뉴욕) → 통과", len(valid) == 1))
+
+    # 경계: 북극 (+90.0)
+    valid, _ = v.validate([{"subject": photo, "predicate": "latitude", "object": "90.0"}])
+    r.append(check("latitude=90.0 (북극 경계) → 통과", len(valid) == 1))
+
+    # 경계: 남극 (-90.0)
+    valid, _ = v.validate([{"subject": photo, "predicate": "latitude", "object": "-90.0"}])
+    r.append(check("latitude=-90.0 (남극 경계) → 통과", len(valid) == 1))
+
+    # 반례: 범위 초과 (200.5)
+    valid, w = v.validate([{"subject": photo, "predicate": "latitude", "object": "200.5"}])
+    r.append(check("latitude=200.5 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("latitude" in x and "범위 위반" in x for x in w)))
+
+    # 반례: 범위 미달 (-100.0)
+    valid, w = v.validate([{"subject": photo, "predicate": "latitude", "object": "-100.0"}])
+    r.append(check("latitude=-100.0 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("latitude" in x for x in w)))
+
+    # 반례: 경계 초과 (90.1)
+    valid, w = v.validate([{"subject": photo, "predicate": "latitude", "object": "90.1"}])
+    r.append(check("latitude=90.1 → 제외", len(valid) == 0))
+
+    # 반례: 경계 미달 (-90.1)
+    valid, w = v.validate([{"subject": photo, "predicate": "latitude", "object": "-90.1"}])
+    r.append(check("latitude=-90.1 → 제외", len(valid) == 0))
+
+    # ── longitude 검증 ──
+
+    # 정례: 서울 경도 (126.9780)
+    valid, _ = v.validate([{"subject": photo, "predicate": "longitude", "object": "126.9780"}])
+    r.append(check("longitude=126.9780 (서울) → 통과", len(valid) == 1))
+
+    # 정례: 뉴욕 경도 (-74.0060)
+    valid, _ = v.validate([{"subject": photo, "predicate": "longitude", "object": "-74.0060"}])
+    r.append(check("longitude=-74.0060 (뉴욕) → 통과", len(valid) == 1))
+
+    # 경계: 동쪽 경계 (+180.0)
+    valid, _ = v.validate([{"subject": photo, "predicate": "longitude", "object": "180.0"}])
+    r.append(check("longitude=180.0 (동쪽 경계) → 통과", len(valid) == 1))
+
+    # 경계: 서쪽 경계 (-180.0)
+    valid, _ = v.validate([{"subject": photo, "predicate": "longitude", "object": "-180.0"}])
+    r.append(check("longitude=-180.0 (서쪽 경계) → 통과", len(valid) == 1))
+
+    # 반례: 범위 초과 (-500.0)
+    valid, w = v.validate([{"subject": photo, "predicate": "longitude", "object": "-500.0"}])
+    r.append(check("longitude=-500.0 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("longitude" in x and "범위 위반" in x for x in w)))
+
+    # 반례: 범위 초과 (300.0)
+    valid, w = v.validate([{"subject": photo, "predicate": "longitude", "object": "300.0"}])
+    r.append(check("longitude=300.0 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("longitude" in x for x in w)))
+
+    # 반례: 경계 초과 (180.1)
+    valid, w = v.validate([{"subject": photo, "predicate": "longitude", "object": "180.1"}])
+    r.append(check("longitude=180.1 → 제외", len(valid) == 0))
+
+    # 반례: 경계 미달 (-180.1)
+    valid, w = v.validate([{"subject": photo, "predicate": "longitude", "object": "-180.1"}])
+    r.append(check("longitude=-180.1 → 제외", len(valid) == 0))
+
+    # ── 복합 검증 (latitude + longitude) ──
+
+    # 정례: 서울 GPS 좌표
+    triples = [
+        {"subject": photo, "predicate": "latitude",  "object": "37.5665"},
+        {"subject": photo, "predicate": "longitude", "object": "126.9780"},
+    ]
+    valid, _ = v.validate(triples)
+    r.append(check("서울 GPS 좌표 (lat+lon) → 2개 모두 통과", len(valid) == 2))
+
+    # 반례: latitude 정상 + longitude 비정상
+    triples = [
+        {"subject": photo, "predicate": "latitude",  "object": "37.5665"},
+        {"subject": photo, "predicate": "longitude", "object": "500.0"},
+    ]
+    valid, w = v.validate(triples)
+    r.append(check("latitude 정상 + longitude 비정상 → 1개만 통과",
+                   len(valid) == 1 and any("longitude" in x for x in w)))
+
+    # 반례: latitude 비정상 + longitude 정상
+    triples = [
+        {"subject": photo, "predicate": "latitude",  "object": "100.0"},
+        {"subject": photo, "predicate": "longitude", "object": "126.9780"},
+    ]
+    valid, w = v.validate(triples)
+    r.append(check("latitude 비정상 + longitude 정상 → 1개만 통과",
+                   len(valid) == 1 and any("latitude" in x for x in w)))
+
+    # 반례: 둘 다 비정상
+    triples = [
+        {"subject": photo, "predicate": "latitude",  "object": "200.0"},
+        {"subject": photo, "predicate": "longitude", "object": "-300.0"},
+    ]
+    valid, w = v.validate(triples)
+    r.append(check("lat+lon 둘 다 비정상 → 0개 통과, 경고 2개",
+                   len(valid) == 0 and len([x for x in w if "범위 위반" in x]) == 2))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -613,6 +734,7 @@ def main() -> None:
         ("시간대 검증",                      test_timestamp_validation),
         ("수면 시간 특별 검증",               test_sleep_duration_special),
         ("타임존 혼합 및 밀리초 엣지케이스",  test_timezone_millisecond_edge_cases),
+        ("GPS 좌표 범위 검증",               test_gps_coordinates),
     ]
 
     passed = 0
