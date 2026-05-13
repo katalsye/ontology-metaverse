@@ -149,16 +149,24 @@ def _add_triples_to_graph(g: Graph, triples: list[dict]) -> None:
 # ── DuckDB 집계 ──────────────────────────────────────────────────────────────
 
 def _aggregate_with_duckdb(g: Graph) -> list[tuple]:
-    """DuckDB로 연속 저보행 일수 계산 → pre-computed 트리플 반환.
+    """DuckDB로 연속 저보행 일수 + 주말 카페인 가중치 계산 → pre-computed 트리플 반환.
 
-    gaps-and-islands 기법으로 사용자별 최대 연속 저보행(< 3000보) 일수를 구해
-    prod:hasConsecutiveLowStepDays 트리플을 생성한다.
-    sedentary_pattern 규칙(Rule 3)이 이 트리플을 읽어 판단한다.
+    1. gaps-and-islands 기법으로 사용자별 최대 연속 저보행(< 3000보) 일수를 구해
+       prod:hasConsecutiveLowStepDays 트리플을 생성한다.
+       sedentary_pattern 규칙(Rule 3)이 이 트리플을 읽어 판단한다.
+
+    2. CalendarEvent 기반 주말 감지 + 카페인 가중치 계산:
+       - 연속 2일 캘린더 일정 공백 → 주말 프록시
+       - 주말 카페 방문: 가중치 ×1.5
+       - 평일 카페 방문: 가중치 ×1.0
+       → prod:hasWeekendCaffeineScore 트리플 생성
+       fatigue_risk 규칙(Rule 1)이 이 트리플을 읽어 판단한다.
     """
     from rdflib import URIRef, Literal
     from rdflib.namespace import XSD
 
-    rows = list(g.query("""
+    # ── 1. 연속 저보행 일수 계산 (기존 로직) ──────────────────────────────────
+    step_rows = list(g.query("""
         PREFIX prod: <http://7team.dev/ontology#>
         SELECT ?user ?date ?count WHERE {
             ?user prod:hasStepCount ?s .
@@ -167,12 +175,34 @@ def _aggregate_with_duckdb(g: Graph) -> list[tuple]:
         }
     """))
 
-    if not rows:
-        logger.info("DuckDB: no step data in graph")
+    # ── 2. 캘린더 일정 수집 (주말 감지용) ─────────────────────────────────────
+    calendar_rows = list(g.query("""
+        PREFIX prod: <http://7team.dev/ontology#>
+        SELECT ?user ?startTime WHERE {
+            ?user prod:hasCalendarEvent ?evt .
+            ?evt  prod:startTime ?startTime .
+        }
+    """))
+
+    # ── 3. 카페 방문 수집 (카페인 섭취 프록시) ────────────────────────────────
+    cafe_rows = list(g.query("""
+        PREFIX prod: <http://7team.dev/ontology#>
+        SELECT ?user ?visitTime WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeType "cafe" ;
+                  prod:visitTime ?visitTime .
+        }
+    """))
+
+    if not step_rows and not cafe_rows:
+        logger.info("DuckDB: no step or cafe data in graph")
         return []
 
     con = duckdb.connect()
+    triples: list[tuple] = []
+
     try:
+        # ── 테이블 생성 ──────────────────────────────────────────────────────
         con.execute("""
             CREATE TABLE steps (
                 user_uri  VARCHAR,
@@ -180,47 +210,135 @@ def _aggregate_with_duckdb(g: Graph) -> list[tuple]:
                 step_cnt  INTEGER
             )
         """)
-        con.executemany(
-            "INSERT INTO steps VALUES (?, TRY_CAST(? AS DATE), TRY_CAST(? AS INTEGER))",
-            [(str(r[0]), str(r[1]), str(r[2])) for r in rows],
-        )
-
-        # gaps-and-islands: 연속된 날짜는 (epoch_days - row_number)가 동일
-        results = con.execute("""
-            WITH low_days AS (
-                SELECT user_uri, step_date
-                FROM steps
-                WHERE step_cnt < 3000
-            ),
-            ranked AS (
-                SELECT
-                    user_uri,
-                    step_date,
-                    (step_date - DATE '1970-01-01') -
-                    CAST(ROW_NUMBER() OVER (PARTITION BY user_uri ORDER BY step_date) AS INTEGER)
-                    AS island_id
-                FROM low_days
-            ),
-            islands AS (
-                SELECT user_uri, island_id, COUNT(*) AS consecutive_days
-                FROM ranked
-                GROUP BY user_uri, island_id
+        con.execute("""
+            CREATE TABLE calendar_events (
+                user_uri   VARCHAR,
+                event_date DATE
             )
-            SELECT user_uri, MAX(consecutive_days) AS max_consecutive
-            FROM islands
-            GROUP BY user_uri
-        """).fetchall()
-
-        logger.info("DuckDB consecutive low-step days: %s", results)
-
-        return [
-            (
-                URIRef(user_uri_str),
-                PROD.hasConsecutiveLowStepDays,
-                Literal(int(max_consec), datatype=XSD.integer),
+        """)
+        con.execute("""
+            CREATE TABLE cafe_visits (
+                user_uri  VARCHAR,
+                visit_date DATE
             )
-            for user_uri_str, max_consec in results
-        ]
+        """)
+
+        # ── 데이터 삽입 ──────────────────────────────────────────────────────
+        if step_rows:
+            con.executemany(
+                "INSERT INTO steps VALUES (?, TRY_CAST(? AS DATE), TRY_CAST(? AS INTEGER))",
+                [(str(r[0]), str(r[1]), str(r[2])) for r in step_rows],
+            )
+
+        if calendar_rows:
+            con.executemany(
+                "INSERT INTO calendar_events VALUES (?, TRY_CAST(? AS DATE))",
+                [(str(r[0]), str(r[1])[:10]) for r in calendar_rows],  # dateTime → date 변환
+            )
+
+        if cafe_rows:
+            con.executemany(
+                "INSERT INTO cafe_visits VALUES (?, TRY_CAST(? AS DATE))",
+                [(str(r[0]), str(r[1])[:10]) for r in cafe_rows],
+            )
+
+        # ── 1. 연속 저보행 일수 계산 (기존 로직) ──────────────────────────────
+        if step_rows:
+            low_step_results = con.execute("""
+                WITH low_days AS (
+                    SELECT user_uri, step_date
+                    FROM steps
+                    WHERE step_cnt < 3000
+                ),
+                ranked AS (
+                    SELECT
+                        user_uri,
+                        step_date,
+                        (step_date - DATE '1970-01-01') -
+                        CAST(ROW_NUMBER() OVER (PARTITION BY user_uri ORDER BY step_date) AS INTEGER)
+                        AS island_id
+                    FROM low_days
+                ),
+                islands AS (
+                    SELECT user_uri, island_id, COUNT(*) AS consecutive_days
+                    FROM ranked
+                    GROUP BY user_uri, island_id
+                )
+                SELECT user_uri, MAX(consecutive_days) AS max_consecutive
+                FROM islands
+                GROUP BY user_uri
+            """).fetchall()
+
+            logger.info("DuckDB consecutive low-step days: %s", low_step_results)
+
+            for user_uri_str, max_consec in low_step_results:
+                triples.append((
+                    URIRef(user_uri_str),
+                    PROD.hasConsecutiveLowStepDays,
+                    Literal(int(max_consec), datatype=XSD.integer),
+                ))
+
+        # ── 2. 주말 감지 + 카페인 가중치 계산 ──────────────────────────────────
+        if cafe_rows:
+            # 주말 프록시: 캘린더 일정 없는 날 중 연속 2일
+            # (실제 주말 또는 휴일로 추정)
+            weekend_caffeine_results = con.execute("""
+                WITH all_dates AS (
+                    SELECT DISTINCT visit_date AS dt
+                    FROM cafe_visits
+                ),
+                event_dates AS (
+                    SELECT DISTINCT event_date AS dt
+                    FROM calendar_events
+                ),
+                no_event_dates AS (
+                    SELECT ad.dt
+                    FROM all_dates ad
+                    LEFT JOIN event_dates ed ON ad.dt = ed.dt
+                    WHERE ed.dt IS NULL
+                ),
+                weekend_proxy AS (
+                    SELECT
+                        dt,
+                        LEAD(dt) OVER (ORDER BY dt) AS next_dt
+                    FROM no_event_dates
+                ),
+                weekend_dates AS (
+                    SELECT dt AS weekend_date
+                    FROM weekend_proxy
+                    WHERE next_dt = dt + INTERVAL 1 DAY
+                    UNION
+                    SELECT next_dt AS weekend_date
+                    FROM weekend_proxy
+                    WHERE next_dt = dt + INTERVAL 1 DAY
+                ),
+                cafe_with_weight AS (
+                    SELECT
+                        cv.user_uri,
+                        cv.visit_date,
+                        CASE
+                            WHEN wd.weekend_date IS NOT NULL THEN 1.5
+                            ELSE 1.0
+                        END AS weight
+                    FROM cafe_visits cv
+                    LEFT JOIN weekend_dates wd ON cv.visit_date = wd.weekend_date
+                )
+                SELECT user_uri, SUM(weight) AS total_weighted_score
+                FROM cafe_with_weight
+                GROUP BY user_uri
+            """).fetchall()
+
+            logger.info("DuckDB weekend caffeine scores: %s", weekend_caffeine_results)
+
+            for user_uri_str, score in weekend_caffeine_results:
+                triples.append((
+                    URIRef(user_uri_str),
+                    PROD.hasWeekendCaffeineScore,
+                    Literal(float(score), datatype=XSD.float),
+                ))
+
+        return triples
+
     finally:
         con.close()
 

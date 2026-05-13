@@ -94,6 +94,12 @@ prod:hasConsecutiveLowStepDays a owl:DatatypeProperty ;
     rdfs:domain prod:User ;
     rdfs:range  xsd:integer .
 
+prod:hasWeekendCaffeineScore a owl:DatatypeProperty ;
+    rdfs:label   "hasWeekendCaffeineScore" ;
+    rdfs:comment "DuckDB 전처리로 계산한 주말 카페인 가중치 점수. CalendarEvent 공백일(주말 프록시)의 카페 방문에 ×1.5 가중치 적용. 단위: float. fatigue_risk 규칙이 읽음." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:float .
+
 prod:hasAppUsage a owl:ObjectProperty ;
     rdfs:label   "hasAppUsage" ;
     rdfs:comment "User → AppUsage 연결. 사용자의 앱 사용 기록 참조." ;

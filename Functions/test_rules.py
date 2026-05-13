@@ -122,7 +122,7 @@ def test_rule_parser(rules: dict[str, str]) -> bool:
 # ── Test 2: fatigue_risk ──────────────────────────────────────────────────────
 
 def test_fatigue_risk(rules: dict[str, str]) -> bool:
-    print("\n[Test 1] fatigue_risk")
+    print("\n[Test 1] fatigue_risk (주말 가중치 추가)")
     results = []
 
     # 정례 A: 수면 5.5h + 주간 카페 3회 (>2) → FatigueRisk
@@ -143,6 +143,24 @@ def test_fatigue_risk(rules: dict[str, str]) -> bool:
     results.append(check("야간 카페 2회 → FatigueRisk",
                          (user, PROD.hasState, PROD.FatigueRisk) in g))
 
+    # 정례 C: 수면 5.5h + 주말 카페인 점수 4.5 (DuckDB 전처리) → FatigueRisk
+    g = load_base_graph()
+    user = _add_user(g, "r1e")
+    _add_sleep(g, user, "r1e", 5.5)
+    g.add((user, PROD.hasWeekendCaffeineScore, Literal(4.5, datatype=XSD.float)))
+    apply_rule(g, rules["fatigue_risk"])
+    results.append(check("주말 카페인 점수 4.5 → FatigueRisk",
+                         (user, PROD.hasState, PROD.FatigueRisk) in g))
+
+    # 정례 D: 수면 5.5h + 주말 카페인 점수 6.0 (주말 4회 × 1.5) → FatigueRisk
+    g = load_base_graph()
+    user = _add_user(g, "r1f")
+    _add_sleep(g, user, "r1f", 5.5)
+    g.add((user, PROD.hasWeekendCaffeineScore, Literal(6.0, datatype=XSD.float)))
+    apply_rule(g, rules["fatigue_risk"])
+    results.append(check("주말 카페인 점수 6.0 → FatigueRisk",
+                         (user, PROD.hasState, PROD.FatigueRisk) in g))
+
     # 반례 A: 수면 7h → 미생성
     g = load_base_graph()
     user = _add_user(g, "r1c")
@@ -159,6 +177,24 @@ def test_fatigue_risk(rules: dict[str, str]) -> bool:
     _add_cafe_location(g, user, "r1d", 2, hour=10)
     apply_rule(g, rules["fatigue_risk"])
     results.append(check("주간 카페 2회 → FatigueRisk 미생성 (반례)",
+                         (user, PROD.hasState, PROD.FatigueRisk) not in g))
+
+    # 반례 C: 수면 5.5h + 주말 카페인 점수 3.0 (< 4.5) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r1g")
+    _add_sleep(g, user, "r1g", 5.5)
+    g.add((user, PROD.hasWeekendCaffeineScore, Literal(3.0, datatype=XSD.float)))
+    apply_rule(g, rules["fatigue_risk"])
+    results.append(check("주말 카페인 점수 3.0 (< 4.5) → FatigueRisk 미생성 (반례)",
+                         (user, PROD.hasState, PROD.FatigueRisk) not in g))
+
+    # 반례 D: 수면 7h + 주말 카페인 점수 5.0 (수면 충분) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r1h")
+    _add_sleep(g, user, "r1h", 7.0)
+    g.add((user, PROD.hasWeekendCaffeineScore, Literal(5.0, datatype=XSD.float)))
+    apply_rule(g, rules["fatigue_risk"])
+    results.append(check("수면 7h + 주말 카페인 점수 5.0 → FatigueRisk 미생성 (반례, 수면 충분)",
                          (user, PROD.hasState, PROD.FatigueRisk) not in g))
 
     return all(results)

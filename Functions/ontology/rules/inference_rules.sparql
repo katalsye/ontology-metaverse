@@ -8,12 +8,13 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Rule 1 — FatigueRisk (시간대별 가중치 적용)
+# Rule 1 — FatigueRisk (시간대별 가중치 + 주말 가중치 적용)
 # 수면 6시간 미만 + 카페인 조건:
 #   ① 주간(06~21h): 카페 방문 3회 초과
 #   ② 야간(22h~):   카페 방문 1회 초과 (위험도 ×2 → 임계값 절반)
-# ── 주말 가중치: SPARQL weekday 함수 미지원 → CalendarEvent 기반 추정
-#    캘린더 일정 없는 날 = 주말 프록시 (DuckDB 전처리로 보완)
+#   ③ 주말 카페인: DuckDB 전처리 hasWeekendCaffeineScore ≥ 4.5
+#      (주말 카페 방문 가중치 ×1.5, 3회 × 1.5 = 4.5)
+# ── 주말 가중치: CalendarEvent 공백일 기반 주말 프록시 (DuckDB 전처리)
 # → prod:FatigueRisk 상태 부여
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: fatigue_risk
@@ -57,6 +58,13 @@ WHERE {
             GROUP BY ?user
         }
         FILTER (?nightCafCnt > 1)
+    }
+    UNION
+    {
+        # ③ 주말 카페인 가중치: DuckDB 전처리 점수 4.5 이상
+        #    (주말 3회 × 1.5 = 4.5)
+        ?user prod:hasWeekendCaffeineScore ?weekendScore .
+        FILTER (?weekendScore >= 4.5)
     }
 }
 
