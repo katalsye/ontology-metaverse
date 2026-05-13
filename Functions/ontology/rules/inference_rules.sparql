@@ -821,7 +821,10 @@ WHERE {
 # ── Rule 28 — SocialActivity ──────────────────────────────────────────────────
 # 댄스·팝 장르 청취 + 외출 위치(집 외) 동시 발생
 # → prod:SocialActivity 상태 + RoomObject 파티 조명 효과
-# ── 시간대 근접 조건: 음악 청취 시각과 위치 방문 시각이 같은 날(date 일치)
+# ── 시간대 근접 조건:
+#    ① 같은 날짜 (년/월/일 일치)
+#    ② 시간 차이 3시간 이내 (10800초)
+# ── Issue #17: 시간대 근접성 검증 추가 (의미론적 정확성 강화)
 # RULE_ID: social_music_pattern
 CONSTRUCT {
     ?user prod:hasState prod:SocialActivity .
@@ -857,10 +860,21 @@ WHERE {
         !CONTAINS(LCASE(STR(?place)), "집")
     )
 
-    # 같은 날짜 내 발생 (DATE 함수로 일자 비교)
+    # ① 같은 날짜 내 발생 (년/월/일 일치)
     FILTER (
         YEAR(?playedAt) = YEAR(?visitTime) &&
         MONTH(?playedAt) = MONTH(?visitTime) &&
         DAY(?playedAt) = DAY(?visitTime)
     )
+
+    # ② 시간 차이 3시간 이내
+    # RDFLib SPARQL 엔진 호환: HOURS() 함수로 시간대 추출 후 차이 계산
+    BIND(HOURS(?playedAt) AS ?playHour)
+    BIND(HOURS(?visitTime) AS ?visitHour)
+    BIND(MINUTES(?playedAt) AS ?playMin)
+    BIND(MINUTES(?visitTime) AS ?visitMin)
+    # 총 분 단위 차이 계산 (시간×60 + 분)
+    BIND((?playHour * 60 + ?playMin) - (?visitHour * 60 + ?visitMin) AS ?minDiff)
+    # 절댓값 3시간(180분) 이내 확인
+    FILTER (?minDiff >= -180 && ?minDiff <= 180)
 }

@@ -1098,6 +1098,75 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("클래식 + 외출 같은 날 → SocialActivity 미생성 (반례, 장르 불일치)",
                          (user, PROD.hasState, PROD.SocialActivity) not in g))
 
+    # ── Issue #17: 시간대 근접성 엣지케이스 테스트 ───────────────────────────
+    # 정례 C: 댄스 14:00 + 외출 16:00 (2시간 차이, 3시간 이내) → 발동
+    g = load_base_graph()
+    user = _add_user(g, "r28g")
+    ml = PROD["ml_r28g"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T14:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28g"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("카페")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T16:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스 14:00 + 외출 16:00 (2시간 차이) → SocialActivity (시간 근접 OK)",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+
+    # 반례 E: 댄스 10:00 + 외출 22:00 (12시간 차이, 3시간 초과) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r28h")
+    ml = PROD["ml_r28h"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("pop")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T10:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28h"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("클럽")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T22:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("팝 10:00 + 외출 22:00 (12시간 차이) → SocialActivity 미생성 (반례, 시간 차이 초과)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
+    # 정례 D: 댄스 20:00 + 외출 22:30 (2.5시간 차이, 경계 테스트) → 발동
+    g = load_base_graph()
+    user = _add_user(g, "r28i")
+    ml = PROD["ml_r28i"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T20:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28i"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("바")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T22:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스 20:00 + 외출 22:30 (2.5시간 차이) → SocialActivity (경계 테스트)",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+
+    # 반례 F: 댄스 10:00 + 외출 13:30 (3.5시간 차이, 경계 초과) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r28j")
+    ml = PROD["ml_r28j"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("pop")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T10:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28j"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("레스토랑")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T13:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("팝 10:00 + 외출 13:30 (3.5시간 차이) → SocialActivity 미생성 (반례, 경계 초과)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
     return all(results)
 
 
