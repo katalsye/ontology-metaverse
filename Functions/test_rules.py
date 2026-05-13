@@ -32,6 +32,7 @@ ALL_RULE_IDS = [
     "causal_weekly_activity_low", "causal_burnout_from_chain",
     "persona_active", "persona_indoor", "persona_social",
     "persona_solitary", "persona_routine", "persona_night_owl",
+    "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
 ]
 
 
@@ -873,6 +874,233 @@ def test_edge_empty_graph(rules: dict[str, str]) -> bool:
                  added == 0, f"추가된 트리플: {added}개")
 
 
+# ── Test 13: Spotify 음악 청취 패턴 규칙 (Issue #16) ──────────────────────────
+
+def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
+    print("\n[Test 26-28] Spotify 음악 청취 패턴 기반 감정 상태 추론")
+    results = []
+
+    # Rule 26: focus_music_pattern — 클래식 3시간 → FocusMode + RoomObject
+    g = load_base_graph()
+    user = _add_user(g, "r26a")
+    for i, dur in enumerate([120, 80, 30]):  # 총 230분 (>180)
+        ml = PROD[f"ml_r26a_{i}"]
+        g.add((ml, RDF.type, PROD.MusicListening))
+        g.add((ml, PROD.genre, Literal("classical")))
+        g.add((ml, PROD.listenDuration, Literal(dur, datatype=XSD.integer)))
+        g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("클래식 230분 청취 → FocusMode",
+                         (user, PROD.hasState, PROD.FocusMode) in g))
+    results.append(check("→ RoomObject(desk_light_bright) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "desk_light_bright"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # 정례 B: Lo-fi 200분 → 역시 발동
+    g = load_base_graph()
+    user = _add_user(g, "r26b")
+    ml = PROD["ml_r26b"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("lo-fi")))
+    g.add((ml, PROD.listenDuration, Literal(200, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("Lo-fi 200분 청취 → FocusMode",
+                         (user, PROD.hasState, PROD.FocusMode) in g))
+
+    # 반례 A: 클래식 150분 (< 180) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r26c")
+    ml = PROD["ml_r26c"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("classical")))
+    g.add((ml, PROD.listenDuration, Literal(150, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("클래식 150분 → FocusMode 미생성 (반례)",
+                         (user, PROD.hasState, PROD.FocusMode) not in g))
+
+    # 반례 B: 팝 300분 (장르 불일치) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r26d")
+    ml = PROD["ml_r26d"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("pop")))
+    g.add((ml, PROD.listenDuration, Literal(300, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("팝 300분 → FocusMode 미생성 (반례, 장르 불일치)",
+                         (user, PROD.hasState, PROD.FocusMode) not in g))
+
+    # Rule 27: stress_music_pattern — 야간(23시) 메탈 → StressIndicator + 퀘스트
+    g = load_base_graph()
+    user = _add_user(g, "r27a")
+    ml = PROD["ml_r27a"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("heavy metal")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("야간 메탈 청취 → StressIndicator",
+                         (user, PROD.hasState, PROD.StressIndicator) in g))
+    results.append(check("→ '오늘 힘든 일 있었어?' 퀘스트 생성",
+                         "오늘 힘든 일 있었어?" in quest_titles(g)))
+
+    # 정례 B: 록 22시 → 역시 발동
+    g = load_base_graph()
+    user = _add_user(g, "r27b")
+    ml = PROD["ml_r27b"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("rock")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T22:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("22시 록 청취 → StressIndicator",
+                         (user, PROD.hasState, PROD.StressIndicator) in g))
+
+    # 반례 A: 주간(14시) 메탈 → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r27c")
+    ml = PROD["ml_r27c"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("metal")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T14:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("주간 메탈 → StressIndicator 미생성 (반례)",
+                         (user, PROD.hasState, PROD.StressIndicator) not in g))
+
+    # 반례 B: 야간(23시) 재즈 → 미생성 (장르 불일치)
+    g = load_base_graph()
+    user = _add_user(g, "r27d")
+    ml = PROD["ml_r27d"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("jazz")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("야간 재즈 → StressIndicator 미생성 (반례, 장르 불일치)",
+                         (user, PROD.hasState, PROD.StressIndicator) not in g))
+
+    # 중복 방지: 동일 퀘스트 재실행 → 1개 유지
+    g = load_base_graph()
+    user = _add_user(g, "r27e")
+    ml = PROD["ml_r27e"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("metal")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    apply_rule(g, rules["stress_music_pattern"])  # 2번 실행
+    dup_count = sum(1 for t in quest_titles(g) if t == "오늘 힘든 일 있었어?")
+    results.append(check("동일 퀘스트 중복 생성 방지 (1개 유지)",
+                         dup_count == 1, f"실제 {dup_count}개"))
+
+    # Rule 28: social_music_pattern — 댄스 + 외출 위치 같은 날 → SocialActivity + RoomObject
+    g = load_base_graph()
+    user = _add_user(g, "r28a")
+    # 댄스 음악
+    ml = PROD["ml_r28a"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T19:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    # 외출 위치 (같은 날)
+    loc = PROD["loc_r28a"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("클럽")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T20:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스 + 외출 같은 날 → SocialActivity",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+    results.append(check("→ RoomObject(party_light) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "party_light"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # 정례 B: 팝 + 카페 같은 날 → 역시 발동
+    g = load_base_graph()
+    user = _add_user(g, "r28b")
+    ml = PROD["ml_r28b"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("pop")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T10:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28b"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("카페")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T11:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("팝 + 카페 같은 날 → SocialActivity",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+
+    # 반례 A: 댄스 있지만 외출 위치 없음 → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r28c")
+    ml = PROD["ml_r28c"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T19:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스만 있음 → SocialActivity 미생성 (반례)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
+    # 반례 B: 댄스 + 집 방문 (외출 아님) → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r28d")
+    ml = PROD["ml_r28d"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T19:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28d"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("집")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T19:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스 + 집 방문 → SocialActivity 미생성 (반례, 외출 아님)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
+    # 반례 C: 댄스 + 외출 다른 날 → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r28e")
+    ml = PROD["ml_r28e"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("dance")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T19:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28e"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("클럽")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-18T20:00:00", datatype=XSD.dateTime)))  # 다음날
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("댄스 + 외출 다른 날 → SocialActivity 미생성 (반례)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
+    # 반례 D: 클래식 + 외출 같은 날 → 미생성 (장르 불일치)
+    g = load_base_graph()
+    user = _add_user(g, "r28f")
+    ml = PROD["ml_r28f"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("classical")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T19:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28f"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("공연장")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T19:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("클래식 + 외출 같은 날 → SocialActivity 미생성 (반례, 장르 불일치)",
+                         (user, PROD.hasState, PROD.SocialActivity) not in g))
+
+    return all(results)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -895,6 +1123,7 @@ def main() -> None:
         ("routine+music", lambda: test_routine_and_music_mood(rules)),
         ("causal_chain",  lambda: test_causal_chain(rules)),
         ("persona_P1-P6", lambda: test_persona_rules(rules)),
+        ("spotify_music", lambda: test_spotify_music_patterns(rules)),
         ("empty_graph",   lambda: test_edge_empty_graph(rules)),
     ]
 

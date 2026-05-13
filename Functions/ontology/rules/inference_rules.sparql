@@ -739,3 +739,128 @@ WHERE {
     }
     FILTER (?lateNightVisits >= 3)
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── Spotify 음악 청취 패턴 기반 감정 상태 추론 규칙 (Rules 26–28) ───────────
+# Issue #16: Spotify 데이터 소스 활용도 증대
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule 26 — FocusMode ───────────────────────────────────────────────────────
+# 클래식·Lo-fi 장르 3시간(180분) 이상 연속 청취
+# → prod:FocusMode 상태 + RoomObject 책상 조명 밝기 증가
+# RULE_ID: focus_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:FocusMode .
+    _:obj a prod:RoomObject ;
+          prod:objectType "desk_light_bright" ;
+          prod:inferredFrom "FocusMode" ;
+          prod:inferredFromConcept prod:FocusMode ;
+          prod:positionX "1.5"^^xsd:float ;
+          prod:positionY "0.8"^^xsd:float ;
+          prod:positionZ "0.0"^^xsd:float .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user (SUM(?dur) AS ?totalFocusMin)
+        WHERE {
+            ?user prod:listensTo     ?ml .
+            ?ml   prod:genre         ?genre ;
+                  prod:listenDuration ?dur .
+            FILTER (
+                CONTAINS(LCASE(STR(?genre)), "classic") ||
+                CONTAINS(LCASE(STR(?genre)), "lo-fi") ||
+                CONTAINS(LCASE(STR(?genre)), "lofi") ||
+                CONTAINS(LCASE(STR(?genre)), "클래식") ||
+                CONTAINS(LCASE(STR(?genre)), "로파이")
+            )
+        }
+        GROUP BY ?user
+    }
+    FILTER (?totalFocusMin >= 180)
+}
+
+# ── Rule 27 — StressIndicator ─────────────────────────────────────────────────
+# 헤비메탈·록 장르를 야간(22시 이후) 청취
+# → prod:StressIndicator 상태 + 데이터 보완형 퀘스트
+# RULE_ID: stress_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:StressIndicator .
+    _:q   a prod:Quest ;
+          prod:title "오늘 힘든 일 있었어?" ;
+          prod:questType "데이터 보완형" ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 야간(22시 이후) 헤비메탈·록 청취 기록
+    ?user prod:listensTo ?ml .
+    ?ml   prod:genre     ?genre ;
+          prod:playedAt  ?playedAt .
+    BIND(HOURS(?playedAt) AS ?h)
+    FILTER (?h >= 22)
+    FILTER (
+        CONTAINS(LCASE(STR(?genre)), "metal") ||
+        CONTAINS(LCASE(STR(?genre)), "rock") ||
+        CONTAINS(LCASE(STR(?genre)), "메탈") ||
+        CONTAINS(LCASE(STR(?genre)), "록")
+    )
+
+    # 동일 퀘스트 중복 생성 방지
+    FILTER NOT EXISTS {
+        ?user prod:receivesQuest ?existing .
+        ?existing prod:title "오늘 힘든 일 있었어?" ;
+                  prod:isCompleted false .
+    }
+}
+
+# ── Rule 28 — SocialActivity ──────────────────────────────────────────────────
+# 댄스·팝 장르 청취 + 외출 위치(집 외) 동시 발생
+# → prod:SocialActivity 상태 + RoomObject 파티 조명 효과
+# ── 시간대 근접 조건: 음악 청취 시각과 위치 방문 시각이 같은 날(date 일치)
+# RULE_ID: social_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:SocialActivity .
+    _:obj a prod:RoomObject ;
+          prod:objectType "party_light" ;
+          prod:inferredFrom "SocialActivity" ;
+          prod:inferredFromConcept prod:SocialActivity ;
+          prod:positionX "-1.5"^^xsd:float ;
+          prod:positionY "1.2"^^xsd:float ;
+          prod:positionZ "0.0"^^xsd:float .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 댄스·팝 장르 청취
+    ?user prod:listensTo ?ml .
+    ?ml   prod:genre     ?genre ;
+          prod:playedAt  ?playedAt .
+    FILTER (
+        CONTAINS(LCASE(STR(?genre)), "dance") ||
+        CONTAINS(LCASE(STR(?genre)), "pop") ||
+        CONTAINS(LCASE(STR(?genre)), "댄스") ||
+        CONTAINS(LCASE(STR(?genre)), "팝")
+    )
+
+    # 외출 위치(집 외) 방문
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeName   ?place ;
+          prod:visitTime   ?visitTime .
+    FILTER (
+        !CONTAINS(LCASE(STR(?place)), "home") &&
+        !CONTAINS(LCASE(STR(?place)), "집")
+    )
+
+    # 같은 날짜 내 발생 (DATE 함수로 일자 비교)
+    FILTER (
+        YEAR(?playedAt) = YEAR(?visitTime) &&
+        MONTH(?playedAt) = MONTH(?visitTime) &&
+        DAY(?playedAt) = DAY(?visitTime)
+    )
+}

@@ -53,6 +53,10 @@ RULE_ORDER = [
     "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
     "routine_detection",        # Rule 8
     "music_mood",               # Rule 9
+    # Spotify 음악 청취 패턴 기반 감정 상태 추론 (Issue #16)
+    "focus_music_pattern",      # Rule 26 (집중 음악 패턴)
+    "stress_music_pattern",     # Rule 27 (스트레스 음악 패턴)
+    "social_music_pattern",     # Rule 28 (사교 음악 패턴)
     # 다단계 인과 체인 — 순서 고정 필수
     "causal_sleep_impaired",        # Rule 10
     "causal_exercise_skipped",      # Rule 11 (Rule 10 의존)

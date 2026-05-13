@@ -452,6 +452,18 @@ prod:WeeklyActivityLow a owl:Class ;
     rdfs:label   "WeeklyActivityLow" ;
     rdfs:comment "ExerciseSkipped 상태에서 주간 걸음수가 3일 이상 저조할 때 추론된 주간 활동량 저하 상태. 인과 체인 Rule 12의 출력." .
 
+prod:FocusMode a owl:Class ;
+    rdfs:label   "FocusMode" ;
+    rdfs:comment "클래식·Lo-fi 장르를 3시간 이상 연속 청취 시 추론된 집중 모드 상태. RoomObject 책상 조명 밝기 증가." .
+
+prod:StressIndicator a owl:Class ;
+    rdfs:label   "StressIndicator" ;
+    rdfs:comment "헤비메탈·록 장르를 야간(22시 이후) 청취 시 추론된 스트레스 지표 상태. 데이터 보완형 퀘스트 생성." .
+
+prod:SocialActivity a owl:Class ;
+    rdfs:label   "SocialActivity" ;
+    rdfs:comment "댄스·팝 장르 청취 + 외출 위치 동시 발생 시 추론된 사교 활동 상태. RoomObject 파티 조명 효과 추가." .
+
 # ─── Object Properties — 확장 ───────────────────────────────────────────────
 
 prod:listensTo a owl:ObjectProperty ;
@@ -590,6 +602,9 @@ prod:SleepData      owl:disjointWith prod:StepCount .
 prod:Quest          owl:disjointWith prod:Reward .
 prod:FatigueRisk    owl:disjointWith prod:BurnoutWarning .
 prod:CalendarEvent  owl:disjointWith prod:MusicListening .
+prod:FocusMode      owl:disjointWith prod:StressIndicator .
+prod:FocusMode      owl:disjointWith prod:SocialActivity .
+prod:StressIndicator owl:disjointWith prod:SocialActivity .
 
 # ── 데이터 범위 제약 (owl:allValuesFrom + owl:withRestrictions) ───────────────
 

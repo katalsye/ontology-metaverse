@@ -31,6 +31,7 @@ REQUIRED_CLASSES = [
     "MusicListening", "CalendarEvent", "Weather",
     "IndoorDayPattern", "Routine", "MusicMood",
     "SleepQualityImpaired", "ExerciseSkipped", "WeeklyActivityLow",
+    "FocusMode", "StressIndicator", "SocialActivity",
 ]
 
 REQUIRED_PROPERTIES = [
@@ -55,6 +56,9 @@ DISJOINT_PAIRS = [
     ("Quest",         "Reward"),
     ("FatigueRisk",   "BurnoutWarning"),
     ("CalendarEvent", "MusicListening"),
+    ("FocusMode",     "StressIndicator"),
+    ("FocusMode",     "SocialActivity"),
+    ("StressIndicator", "SocialActivity"),
 ]
 
 MIN_CARDINALITY_1 = [
@@ -82,6 +86,7 @@ RULE_IDS = [
     "causal_weekly_activity_low", "causal_burnout_from_chain",
     "persona_active", "persona_indoor", "persona_social",
     "persona_solitary", "persona_routine", "persona_night_owl",
+    "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
 ]
 
 
