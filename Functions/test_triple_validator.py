@@ -135,8 +135,9 @@ def test_range_validation() -> bool:
     valid, _ = v.validate([t("sl", "duration", "7.5", "float")])
     r.append(check("duration=7.5 → 통과", len(valid) == 1))
 
-    valid, _ = v.validate([t("sl", "duration", "0.0", "float")])
-    r.append(check("duration=0.0 (경계) → 통과", len(valid) == 1))
+    valid, w = v.validate([t("sl", "duration", "0.0", "float")])
+    r.append(check("duration=0.0 → 제외 (수면 시간 비정상)",
+                   len(valid) == 0 and any("수면 시간 비정상" in x for x in w)))
 
     # quality: 0~100
     valid, w = v.validate([t("sl", "quality", "101", "integer")])
@@ -371,6 +372,165 @@ def test_integration() -> bool:
     return all(r)
 
 
+# ── Test 8: 시간대 검증 (timestamp, visitTime, date) ──────────────────────────
+
+def test_timestamp_validation() -> bool:
+    print("\n[Test 8] 시간대 검증 (ISO 8601 / YYYY-MM-DD)")
+    v = V()
+    r = []
+
+    loc = PROD + "loc_ts"
+    sleep = PROD + "sl_ts"
+    sc = PROD + "sc_ts"
+
+    # ── timestamp 검증 ──
+
+    # 유효: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00"}])
+    r.append(check("timestamp='2026-05-13T14:30:00' → 통과",
+                   len(valid) == 1))
+
+    # 유효: Z 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00Z"}])
+    r.append(check("timestamp='2026-05-13T14:30:00Z' → 통과",
+                   len(valid) == 1))
+
+    # 유효: +09:00 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00+09:00"}])
+    r.append(check("timestamp='2026-05-13T14:30:00+09:00' → 통과",
+                   len(valid) == 1))
+
+    # 무효: 시간만 (HH:MM 형식)
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "14:30"}])
+    r.append(check("timestamp='14:30' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 무효: 텍스트 ("2pm")
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2pm"}])
+    r.append(check("timestamp='2pm' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 무효: Unix timestamp (숫자만)
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "1747123456"}])
+    r.append(check("timestamp='1747123456' (Unix) → 제외",
+                   len(valid) == 0))
+
+    # 무효: 빈 문자열
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": ""}])
+    r.append(check("timestamp='' → 제외",
+                   len(valid) == 0))
+
+    # ── visitTime 검증 ──
+
+    # 유효: ISO 8601
+    valid, _ = v.validate([{"subject": loc, "predicate": "visitTime",
+                             "object": "2026-05-13T18:45:00"}])
+    r.append(check("visitTime='2026-05-13T18:45:00' → 통과",
+                   len(valid) == 1))
+
+    # 무효: afternoon (텍스트)
+    valid, w = v.validate([{"subject": loc, "predicate": "visitTime",
+                             "object": "afternoon"}])
+    r.append(check("visitTime='afternoon' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # ── date 검증 ──
+
+    # 유효: YYYY-MM-DD
+    valid, _ = v.validate([{"subject": sc, "predicate": "date",
+                             "object": "2026-05-13"}])
+    r.append(check("date='2026-05-13' → 통과",
+                   len(valid) == 1))
+
+    # 무효: MM/DD/YYYY
+    valid, w = v.validate([{"subject": sc, "predicate": "date",
+                             "object": "05/13/2026"}])
+    r.append(check("date='05/13/2026' → 제외",
+                   len(valid) == 0 and any("날짜 형식" in x for x in w)))
+
+    # 무효: DD-MM-YYYY
+    valid, w = v.validate([{"subject": sc, "predicate": "date",
+                             "object": "13-05-2026"}])
+    r.append(check("date='13-05-2026' → 제외",
+                   len(valid) == 0))
+
+    # 무효: YYYYMMDD (하이픈 없음)
+    valid, w = v.validate([{"subject": sc, "predicate": "date",
+                             "object": "20260513"}])
+    r.append(check("date='20260513' → 제외",
+                   len(valid) == 0))
+
+    # ── 미래 timestamp 경고 (제외는 안 함) ──
+
+    # 미래 날짜 (2030년)
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2030-01-01T00:00:00"}])
+    r.append(check("timestamp='2030-01-01...' → 통과하지만 미래 경고",
+                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+
+    # 현재 날짜 (경고 없어야 함)
+    from datetime import datetime
+    now_str = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": now_str}])
+    future_warnings = [x for x in w if "미래 시각" in x]
+    r.append(check("timestamp=현재 시각 → 미래 경고 없음",
+                   len(valid) == 1 and len(future_warnings) == 0))
+
+    return all(r)
+
+
+# ── Test 9: 수면 시간 특별 검증 (0.5~18.0) ─────────────────────────────────────
+
+def test_sleep_duration_special() -> bool:
+    print("\n[Test 9] 수면 시간 특별 검증 (0.5~18.0 시간)")
+    v = V()
+    r = []
+
+    sleep = PROD + "sl_dur"
+
+    # 유효: 0.5 (경계)
+    valid, _ = v.validate([{"subject": sleep, "predicate": "duration", "object": "0.5"}])
+    r.append(check("duration=0.5 (경계) → 통과", len(valid) == 1))
+
+    # 유효: 18.0 (경계)
+    valid, _ = v.validate([{"subject": sleep, "predicate": "duration", "object": "18.0"}])
+    r.append(check("duration=18.0 (경계) → 통과", len(valid) == 1))
+
+    # 유효: 7.5 (정상)
+    valid, _ = v.validate([{"subject": sleep, "predicate": "duration", "object": "7.5"}])
+    r.append(check("duration=7.5 → 통과", len(valid) == 1))
+
+    # 무효: 0.3 (< 0.5)
+    valid, w = v.validate([{"subject": sleep, "predicate": "duration", "object": "0.3"}])
+    r.append(check("duration=0.3 → 제외 (비정상)",
+                   len(valid) == 0 and any("수면 시간 비정상" in x for x in w)))
+
+    # 무효: 0.0
+    valid, w = v.validate([{"subject": sleep, "predicate": "duration", "object": "0.0"}])
+    r.append(check("duration=0.0 → 제외 (비정상)",
+                   len(valid) == 0))
+
+    # 무효: 20.0 (> 18.0)
+    valid, w = v.validate([{"subject": sleep, "predicate": "duration", "object": "20.0"}])
+    r.append(check("duration=20.0 → 제외 (비정상)",
+                   len(valid) == 0 and any("수면 시간 비정상" in x for x in w)))
+
+    # 무효: 24.5 (범위 검사에서 먼저 걸림)
+    valid, w = v.validate([{"subject": sleep, "predicate": "duration", "object": "24.5"}])
+    r.append(check("duration=24.5 → 제외 (범위 위반 먼저)",
+                   len(valid) == 0 and any("범위 위반" in x for x in w)))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -386,6 +546,8 @@ def main() -> None:
         ("User 연결 감지",       test_user_connection),
         ("엣지 케이스",           test_edge_cases),
         ("통합 시나리오",          test_integration),
+        ("시간대 검증",           test_timestamp_validation),
+        ("수면 시간 특별 검증",    test_sleep_duration_special),
     ]
 
     passed = 0

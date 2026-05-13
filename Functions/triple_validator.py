@@ -8,11 +8,14 @@ ontology_engine._add_triples_to_graph() 호출 전에 자동 실행됨.
   2. 스키마 검증 (core.ttl 미정의 predicate 제외)
   3. 타입 자동 변환 (range 정보 또는 값 패턴 기반)
   4. 범위 제약 검사 (duration·quality·count·temperature·humidity)
-  5. User 연결 감지 (고립 노드 경고)
+  5. 시간대 검증 (timestamp·visitTime·date·createdAt 형식 검증)
+  6. User 연결 감지 (고립 노드 경고)
 """
 from __future__ import annotations
 
 import logging
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from rdflib import Graph, Namespace, RDF, OWL, RDFS
@@ -33,6 +36,20 @@ RANGE_BOUNDS: dict[str, tuple] = {
     "temperature": (-50.0, 60.0,  float),
     "humidity":    (0.0,   100.0, float),
 }
+
+# 시간대 검증 대상 속성 (ISO 8601 dateTime 형식 필요)
+DATETIME_PROPS: frozenset[str] = frozenset({"timestamp", "visitTime", "createdAt"})
+
+# 날짜 검증 대상 속성 (YYYY-MM-DD 형식 필요)
+DATE_PROPS: frozenset[str] = frozenset({"date"})
+
+# ISO 8601 dateTime 정규식 (기본 형식 + Z/+09:00 타임존 지원)
+ISO_DATETIME_PATTERN = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$"
+)
+
+# YYYY-MM-DD 날짜 정규식
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # rdf:type는 core.ttl Property 목록에 없지만 항상 통과
 _PASSTHROUGH_URIS: frozenset[str] = frozenset({RDF_TYPE_URI})
@@ -144,6 +161,67 @@ class TripleValidator:
             return False
         return True
 
+    # ── 시간대 검증 ───────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _validate_datetime_format(value: str) -> bool:
+        """ISO 8601 dateTime 형식 검증. 유효하면 True."""
+        if not value or not isinstance(value, str):
+            return False
+        # 정규식 매칭
+        if not ISO_DATETIME_PATTERN.match(value):
+            return False
+        # 파싱 가능 여부 확인 (유효한 날짜인지)
+        try:
+            # Z 타임존 처리
+            clean = value.replace("Z", "+00:00")
+            # 밀리초 제거 후 파싱
+            if "." in clean:
+                clean = clean.split(".")[0] + clean[clean.rfind("+"):]
+            # 타임존 제거 후 기본 파싱
+            if "+" in clean or clean.count("-") > 2:
+                dt_part = clean[:19]  # YYYY-MM-DDTHH:MM:SS
+                datetime.strptime(dt_part, "%Y-%m-%dT%H:%M:%S")
+            else:
+                datetime.strptime(clean, "%Y-%m-%dT%H:%M:%S")
+            return True
+        except (ValueError, AttributeError):
+            return False
+
+    @staticmethod
+    def _validate_date_format(value: str) -> bool:
+        """YYYY-MM-DD 날짜 형식 검증. 유효하면 True."""
+        if not value or not isinstance(value, str):
+            return False
+        if not DATE_PATTERN.match(value):
+            return False
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_future_timestamp(value: str) -> bool:
+        """timestamp가 현재 + 1일 이후면 True (미래 데이터 경고용)."""
+        try:
+            # 타임존 제거 후 파싱
+            clean = value.replace("Z", "").split("+")[0].split(".")[0]
+            dt = datetime.fromisoformat(clean)
+            threshold = datetime.now() + timedelta(days=1)
+            return dt > threshold
+        except (ValueError, AttributeError):
+            return False
+
+    @staticmethod
+    def _validate_sleep_duration(value: str) -> bool:
+        """수면 시간이 0.5~18.0 범위인지 확인."""
+        try:
+            duration = float(value)
+            return 0.5 <= duration <= 18.0
+        except (ValueError, TypeError):
+            return False
+
     # ── User 연결 감지 ────────────────────────────────────────────────────────
 
     @staticmethod
@@ -214,6 +292,46 @@ class TripleValidator:
                 logger.warning("TripleValidator: %s", msg)
                 continue
 
+            # ④ 시간대 검증 (timestamp, visitTime, createdAt)
+            if prop_local in DATETIME_PROPS:
+                if not self._validate_datetime_format(str(coerced_val)):
+                    msg = (
+                        f"시간 형식 오류: {prop_local}='{coerced_val}' "
+                        f"(ISO 8601 필요, 예: 2026-05-13T14:30:00) — 트리플 제외 (subject: {subj})"
+                    )
+                    warnings.append(msg)
+                    logger.warning("TripleValidator: %s", msg)
+                    continue
+                # 미래 timestamp 경고 (제외는 안 함)
+                if self._is_future_timestamp(str(coerced_val)):
+                    msg = f"미래 시각 경고: {prop_local}='{coerced_val}' (현재+1일 초과)"
+                    warnings.append(msg)
+                    logger.warning("TripleValidator: %s", msg)
+
+            # ⑤ 날짜 검증 (date)
+            if prop_local in DATE_PROPS:
+                if not self._validate_date_format(str(coerced_val)):
+                    msg = (
+                        f"날짜 형식 오류: {prop_local}='{coerced_val}' "
+                        f"(YYYY-MM-DD 필요) — 트리플 제외 (subject: {subj})"
+                    )
+                    warnings.append(msg)
+                    logger.warning("TripleValidator: %s", msg)
+                    continue
+
+            # ⑥ 수면 시간 특별 검증 (0.5~18.0 시간)
+            if prop_local == "duration":
+                # duration은 이미 범위 검사(0.0~24.0)를 통과했지만,
+                # 수면 데이터의 경우 더 엄격한 검증 (0.5~18.0)
+                if not self._validate_sleep_duration(coerced_val):
+                    msg = (
+                        f"수면 시간 비정상: duration={coerced_val} "
+                        f"(현실적 범위: 0.5~18.0시간) — 트리플 제외 (subject: {subj})"
+                    )
+                    warnings.append(msg)
+                    logger.warning("TripleValidator: %s", msg)
+                    continue
+
             clean: dict = {
                 "subject":   subj,
                 "predicate": pred_uri,
@@ -223,7 +341,7 @@ class TripleValidator:
                 clean["datatype"] = coerced_dt
             valid.append(clean)
 
-        # ④ User 연결 감지 (경고만, 트리플 제외 안 함)
+        # ⑦ User 연결 감지 (경고만, 트리플 제외 안 함)
         for node in self._find_orphans(valid):
             msg = f"User 연결 없는 고립 노드: {node}"
             warnings.append(msg)
