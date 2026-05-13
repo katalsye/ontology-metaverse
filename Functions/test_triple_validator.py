@@ -531,6 +531,70 @@ def test_sleep_duration_special() -> bool:
     return all(r)
 
 
+# ── Test 10: 타임존 혼합 및 밀리초 엣지케이스 ────────────────────────────────
+
+def test_timezone_millisecond_edge_cases() -> bool:
+    print("\n[Test 10] 타임존 혼합 및 밀리초 엣지케이스")
+    v = V()
+    r = []
+
+    loc = PROD + "loc_edge"
+
+    # 밀리초 + Z 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.123Z"}])
+    r.append(check("밀리초 + Z 타임존 → 통과", len(valid) == 1))
+
+    # 밀리초 + +09:00 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.456+09:00"}])
+    r.append(check("밀리초 + +09:00 타임존 → 통과", len(valid) == 1))
+
+    # 밀리초 + -05:00 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.789-05:00"}])
+    r.append(check("밀리초 + -05:00 타임존 → 통과", len(valid) == 1))
+
+    # 밀리초만 (타임존 없음)
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.999"}])
+    r.append(check("밀리초만 (타임존 없음) → 통과", len(valid) == 1))
+
+    # 6자리 밀리초 (마이크로초)
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.123456"}])
+    r.append(check("6자리 밀리초 (마이크로초) → 통과", len(valid) == 1))
+
+    # 6자리 밀리초 + 타임존
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.123456+09:00"}])
+    r.append(check("6자리 밀리초 + 타임존 → 통과", len(valid) == 1))
+
+    # 미래 timestamp (밀리초 포함) — 경고만
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2030-12-31T23:59:59.999Z"}])
+    r.append(check("미래 timestamp (밀리초+Z) → 통과 + 미래 경고",
+                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+
+    # 미래 timestamp (밀리초 + +09:00)
+    valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2030-01-01T00:00:00.001+09:00"}])
+    r.append(check("미래 timestamp (밀리초++09:00) → 통과 + 미래 경고",
+                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+
+    # 0 밀리초 (명시적)
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.000"}])
+    r.append(check("0 밀리초 명시적 → 통과", len(valid) == 1))
+
+    # 1자리 밀리초
+    valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
+                             "object": "2026-05-13T14:30:00.1Z"}])
+    r.append(check("1자리 밀리초 + Z → 통과", len(valid) == 1))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -539,15 +603,16 @@ def main() -> None:
     print("=" * 60)
 
     test_groups = [
-        ("predicate 정규화",    test_predicate_normalization),
-        ("스키마 검증",          test_schema_validation),
-        ("범위 제약 검증",        test_range_validation),
-        ("타입 자동 변환",        test_type_coercion),
-        ("User 연결 감지",       test_user_connection),
-        ("엣지 케이스",           test_edge_cases),
-        ("통합 시나리오",          test_integration),
-        ("시간대 검증",           test_timestamp_validation),
-        ("수면 시간 특별 검증",    test_sleep_duration_special),
+        ("predicate 정규화",               test_predicate_normalization),
+        ("스키마 검증",                     test_schema_validation),
+        ("범위 제약 검증",                   test_range_validation),
+        ("타입 자동 변환",                   test_type_coercion),
+        ("User 연결 감지",                  test_user_connection),
+        ("엣지 케이스",                      test_edge_cases),
+        ("통합 시나리오",                     test_integration),
+        ("시간대 검증",                      test_timestamp_validation),
+        ("수면 시간 특별 검증",               test_sleep_duration_special),
+        ("타임존 혼합 및 밀리초 엣지케이스",  test_timezone_millisecond_edge_cases),
     ]
 
     passed = 0

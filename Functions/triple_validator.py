@@ -175,9 +175,27 @@ class TripleValidator:
         try:
             # Z 타임존 처리
             clean = value.replace("Z", "+00:00")
-            # 밀리초 제거 후 파싱
+
+            # 밀리초 처리 (타임존 혼합 대응)
             if "." in clean:
-                clean = clean.split(".")[0] + clean[clean.rfind("+"):]
+                # 타임존이 있는 경우: 2026-05-13T14:30:00.123+09:00
+                if "+" in clean.split(".")[-1] or "-" in clean.split(".")[-1]:
+                    dt_part, ms_tz_part = clean.split(".", 1)
+                    # 밀리초와 타임존 분리
+                    if "+" in ms_tz_part:
+                        tz_part = "+" + ms_tz_part.split("+")[1]
+                    else:
+                        # 마지막 - 찾기 (날짜의 -가 아닌 타임존의 -)
+                        tz_idx = ms_tz_part.rfind("-")
+                        if tz_idx > 0:
+                            tz_part = ms_tz_part[tz_idx:]
+                        else:
+                            tz_part = ""
+                    clean = dt_part + (tz_part if tz_part else "")
+                else:
+                    # 타임존 없는 밀리초: 2026-05-13T14:30:00.123
+                    clean = clean.split(".")[0]
+
             # 타임존 제거 후 기본 파싱
             if "+" in clean or clean.count("-") > 2:
                 dt_part = clean[:19]  # YYYY-MM-DDTHH:MM:SS
@@ -185,7 +203,7 @@ class TripleValidator:
             else:
                 datetime.strptime(clean, "%Y-%m-%dT%H:%M:%S")
             return True
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, IndexError):
             return False
 
     @staticmethod
@@ -205,12 +223,27 @@ class TripleValidator:
     def _is_future_timestamp(value: str) -> bool:
         """timestamp가 현재 + 1일 이후면 True (미래 데이터 경고용)."""
         try:
-            # 타임존 제거 후 파싱
-            clean = value.replace("Z", "").split("+")[0].split(".")[0]
+            # 타임존 및 밀리초 제거 후 파싱 (나이브 datetime으로 통일)
+            clean = value.replace("Z", "")
+
+            # + 타임존 제거
+            if "+" in clean:
+                clean = clean.split("+")[0]
+            # - 타임존 제거 (날짜 구분자가 아닌 마지막 -만)
+            elif clean.count("-") > 2:
+                parts = clean.rsplit("-", 1)
+                if ":" in parts[-1]:  # 타임존 형식 확인 (예: -09:00)
+                    clean = parts[0]
+
+            # 밀리초 제거
+            if "." in clean:
+                clean = clean.split(".")[0]
+
+            # 나이브 datetime으로 파싱하여 비교
             dt = datetime.fromisoformat(clean)
             threshold = datetime.now() + timedelta(days=1)
             return dt > threshold
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, TypeError):
             return False
 
     @staticmethod
