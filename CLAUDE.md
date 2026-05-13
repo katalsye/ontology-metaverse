@@ -148,3 +148,10 @@ Gemma 3n은 기기 raw 데이터를 아래 형태의 트리플로 변환함.
 - quests/{uid}: 현재/완료 퀘스트 목록
 - users/{uid}: 프로필 + persona JSON 백업
 - temp_triples/{uid}: batch용 임시 트리플 (추론 후 삭제)
+
+## GitHub 레포 정보
+- 레포: katalsye/ontology-metaverse
+- 브랜치: feature/ontology
+- 이슈 등록: gh issue create --repo katalsye/ontology-metaverse
+- 이슈 목록: gh issue list --repo katalsye/ontology-metaverse
+- 이슈 닫기: gh issue close {번호} --repo katalsye/ontology-metaverse

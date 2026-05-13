@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778606195373,
+  "projectRoot": "C:\\Users\\user\\Desktop\\ontology-metaverse",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "Docs": {
+      "path": "Docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1778606195148,
+      "keyFiles": [
+        "docs.gitkeep"
+      ]
+    },
+    "Functions": {
+      "path": "Functions",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1778606195151,
+      "keyFiles": [
+        "functions.gitkeep",
+        "ontology_engine.py",
+        "requirements.txt",
+        "test_rules.py",
+        "test_triple_validator.py"
+      ]
+    },
+    "Unity": {
+      "path": "Unity",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1778606195153,
+      "keyFiles": [
+        "ontology-metaverse.slnx",
+        "Unity.slnx"
+      ]
+    },
+    "Unity\\Assets": {
+      "path": "Unity\\Assets",
+      "purpose": "Static assets",
+      "fileCount": 11,
+      "lastAccessed": 1778606195159,
+      "keyFiles": [
+        "01_Scenes.meta",
+        "02_Scripts.meta",
+        "03_Prefabs.meta"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "Functions\\test_ontology_engine.py",
+      "accessCount": 9,
+      "lastAccessed": 1778606883636,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology_engine.py",
+      "accessCount": 2,
+      "lastAccessed": 1778606574543,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
+      "accessCount": 2,
+      "lastAccessed": 1778606575888,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\core.ttl",
+      "accessCount": 2,
+      "lastAccessed": 1778606577235,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\test_rules.py",
+      "accessCount": 2,
+      "lastAccessed": 1778606577566,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\validate_ontology.py",
+      "accessCount": 1,
+      "lastAccessed": 1778606443813,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\triple_validator.py",
+      "accessCount": 1,
+      "lastAccessed": 1778606457052,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\requirements.txt",
+      "accessCount": 1,
+      "lastAccessed": 1778606756231,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
