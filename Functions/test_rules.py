@@ -1170,6 +1170,259 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     return all(results)
 
 
+# ── Test 11-E: persona rules P1-P6 엣지케이스 (Issue #25) ────────────────────
+
+def test_persona_edge_cases(rules: dict[str, str]) -> bool:
+    print("\n[Test P1-P6 Edge] 페르소나 규칙 엣지케이스 12개")
+    results = []
+
+    # ── P1 경계값 테스트 ──────────────────────────────────────────────────────
+
+    # P1-E1: 정확히 7000보 4일 → 발동 (경계값 포함)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p1e1")
+    for i in range(4):
+        sc = PROD[f"sc_pe_p1e1_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(7000, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["persona_active"])
+    results.append(check(
+        "P1-E1: 정확히 7000보 4일 → Persona(active) 발동 (경계값 포함)",
+        any(str(v) == "active"
+            for p in g.objects(user, PROD.hasPersona)
+            for v in g.objects(p, PROD.energyType))
+    ))
+
+    # P1-E2: 6999보 4일 → 미발동 (경계값 미만)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p1e2")
+    for i in range(4):
+        sc = PROD[f"sc_pe_p1e2_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(6999, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["persona_active"])
+    results.append(check(
+        "P1-E2: 6999보 4일 → Persona 미발동 (경계값 미만, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
+    ))
+
+    # P1-E3: 7000보 이상 3일 + 6999보 2일 → 미발동 (충족일수 부족)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p1e3")
+    for i in range(3):
+        sc = PROD[f"sc_pe_p1e3_hi_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(7000, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    for i in range(2):
+        sc = PROD[f"sc_pe_p1e3_lo_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(6999, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["persona_active"])
+    results.append(check(
+        "P1-E3: 7000보 이상 3일 + 미만 2일 → Persona 미발동 (충족일수 3 < 4, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
+    ))
+
+    # ── P4 경계값/예외 테스트 ─────────────────────────────────────────────────
+
+    # P4-E1: 정확히 70% 혼자 방문 (7/10) → 발동 (경계값 포함)
+    # 조건: soloVisits*10 >= totalVisits*7 → 7*10=70 >= 10*7=70 → True
+    g = load_base_graph()
+    user = _add_user(g, "pe_p4e1")
+    for i in range(7):  # 혼자 방문 7개
+        loc = PROD[f"loc_pe_p4e1_solo_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeName, Literal(f"장소{i}")))
+        g.add((user, PROD.hasLocation, loc))
+    for i in range(3):  # 동반 방문 3개
+        loc = PROD[f"loc_pe_p4e1_comp_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.companion, Literal("친구")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_solitary"])
+    results.append(check(
+        "P4-E1: 혼자 방문 70% (7/10) → Persona(solitary) 발동 (경계값 포함)",
+        any(str(v) == "solitary"
+            for p in g.objects(user, PROD.hasPersona)
+            for v in g.objects(p, PROD.socialPreference))
+    ))
+
+    # P4-E2: 69% 혼자 방문 (69/100) → 미발동
+    # 조건: soloVisits*10 >= totalVisits*7 → 69*10=690 >= 100*7=700 → False
+    g = load_base_graph()
+    user = _add_user(g, "pe_p4e2")
+    for i in range(69):  # 혼자 방문 69개
+        loc = PROD[f"loc_pe_p4e2_solo_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeName, Literal(f"장소{i}")))
+        g.add((user, PROD.hasLocation, loc))
+    for i in range(31):  # 동반 방문 31개
+        loc = PROD[f"loc_pe_p4e2_comp_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.companion, Literal("친구")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_solitary"])
+    results.append(check(
+        "P4-E2: 혼자 방문 69% (69/100) → Persona 미발동 (경계값 미만, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
+    ))
+
+    # P4-E3: 방문 기록 없음 → 미발동 (0으로 나누기 방지)
+    # 조건: totalVisits > 0 이 False → 전체 FILTER 실패 → 발동 안 됨
+    g = load_base_graph()
+    user = _add_user(g, "pe_p4e3")
+    # hasLocation 트리플 없음
+    apply_rule(g, rules["persona_solitary"])
+    results.append(check(
+        "P4-E3: 방문 기록 없음 → Persona 미발동 (0 나누기 방지, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
+    ))
+
+    # ── P6 시간대 경계 테스트 ─────────────────────────────────────────────────
+
+    # P6-E1: 정확히 23:00 방문 3회 → 발동 (h >= 23 경계값)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p6e1")
+    for i in range(3):
+        loc = PROD[f"loc_pe_p6e1_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.visitTime,
+               Literal(f"2026-04-{17+i}T23:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E1: 정확히 23:00 방문 3회 → Persona(night_owl) 발동 (h=23 경계값)",
+        any(str(v) == "night_owl"
+            for p in g.objects(user, PROD.hasPersona)
+            for v in g.objects(p, PROD.lifePattern))
+    ))
+
+    # P6-E2: 22:59 방문 3회 → 미발동 (h=22, 조건 불충족)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p6e2")
+    for i in range(3):
+        loc = PROD[f"loc_pe_p6e2_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.visitTime,
+               Literal(f"2026-04-{17+i}T22:59:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E2: 22:59 방문 3회 → Persona 미발동 (h=22 < 23, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
+    ))
+
+    # P6-E3: 새벽 1시(01:00) 방문 3회 → 발동 (h < 2 조건)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p6e3")
+    for i in range(3):
+        loc = PROD[f"loc_pe_p6e3_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.visitTime,
+               Literal(f"2026-04-{17+i}T01:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E3: 새벽 01:00 방문 3회 → Persona(night_owl) 발동 (h=1 < 2 조건)",
+        any(str(v) == "night_owl"
+            for p in g.objects(user, PROD.hasPersona)
+            for v in g.objects(p, PROD.lifePattern))
+    ))
+
+    # P6-E4: 23시 2회 + 01시 1회 → 발동 (혼합 시간대, 합산 3회)
+    g = load_base_graph()
+    user = _add_user(g, "pe_p6e4")
+    for i in range(2):
+        loc = PROD[f"loc_pe_p6e4_23h_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.visitTime,
+               Literal(f"2026-04-{17+i}T23:15:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasLocation, loc))
+    loc_1h = PROD["loc_pe_p6e4_01h"]
+    g.add((loc_1h, RDF.type, PROD.Location))
+    g.add((loc_1h, PROD.visitTime,
+           Literal("2026-04-19T01:30:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc_1h))
+    apply_rule(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E4: 23시 2회 + 01시 1회 → Persona(night_owl) 발동 (혼합 시간대)",
+        any(str(v) == "night_owl"
+            for p in g.objects(user, PROD.hasPersona)
+            for v in g.objects(p, PROD.lifePattern))
+    ))
+
+    # ── 복합 페르소나 테스트 ──────────────────────────────────────────────────
+
+    # Composite-1: 동일 사용자에게 P1(active) + P3(social) 동시 발동
+    # → hasPersona 노드 2개 생성, energyType=active AND socialPreference=social
+    g = load_base_graph()
+    user = _add_user(g, "pe_comp1")
+    # P1 조건: 7000보 4일
+    for i in range(4):
+        sc = PROD[f"sc_pe_comp1_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(9000, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    # P3 조건: companion 방문 3회
+    for i in range(3):
+        loc = PROD[f"loc_pe_comp1_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.companion, Literal("가족")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_active"])
+    apply_rule(g, rules["persona_social"])
+    has_active = any(str(v) == "active"
+                     for p in g.objects(user, PROD.hasPersona)
+                     for v in g.objects(p, PROD.energyType))
+    has_social = any(str(v) == "social"
+                     for p in g.objects(user, PROD.hasPersona)
+                     for v in g.objects(p, PROD.socialPreference))
+    persona_count = sum(1 for _ in g.objects(user, PROD.hasPersona))
+    results.append(check(
+        "Composite-1: P1+P3 동시 발동 → Persona 노드 2개 생성",
+        persona_count >= 2,
+        f"실제 Persona 노드 수: {persona_count}"
+    ))
+    results.append(check(
+        "Composite-1: energyType=active AND socialPreference=social 모두 존재",
+        has_active and has_social,
+        f"active={has_active}, social={has_social}"
+    ))
+
+    # Composite-2: P2(indoor) + P4(solitary) 동시 발동
+    # → energyType=indoor AND socialPreference=solitary 속성 병합 확인
+    g = load_base_graph()
+    user = _add_user(g, "pe_comp2")
+    # P2 조건: IndoorDayPattern 상태
+    g.add((user, PROD.hasState, PROD.IndoorDayPattern))
+    # P4 조건: 혼자 방문 100% (5/5)
+    for i in range(5):
+        loc = PROD[f"loc_pe_comp2_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeName, Literal(f"장소{i}")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_indoor"])
+    apply_rule(g, rules["persona_solitary"])
+    has_indoor = any(str(v) == "indoor"
+                     for p in g.objects(user, PROD.hasPersona)
+                     for v in g.objects(p, PROD.energyType))
+    has_solitary = any(str(v) == "solitary"
+                       for p in g.objects(user, PROD.hasPersona)
+                       for v in g.objects(p, PROD.socialPreference))
+    results.append(check(
+        "Composite-2: P2(indoor) + P4(solitary) 동시 발동 → 두 속성 모두 존재",
+        has_indoor and has_solitary,
+        f"indoor={has_indoor}, solitary={has_solitary}"
+    ))
+
+    print(f"  총 {len(results)}개 테스트 실행")
+    return all(results)
+
+
 # ── Test 12: 엣지 케이스 ──────────────────────────────────────────────────────
 
 def test_edge_empty_graph(rules: dict[str, str]) -> bool:
@@ -1485,7 +1738,7 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
 
 def main() -> None:
     print("=" * 60)
-    print("inference_rules.sparql 단위 테스트 (25개 규칙 전체)")
+    print("inference_rules.sparql 단위 테스트 (25개 규칙 전체 + Persona 엣지케이스)")
     print("=" * 60)
 
     rules_text = RULES_PATH.read_text(encoding="utf-8")
@@ -1503,6 +1756,7 @@ def main() -> None:
         ("routine+music", lambda: test_routine_and_music_mood(rules)),
         ("causal_chain",  lambda: test_causal_chain(rules)),
         ("persona_P1-P6", lambda: test_persona_rules(rules)),
+        ("persona_edge",  lambda: test_persona_edge_cases(rules)),
         ("spotify_music", lambda: test_spotify_music_patterns(rules)),
         ("empty_graph",   lambda: test_edge_empty_graph(rules)),
     ]
