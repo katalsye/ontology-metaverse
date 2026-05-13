@@ -1173,7 +1173,7 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
 # ── Test 11-E: persona rules P1-P6 엣지케이스 (Issue #25) ────────────────────
 
 def test_persona_edge_cases(rules: dict[str, str]) -> bool:
-    print("\n[Test P1-P6 Edge] 페르소나 규칙 엣지케이스 12개")
+    print("\n[Test P1-P6 Edge] 페르소나 규칙 엣지케이스 14개")
     results = []
 
     # ── P1 경계값 테스트 ──────────────────────────────────────────────────────
@@ -1353,6 +1353,22 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         any(str(v) == "night_owl"
             for p in g.objects(user, PROD.hasPersona)
             for v in g.objects(p, PROD.lifePattern))
+    ))
+
+    # P6-E5: 정확히 02:00 방문 3회 → 미발동 (h=2, h<2 조건 불충족)
+    # 조건: h >= 23 || h < 2 → h=2는 양쪽 모두 불충족
+    g = load_base_graph()
+    user = _add_user(g, "pe_p6e5")
+    for i in range(3):
+        loc = PROD[f"loc_pe_p6e5_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.visitTime,
+               Literal(f"2026-04-{17+i}T02:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_night_owl"])
+    results.append(check(
+        "P6-E5: 새벽 02:00 방문 3회 → Persona 미발동 (h=2, h<2 조건 불충족, 반례)",
+        not any(True for _ in g.objects(user, PROD.hasPersona))
     ))
 
     # ── 복합 페르소나 테스트 ──────────────────────────────────────────────────
