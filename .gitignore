@@ -66,6 +66,12 @@ mono_crash.*
 *.unitypackage.meta
 *.app
 
+# Unity Burst compiler generated files
+*_BurstDebugInformation_DoNotShip*
+*_BackUpThisFolder_ButDontShipItWithYourGame*
+lib_burst_generated*.txt
+*.burst.cs
+
 # Crashlytics
 crashlytics-build.properties
 
