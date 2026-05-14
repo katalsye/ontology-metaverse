@@ -1,6 +1,6 @@
 """
 test_triple_validator.py
-TripleValidator 단위 테스트 — 13개 그룹, 132개 assertion
+TripleValidator 단위 테스트 — 13개 그룹, 132개 check 호출
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -920,8 +920,9 @@ def test_updatedAt_prop() -> bool:
     # 미래 시각 경고 (통과하지만 경고 발생)
     valid, w = v.validate([{"subject": persona, "predicate": "updatedAt",
                              "object": "2030-01-01T00:00:00Z"}])
+    future_warnings = [x for x in w if "미래 시각" in x]
     r.append(check("updatedAt 미래 시각 → 통과하지만 미래 경고",
-                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+                   len(valid) == 1 and len(future_warnings) == 1))
 
     # Unix timestamp 반례
     valid, w = v.validate([{"subject": persona, "predicate": "updatedAt",
