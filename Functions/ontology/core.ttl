@@ -734,6 +734,34 @@ prod:SleepData rdfs:subClassOf [
     ]
 ] .
 
+# Location.latitude: -90.0 ~ 90.0 (위도)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:latitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-90.0"^^xsd:float ]
+            [ xsd:maxInclusive "90.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# Location.longitude: -180.0 ~ 180.0 (경도)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:longitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-180.0"^^xsd:float ]
+            [ xsd:maxInclusive "180.0"^^xsd:float  ]
+        )
+    ]
+] .
+
 # GalleryPhoto.latitude: -90.0 ~ 90.0 (위도)
 prod:GalleryPhoto rdfs:subClassOf [
     a owl:Restriction ;

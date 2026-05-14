@@ -49,6 +49,8 @@ REQUIRED_PROPERTIES = [
     "emotion", "purpose", "mood", "cause", "review",
     # DuckDB 전처리 결과 주입 속성
     "hasConsecutiveLowStepDays",
+    # Location 장소 유형
+    "placeType",
 ]
 
 DISJOINT_PAIRS = [
@@ -79,6 +81,8 @@ RANGE_CONSTRAINTS = [
     ("Reward",    "amount"),
     ("GalleryPhoto", "latitude"),
     ("GalleryPhoto", "longitude"),
+    ("Location",     "latitude"),
+    ("Location",     "longitude"),
 ]
 
 RULE_IDS = [

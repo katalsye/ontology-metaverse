@@ -716,6 +716,44 @@ def test_gps_coordinates() -> bool:
     r.append(check("lat+lon 둘 다 비정상 → 0개 통과, 경고 2개",
                    len(valid) == 0 and len([x for x in w if "범위 위반" in x]) == 2))
 
+    # ── Location subject 검증 (GPS 기반 방문 장소) ──
+
+    loc_node = PROD + "loc_gps"
+
+    # 정례: 서울 위도 (Location subject)
+    valid, _ = v.validate([{"subject": loc_node, "predicate": "latitude", "object": "37.5665"}])
+    r.append(check("Location latitude=37.5665 (서울) → 통과", len(valid) == 1))
+
+    # 정례: 서울 경도 (Location subject)
+    valid, _ = v.validate([{"subject": loc_node, "predicate": "longitude", "object": "126.9780"}])
+    r.append(check("Location longitude=126.9780 (서울) → 통과", len(valid) == 1))
+
+    # 경계: 북극 위도 (Location subject)
+    valid, _ = v.validate([{"subject": loc_node, "predicate": "latitude", "object": "90.0"}])
+    r.append(check("Location latitude=90.0 (북극 경계) → 통과", len(valid) == 1))
+
+    # 경계: 서쪽 경계 경도 (Location subject)
+    valid, _ = v.validate([{"subject": loc_node, "predicate": "longitude", "object": "-180.0"}])
+    r.append(check("Location longitude=-180.0 (서쪽 경계) → 통과", len(valid) == 1))
+
+    # 반례: Location latitude 범위 초과
+    valid, w = v.validate([{"subject": loc_node, "predicate": "latitude", "object": "91.0"}])
+    r.append(check("Location latitude=91.0 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("latitude" in x and "범위 위반" in x for x in w)))
+
+    # 반례: Location longitude 범위 초과
+    valid, w = v.validate([{"subject": loc_node, "predicate": "longitude", "object": "200.0"}])
+    r.append(check("Location longitude=200.0 → 제외 (범위 위반)",
+                   len(valid) == 0 and any("longitude" in x and "범위 위반" in x for x in w)))
+
+    # 정례: Location GPS 좌표 복합 (lat+lon)
+    triples = [
+        {"subject": loc_node, "predicate": "latitude",  "object": "35.6762"},
+        {"subject": loc_node, "predicate": "longitude", "object": "139.6503"},
+    ]
+    valid, _ = v.validate(triples)
+    r.append(check("Location 도쿄 GPS (lat+lon) → 2개 모두 통과", len(valid) == 2))
+
     # ── 문자열 반례 (숫자 변환 불가 → 제외 + 경고) ──
 
     # weather 노드 (온도 문자열 반례)
