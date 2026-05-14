@@ -870,6 +870,56 @@ def test_extended_datetime_props() -> bool:
     return all(r)
 
 
+# ── Test 13: updatedAt 시간 속성 검증 ────────────────────────────────────────
+
+def test_updatedAt_prop() -> bool:
+    print("\n[Test 13] updatedAt 시간 속성 검증 (Persona 갱신 시각)")
+    v = V()
+    r = []
+
+    persona = PROD + "persona_upd"
+
+    # 정례: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "2026-05-14T09:00:00"}])
+    r.append(check("updatedAt='2026-05-14T09:00:00' → 통과", len(valid) == 1))
+
+    # 정례: Z 타임존
+    valid, _ = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "2026-05-14T09:00:00Z"}])
+    r.append(check("updatedAt='2026-05-14T09:00:00Z' → 통과", len(valid) == 1))
+
+    # 정례: +09:00 타임존
+    valid, _ = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "2026-05-14T09:00:00+09:00"}])
+    r.append(check("updatedAt='2026-05-14T09:00:00+09:00' → 통과", len(valid) == 1))
+
+    # 정례: 밀리초 포함
+    valid, _ = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "2026-05-14T09:00:00.123Z"}])
+    r.append(check("updatedAt 밀리초 포함 → 통과", len(valid) == 1))
+
+    # 반례: 날짜만 (YYYY-MM-DD) → 제외 + 경고
+    valid, w = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "2026-05-14"}])
+    r.append(check("updatedAt='2026-05-14' (날짜만) → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 빈 문자열 → 제외
+    valid, w = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": ""}])
+    r.append(check("updatedAt='' → 제외",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 텍스트 → 제외 + 경고
+    valid, w = v.validate([{"subject": persona, "predicate": "updatedAt",
+                             "object": "yesterday"}])
+    r.append(check("updatedAt='yesterday' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -890,6 +940,7 @@ def main() -> None:
         ("타임존 혼합 및 밀리초 엣지케이스",  test_timezone_millisecond_edge_cases),
         ("GPS 좌표 범위 검증",               test_gps_coordinates),
         ("확장 시간 속성 검증",               test_extended_datetime_props),
+        ("updatedAt 시간 속성 검증",         test_updatedAt_prop),
     ]
 
     passed = 0

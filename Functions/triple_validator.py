@@ -48,6 +48,7 @@ DATETIME_PROPS: frozenset[str] = frozenset({
     "recordedAt",   # Weather 기록 시각
     "startTime",    # CalendarEvent 시작 시각
     "endTime",      # CalendarEvent 종료 시각
+    "updatedAt",    # Persona 갱신 시각
 })
 
 # 날짜 검증 대상 속성 (YYYY-MM-DD 형식 필요)
