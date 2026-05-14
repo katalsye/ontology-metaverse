@@ -889,7 +889,7 @@ CONSTRUCT {
     ?user prod:hasState prod:ScheduleOverload .
     _:q   a prod:Quest ;
           prod:title "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?" ;
-          prod:questType "보완형" ;
+          prod:questType "삶 개선형" ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }

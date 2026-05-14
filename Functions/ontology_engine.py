@@ -57,6 +57,7 @@ RULE_ORDER = [
     "focus_music_pattern",      # Rule 26 (집중 음악 패턴)
     "stress_music_pattern",     # Rule 27 (스트레스 음악 패턴)
     "social_music_pattern",     # Rule 28 (사교 음악 패턴)
+    "schedule_overload",               # Rule 29 (Google Calendar 일정 과부하)
     # 다단계 인과 체인 — 순서 고정 필수
     "causal_sleep_impaired",        # Rule 10
     "causal_exercise_skipped",      # Rule 11 (Rule 10 의존)
