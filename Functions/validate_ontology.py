@@ -73,6 +73,9 @@ RANGE_CONSTRAINTS = [
     ("StepCount", "count"),
     ("Weather",   "temperature"),
     ("Weather",   "humidity"),
+    ("Location",  "visitCount"),
+    ("AppUsage",  "usageDuration"),
+    ("Reward",    "amount"),
 ]
 
 RULE_IDS = [

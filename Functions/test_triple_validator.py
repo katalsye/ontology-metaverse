@@ -1,6 +1,6 @@
 """
 test_triple_validator.py
-TripleValidator 단위 테스트 — 14개 그룹, 170개 check 호출
+TripleValidator 단위 테스트 — 14개 그룹, 172개 check 호출
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -1063,6 +1063,14 @@ def test_numeric_ranges() -> bool:
     valid, w = v.validate([t("loc", "visitCount", "-1")])
     r.append(check("visitCount=-1 → 제외 + 경고",
                    len(valid) == 0 and any("visitCount" in x for x in w)))
+
+    # visitCount 상한 경계값/초과
+    loc = PROD + "loc_rng"
+    valid, _ = v.validate([{"subject": loc, "predicate": "visitCount", "object": "10000"}])
+    r.append(check("visitCount=10000 (경계 최댓값) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([{"subject": loc, "predicate": "visitCount", "object": "10001"}])
+    r.append(check("visitCount=10001 (초과) → 제외 + 경고", len(valid) == 0 and len(w) > 0))
 
     # ── amount (보상 금액: 0 ~ 1_000_000) ──
     reward = PROD + "reward_rng"
