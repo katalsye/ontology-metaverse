@@ -70,12 +70,15 @@ MIN_CARDINALITY_1 = [
 RANGE_CONSTRAINTS = [
     ("SleepData", "duration"),
     ("SleepData", "quality"),
+    ("SleepData", "deepSleepRatio"),
     ("StepCount", "count"),
     ("Weather",   "temperature"),
     ("Weather",   "humidity"),
     ("Location",  "visitCount"),
     ("AppUsage",  "usageDuration"),
     ("Reward",    "amount"),
+    ("GalleryPhoto", "latitude"),
+    ("GalleryPhoto", "longitude"),
 ]
 
 RULE_IDS = [
