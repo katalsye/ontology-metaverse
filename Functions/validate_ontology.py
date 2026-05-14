@@ -36,6 +36,7 @@ REQUIRED_CLASSES = [
     "IndoorDayPattern", "Routine", "MusicMood",
     "SleepQualityImpaired", "ExerciseSkipped", "WeeklyActivityLow",
     "FocusMode", "StressIndicator", "SocialActivity",
+    "ScheduleOverload",
 ]
 
 REQUIRED_PROPERTIES = [
@@ -107,6 +108,7 @@ RULE_IDS = [
     "persona_active", "persona_indoor", "persona_social",
     "persona_solitary", "persona_routine", "persona_night_owl",
     "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
+    "schedule_overload",
 ]
 
 

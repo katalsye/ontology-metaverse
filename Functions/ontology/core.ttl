@@ -467,6 +467,10 @@ prod:SocialActivity a owl:Class ;
     rdfs:label   "SocialActivity" ;
     rdfs:comment "댄스·팝 장르 청취 + 외출 위치 동시 발생 시 추론된 사교 활동 상태. RoomObject 파티 조명 효과 추가." .
 
+prod:ScheduleOverload a owl:Class ;
+    rdfs:label   "ScheduleOverload" ;
+    rdfs:comment "하루 일정 5개 이상 또는 연속 일정(휴식 30분 미만) 3개 이상일 때 추론된 일정 과부하 상태." .
+
 # ─── Object Properties — 확장 ───────────────────────────────────────────────
 
 prod:listensTo a owl:ObjectProperty ;

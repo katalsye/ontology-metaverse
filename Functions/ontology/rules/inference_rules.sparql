@@ -878,3 +878,32 @@ WHERE {
     # 절댓값 3시간(180분) 이내 확인
     FILTER (?minDiff >= -180 && ?minDiff <= 180)
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 29 — ScheduleOverload + 휴식 권장 퀘스트
+# 같은 날짜에 CalendarEvent 5개 이상
+# → prod:ScheduleOverload 상태 부여 + 보완형 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: schedule_overload
+CONSTRUCT {
+    ?user prod:hasState prod:ScheduleOverload .
+    _:q   a prod:Quest ;
+          prod:title "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?" ;
+          prod:questType "보완형" ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?evtDate (COUNT(?evt) AS ?evtCnt)
+        WHERE {
+            ?user prod:hasCalendarEvent ?evt .
+            ?evt  prod:startTime        ?st .
+            BIND (STRBEFORE(STR(?st), "T") AS ?evtDate)
+        }
+        GROUP BY ?user ?evtDate
+    }
+    FILTER (?evtCnt >= 5)
+}

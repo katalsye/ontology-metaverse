@@ -33,6 +33,7 @@ ALL_RULE_IDS = [
     "persona_active", "persona_indoor", "persona_social",
     "persona_solitary", "persona_routine", "persona_night_owl",
     "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
+    "schedule_overload",
 ]
 
 
@@ -120,12 +121,12 @@ def _add_cafe_location(g: Graph, user: URIRef, uid: str,
 # ── Test 1: rule_parser ───────────────────────────────────────────────────────
 
 def test_rule_parser(rules: dict[str, str]) -> bool:
-    print("\n[Test P] 규칙 파서 — 25개 RULE_ID 추출 확인")
+    print("\n[Test P] 규칙 파서 — 29개 RULE_ID 추출 확인")
     expected = set(ALL_RULE_IDS)
     extracted = set(rules.keys())
     missing = sorted(expected - extracted)
     extra   = sorted(extracted - expected)
-    ok = check(f"25개 규칙 추출됨 (실제 {len(extracted)}개)",
+    ok = check(f"29개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
     return ok
@@ -1771,6 +1772,70 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     return all(results)
 
 
+# ── Test 14: schedule_overload ────────────────────────────────────────────────
+
+def test_schedule_overload(rules: dict[str, str]) -> bool:
+    print("\n[Test 29] schedule_overload — 일정 과부하 감지")
+    results = []
+
+    # 정례: 같은 날 CalendarEvent 5개 → ScheduleOverload + Quest 생성
+    g = load_base_graph()
+    user = _add_user(g, "r29a")
+    for i in range(5):
+        evt = PROD[f"evt_r29a_{i}"]
+        g.add((evt, RDF.type, PROD.CalendarEvent))
+        g.add((evt, PROD.startTime,
+               Literal(f"2026-05-14T{9+i:02d}:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["schedule_overload"])
+    results.append(check("같은 날 CalendarEvent 5개 → ScheduleOverload",
+                         (user, PROD.hasState, PROD.ScheduleOverload) in g))
+    results.append(check("→ 휴식 권장 퀘스트 생성",
+                         any("오늘 일정이 빡빡해 보여요" in t for t in quest_titles(g))))
+
+    # 정례 B: 같은 날 CalendarEvent 7개 (5개 초과도 발동)
+    g = load_base_graph()
+    user = _add_user(g, "r29b")
+    for i in range(7):
+        evt = PROD[f"evt_r29b_{i}"]
+        g.add((evt, RDF.type, PROD.CalendarEvent))
+        g.add((evt, PROD.startTime,
+               Literal(f"2026-05-14T{8+i:02d}:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["schedule_overload"])
+    results.append(check("같은 날 CalendarEvent 7개 → ScheduleOverload",
+                         (user, PROD.hasState, PROD.ScheduleOverload) in g))
+
+    # 반례: 같은 날 CalendarEvent 4개 → ScheduleOverload 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r29c")
+    for i in range(4):
+        evt = PROD[f"evt_r29c_{i}"]
+        g.add((evt, RDF.type, PROD.CalendarEvent))
+        g.add((evt, PROD.startTime,
+               Literal(f"2026-05-14T{9+i:02d}:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["schedule_overload"])
+    results.append(check("같은 날 CalendarEvent 4개 → ScheduleOverload 미생성 (반례)",
+                         (user, PROD.hasState, PROD.ScheduleOverload) not in g))
+
+    # 반례 B: 다른 날짜에 분산된 CalendarEvent 5개 → 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r29d")
+    for i in range(5):
+        evt = PROD[f"evt_r29d_{i}"]
+        g.add((evt, RDF.type, PROD.CalendarEvent))
+        # 각기 다른 날짜
+        g.add((evt, PROD.startTime,
+               Literal(f"2026-05-{14+i:02d}T09:00:00", datatype=XSD.dateTime)))
+        g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["schedule_overload"])
+    results.append(check("서로 다른 날에 CalendarEvent 1개씩 5일 → ScheduleOverload 미생성 (반례)",
+                         (user, PROD.hasState, PROD.ScheduleOverload) not in g))
+
+    return all(results)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1794,8 +1859,9 @@ def main() -> None:
         ("causal_chain",  lambda: test_causal_chain(rules)),
         ("persona_P1-P6", lambda: test_persona_rules(rules)),
         ("persona_edge",  lambda: test_persona_edge_cases(rules)),
-        ("spotify_music", lambda: test_spotify_music_patterns(rules)),
-        ("empty_graph",   lambda: test_edge_empty_graph(rules)),
+        ("spotify_music",     lambda: test_spotify_music_patterns(rules)),
+        ("schedule_overload", lambda: test_schedule_overload(rules)),
+        ("empty_graph",       lambda: test_edge_empty_graph(rules)),
     ]
 
     passed = 0
