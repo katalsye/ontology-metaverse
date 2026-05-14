@@ -129,7 +129,7 @@ def validate_ttl(g: Graph) -> int:
 
 
 def validate_rules(rules_text: str) -> int:
-    print("\n[3] SPARQL 규칙 ID 존재 확인")
+    print("\n[7] SPARQL 규칙 ID 존재 확인")
     failures = 0
     for rule_id in RULE_IDS:
         found = bool(re.search(rf"RULE_ID:\s*{rule_id}", rules_text))
@@ -145,7 +145,7 @@ def _ask(g: Graph, sparql: str) -> bool:
 def validate_owl_constraints(g: Graph) -> int:
     failures = 0
 
-    print("\n[5] owl:disjointWith 선언 확인")
+    print("\n[3] owl:disjointWith 선언 확인")
     for a, b in DISJOINT_PAIRS:
         ok = (
             (PROD[a], OWL.disjointWith, PROD[b]) in g or
@@ -154,7 +154,7 @@ def validate_owl_constraints(g: Graph) -> int:
         if not check(ok, f"{a} ↔ {b}"):
             failures += 1
 
-    print("\n[6] owl:minCardinality ≥ 1 확인")
+    print("\n[4] owl:minCardinality ≥ 1 확인")
     for cls, prop in MIN_CARDINALITY_1:
         sparql = f"""
 PREFIX prod: <http://7team.dev/ontology#>
@@ -170,7 +170,7 @@ ASK {{
         if not check(_ask(g, sparql), f"{cls}.{prop}"):
             failures += 1
 
-    print("\n[7] 데이터 범위 제약(owl:withRestrictions) 확인")
+    print("\n[5] 데이터 범위 제약(owl:withRestrictions) 확인")
     for cls, prop in RANGE_CONSTRAINTS:
         sparql = f"""
 PREFIX prod: <http://7team.dev/ontology#>
@@ -189,8 +189,8 @@ ASK {{
 
 
 def validate_domain_union(g: Graph) -> int:
-    """[8] rdfs:domain owl:unionOf 멤버 검증."""
-    print("\n[8] rdfs:domain owl:unionOf 멤버 확인")
+    """[6] rdfs:domain owl:unionOf 멤버 검증."""
+    print("\n[6] rdfs:domain owl:unionOf 멤버 확인")
     failures = 0
 
     for prop, expected_classes in DOMAIN_UNION_CONSTRAINTS:
@@ -235,7 +235,7 @@ ASK {{
 
 def validate_sparql_syntax(g: Graph, rules_text: str) -> int:
     """CONSTRUCT 블록별 파싱 시도."""
-    print("\n[4] SPARQL CONSTRUCT 블록 파싱 확인")
+    print("\n[8] SPARQL CONSTRUCT 블록 파싱 확인")
     failures = 0
     pattern = re.compile(
         r"#\s*RULE_ID:\s*(\w+)\s*\n(CONSTRUCT[\s\S]+?)(?=\n#\s*RULE_ID:|\Z)"
