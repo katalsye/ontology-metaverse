@@ -259,7 +259,7 @@ prod:foodType a owl:DatatypeProperty ;
 prod:placeType a owl:DatatypeProperty ;
     rdfs:label   "placeType" ;
     rdfs:comment "장소 유형. Gemma 3n 분석 또는 GPS 기반 추론. 예: 'cafe', 'restaurant', 'gym'. 형식: 문자열." ;
-    rdfs:domain  prod:GalleryPhoto ;
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
     rdfs:range   xsd:string .
 
 prod:analyzedBy a owl:DatatypeProperty ;
