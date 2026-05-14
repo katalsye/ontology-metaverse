@@ -472,8 +472,9 @@ def test_timestamp_validation() -> bool:
     # 미래 날짜 (2030년)
     valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
                              "object": "2030-01-01T00:00:00"}])
+    future_warnings = [x for x in w if "미래 시각" in x]
     r.append(check("timestamp='2030-01-01...' → 통과하지만 미래 경고",
-                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+                   len(valid) == 1 and len(future_warnings) == 1))
 
     # 현재 날짜 (경고 없어야 함)
     from datetime import datetime
@@ -573,14 +574,16 @@ def test_timezone_millisecond_edge_cases() -> bool:
     # 미래 timestamp (밀리초 포함) — 경고만
     valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
                              "object": "2030-12-31T23:59:59.999Z"}])
+    future_warnings = [x for x in w if "미래 시각" in x]
     r.append(check("미래 timestamp (밀리초+Z) → 통과 + 미래 경고",
-                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+                   len(valid) == 1 and len(future_warnings) == 1))
 
     # 미래 timestamp (밀리초 + +09:00)
     valid, w = v.validate([{"subject": loc, "predicate": "timestamp",
                              "object": "2030-01-01T00:00:00.001+09:00"}])
+    future_warnings = [x for x in w if "미래 시각" in x]
     r.append(check("미래 timestamp (밀리초++09:00) → 통과 + 미래 경고",
-                   len(valid) == 1 and any("미래 시각" in x for x in w)))
+                   len(valid) == 1 and len(future_warnings) == 1))
 
     # 0 밀리초 (명시적)
     valid, _ = v.validate([{"subject": loc, "predicate": "timestamp",
