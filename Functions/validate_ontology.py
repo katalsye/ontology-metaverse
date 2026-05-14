@@ -3,11 +3,15 @@ validate_ontology.py
 온톨로지 수정 후 반드시 실행 — 구조/무결성 검증 스크립트
 
 검사 항목:
-  1. core.ttl 파싱 성공 여부
-  2. 필수 클래스 존재 확인
-  3. 필수 속성(도메인/범위) 존재 확인
-  4. SPARQL 추론 규칙 파싱 성공 여부
-  5. 간단한 CONSTRUCT 쿼리 실행 가능 여부
+  [0] core.ttl 파싱
+  [1] 클래스 존재 확인
+  [2] 속성 존재 확인
+  [3] owl:disjointWith 선언 확인
+  [4] owl:minCardinality >= 1 확인
+  [5] 데이터 범위 제약(owl:withRestrictions) 확인
+  [6] rdfs:domain owl:unionOf 멤버 확인
+  [7] SPARQL 규칙 ID 존재 확인
+  [8] SPARQL CONSTRUCT 블록 파싱 확인
 
 Usage:
     python validate_ontology.py
@@ -129,7 +133,7 @@ def validate_ttl(g: Graph) -> int:
 
 
 def validate_rules(rules_text: str) -> int:
-    print("\n[7] SPARQL 규칙 ID 존재 확인")
+    print("\n[7] SPARQL 규칙 ID 존재 확인 (inference_rules.sparql 로드 완료)")
     failures = 0
     for rule_id in RULE_IDS:
         found = bool(re.search(rf"RULE_ID:\s*{rule_id}", rules_text))
@@ -279,13 +283,11 @@ def main() -> None:
     total_fail += validate_domain_union(g)
 
     # 추론 규칙 파일 로드
-    print("\n[RULES] inference_rules.sparql 로드")
     if not RULES_PATH.exists():
         print(f"  [FAIL] 파일 없음: {RULES_PATH}")
         sys.exit(1)
 
     rules_text = RULES_PATH.read_text(encoding="utf-8")
-    check(True, "파일 로드 성공")
 
     total_fail += validate_rules(rules_text)
     total_fail += validate_sparql_syntax(g, rules_text)
