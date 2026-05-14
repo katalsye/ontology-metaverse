@@ -1,6 +1,6 @@
 """
 test_triple_validator.py
-TripleValidator 단위 테스트 — 13개 그룹, 132개 check 호출
+TripleValidator 단위 테스트 — 14개 그룹, 163개 check 호출
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -936,6 +936,137 @@ def test_updatedAt_prop() -> bool:
     return all(r)
 
 
+# ── Test 14: 숫자 범위 검증 (count / duration / quality / deepSleepRatio /
+#             usageDuration / visitCount) ─────────────────────────────────────
+
+def test_numeric_ranges() -> bool:
+    print("\n[Test 14] 숫자 범위 검증 (NUMERIC_RANGES 전체)")
+    v = V()
+    r = []
+
+    def t(subj_local: str, pred_local: str, obj: str):
+        return {"subject": PROD + subj_local,
+                "predicate": PROD + pred_local,
+                "object": obj}
+
+    # ── count (걸음수: 0 ~ 100_000) ──
+
+    valid, _ = v.validate([t("sc", "count", "5000")])
+    r.append(check("count=5000 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sc", "count", "0")])
+    r.append(check("count=0 (경계 최솟값) → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sc", "count", "100000")])
+    r.append(check("count=100000 (경계 최댓값) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("sc", "count", "-1")])
+    r.append(check("count=-1 (음수) → 제외 + 경고",
+                   len(valid) == 0 and any("count" in x for x in w)))
+
+    valid, w = v.validate([t("sc", "count", "100001")])
+    r.append(check("count=100001 (상한 초과) → 제외 + 경고",
+                   len(valid) == 0 and any("count" in x for x in w)))
+
+    valid, w = v.validate([t("sc", "count", "abc")])
+    r.append(check("count='abc' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("count" in x for x in w)))
+
+    # ── duration (수면 시간: 0.0 ~ 24.0, 실용 검증은 0.5~18.0) ──
+    # duration은 NUMERIC_RANGES 내에 있으나 수면 특별 검증도 적용됨
+    # 0.0 은 RANGE_BOUNDS 통과(경계값)하지만 수면 특별 검증에서 제외
+    # 24.0 은 RANGE_BOUNDS 경계값이므로 통과, 수면 특별 검증(>18.0)에서 제외
+
+    valid, _ = v.validate([t("sl", "duration", "7.5")])
+    r.append(check("duration=7.5 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sl", "duration", "0.5")])
+    r.append(check("duration=0.5 (수면 최솟값 경계) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("sl", "duration", "-0.5")])
+    r.append(check("duration=-0.5 (RANGE_BOUNDS 위반) → 제외",
+                   len(valid) == 0 and any("duration" in x for x in w)))
+
+    valid, w = v.validate([t("sl", "duration", "24.1")])
+    r.append(check("duration=24.1 (상한 초과) → 제외",
+                   len(valid) == 0 and any("duration" in x for x in w)))
+
+    # ── quality (수면 질: 0 ~ 100) ──
+
+    valid, _ = v.validate([t("sl", "quality", "75")])
+    r.append(check("quality=75 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sl", "quality", "0")])
+    r.append(check("quality=0 (경계 최솟값) → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sl", "quality", "100")])
+    r.append(check("quality=100 (경계 최댓값) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("sl", "quality", "-1")])
+    r.append(check("quality=-1 → 제외 + 경고",
+                   len(valid) == 0 and any("quality" in x for x in w)))
+
+    valid, w = v.validate([t("sl", "quality", "101")])
+    r.append(check("quality=101 → 제외 + 경고",
+                   len(valid) == 0 and any("quality" in x for x in w)))
+
+    # ── deepSleepRatio (0.0 ~ 1.0) ──
+
+    valid, _ = v.validate([t("sl", "deepSleepRatio", "0.3")])
+    r.append(check("deepSleepRatio=0.3 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sl", "deepSleepRatio", "0.0")])
+    r.append(check("deepSleepRatio=0.0 (경계 최솟값) → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("sl", "deepSleepRatio", "1.0")])
+    r.append(check("deepSleepRatio=1.0 (경계 최댓값) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("sl", "deepSleepRatio", "-0.1")])
+    r.append(check("deepSleepRatio=-0.1 → 제외 + 경고",
+                   len(valid) == 0 and any("deepSleepRatio" in x for x in w)))
+
+    valid, w = v.validate([t("sl", "deepSleepRatio", "1.1")])
+    r.append(check("deepSleepRatio=1.1 → 제외 + 경고",
+                   len(valid) == 0 and any("deepSleepRatio" in x for x in w)))
+
+    # ── usageDuration (앱 사용 분: 0 ~ 1440) ──
+
+    valid, _ = v.validate([t("au", "usageDuration", "90")])
+    r.append(check("usageDuration=90 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("au", "usageDuration", "0")])
+    r.append(check("usageDuration=0 (경계 최솟값) → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("au", "usageDuration", "1440")])
+    r.append(check("usageDuration=1440 (경계 최댓값, 24시간) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("au", "usageDuration", "-1")])
+    r.append(check("usageDuration=-1 → 제외 + 경고",
+                   len(valid) == 0 and any("usageDuration" in x for x in w)))
+
+    valid, w = v.validate([t("au", "usageDuration", "1441")])
+    r.append(check("usageDuration=1441 → 제외 + 경고",
+                   len(valid) == 0 and any("usageDuration" in x for x in w)))
+
+    # ── visitCount (방문 횟수: 1 ~ 10_000) ──
+
+    valid, _ = v.validate([t("loc", "visitCount", "3")])
+    r.append(check("visitCount=3 → 통과", len(valid) == 1))
+
+    valid, _ = v.validate([t("loc", "visitCount", "1")])
+    r.append(check("visitCount=1 (경계 최솟값) → 통과", len(valid) == 1))
+
+    valid, w = v.validate([t("loc", "visitCount", "0")])
+    r.append(check("visitCount=0 (최솟값 미만) → 제외 + 경고",
+                   len(valid) == 0 and any("visitCount" in x for x in w)))
+
+    valid, w = v.validate([t("loc", "visitCount", "-1")])
+    r.append(check("visitCount=-1 → 제외 + 경고",
+                   len(valid) == 0 and any("visitCount" in x for x in w)))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -957,6 +1088,7 @@ def main() -> None:
         ("GPS 좌표 범위 검증",               test_gps_coordinates),
         ("확장 시간 속성 검증",               test_extended_datetime_props),
         ("updatedAt 시간 속성 검증",         test_updatedAt_prop),
+        ("숫자 범위 검증",                   test_numeric_ranges),
     ]
 
     passed = 0

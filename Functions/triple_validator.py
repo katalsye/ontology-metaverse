@@ -7,7 +7,9 @@ ontology_engine._add_triples_to_graph() 호출 전에 자동 실행됨.
   1. predicate 정규화 (약식 → full URI, core.ttl 기반)
   2. 스키마 검증 (core.ttl 미정의 predicate 제외)
   3. 타입 자동 변환 (range 정보 또는 값 패턴 기반)
-  4. 범위 제약 검사 (duration·quality·count·temperature·humidity)
+  4. 범위 제약 검사 (duration·quality·count·deepSleepRatio·
+                      usageDuration·visitCount·amount·temperature·
+                      humidity·latitude·longitude)
   5. 시간대 검증 (timestamp·visitTime·date·createdAt 형식 검증)
   6. User 연결 감지 (고립 노드 경고)
 """
@@ -30,13 +32,25 @@ RDF_TYPE_URI = str(RDF.type)
 
 # 범위 제약: 속성 로컬명 → (min, max, python_type)   max=None은 상한 없음
 RANGE_BOUNDS: dict[str, tuple] = {
-    "duration":    (0.0,   24.0,  float),
-    "quality":     (0,     100,   int),
-    "count":       (0,     None,  int),
-    "temperature": (-50.0, 60.0,  float),
-    "humidity":    (0.0,   100.0, float),
-    "latitude":    (-90.0, 90.0,  float),   # 위도: 남극(-90) ~ 북극(+90)
-    "longitude":   (-180.0, 180.0, float),  # 경도: -180 ~ +180
+    "duration":       (0.0,    24.0,        float),
+    "quality":        (0,      100,         int),
+    "count":          (0,      100_000,     int),    # StepCount.count 상한 10만
+    "deepSleepRatio": (0.0,    1.0,         float),  # SleepData.deepSleepRatio
+    "usageDuration":  (0,      1440,        int),    # AppUsage.usageDuration (분)
+    "visitCount":     (1,      10_000,      int),    # Location.visitCount 최솟값 1
+    "amount":         (0,      1_000_000,   int),    # Reward.amount
+    "temperature":    (-50.0,  60.0,        float),
+    "humidity":       (0.0,    100.0,       float),
+    "latitude":       (-90.0,  90.0,        float),  # 위도: 남극(-90) ~ 북극(+90)
+    "longitude":      (-180.0, 180.0,       float),  # 경도: -180 ~ +180
+}
+
+# 숫자 범위 검증 대상 속성 (min, max) — RANGE_BOUNDS에서 자동 파생
+# DATETIME_PROPS 근처에 위치시켜 범위 상수 일람 가능하도록 배치
+NUMERIC_RANGES: dict[str, tuple[float, float]] = {
+    k: (v[0], v[1])
+    for k, v in RANGE_BOUNDS.items()
+    if k not in ("temperature", "humidity", "latitude", "longitude")
 }
 
 # 시간대 검증 대상 속성 (ISO 8601 dateTime 형식 필요)
@@ -157,7 +171,7 @@ class TripleValidator:
 
     @staticmethod
     def _in_bounds(prop_local: str, value: str) -> bool:
-        """범위 제약 위반 시 False 반환."""
+        """범위 제약 위반 시 False 반환. 숫자 변환 불가 시 True (상위 로직에서 별도 처리)."""
         bounds = RANGE_BOUNDS.get(prop_local)
         if not bounds:
             return True
@@ -165,12 +179,43 @@ class TripleValidator:
         try:
             v = typ(value)
         except (ValueError, TypeError):
-            return True
+            return True  # 숫자 변환 불가 — validate()에서 NUMERIC_RANGES 로직이 처리
         if lo is not None and v < lo:
             return False
         if hi is not None and v > hi:
             return False
         return True
+
+    @staticmethod
+    def _check_numeric_range(prop_local: str, value: str) -> str | None:
+        """NUMERIC_RANGES 대상 속성의 숫자 변환 실패 또는 범위 위반 감지.
+
+        반환:
+            None  — 통과 (범위 내 또는 검사 대상 아님)
+            str   — 경고 메시지 (트리플 제외 필요)
+        """
+        if prop_local not in NUMERIC_RANGES:
+            return None
+        lo, hi = NUMERIC_RANGES[prop_local]
+        _, _, typ = RANGE_BOUNDS[prop_local]
+        try:
+            v = typ(value)
+        except (ValueError, TypeError):
+            return (
+                f"숫자 변환 실패: {prop_local}='{value}' "
+                f"(숫자 형식 필요, 허용: {lo}~{hi})"
+            )
+        if lo is not None and v < lo:
+            return (
+                f"범위 위반: {prop_local}={value} "
+                f"(허용: {lo}~{hi})"
+            )
+        if hi is not None and v > hi:
+            return (
+                f"범위 위반: {prop_local}={value} "
+                f"(허용: {lo}~{hi})"
+            )
+        return None
 
     # ── 시간대 검증 ───────────────────────────────────────────────────────────
 
@@ -325,13 +370,22 @@ class TripleValidator:
             # ② 타입 변환
             coerced_val, coerced_dt = self._coerce(pred_uri, obj_val, datatype)
 
-            # ③ 범위 검사
+            # ③ 범위 검사 (RANGE_BOUNDS 전체 — 경계 위반 감지)
             if not self._in_bounds(prop_local, coerced_val):
                 lo, hi, _ = RANGE_BOUNDS[prop_local]
                 msg = (
                     f"범위 위반: {prop_local}={coerced_val} "
                     f"(허용: {lo}~{hi}) — 트리플 제외 (subject: {subj})"
                 )
+                warnings.append(msg)
+                logger.warning("TripleValidator: %s", msg)
+                continue
+
+            # ③-a NUMERIC_RANGES 숫자 변환 실패 감지
+            #     (_in_bounds는 변환 불가 시 True 반환하므로 여기서 별도 처리)
+            numeric_warn = self._check_numeric_range(prop_local, coerced_val)
+            if numeric_warn is not None:
+                msg = f"{numeric_warn} — 트리플 제외 (subject: {subj})"
                 warnings.append(msg)
                 logger.warning("TripleValidator: %s", msg)
                 continue
