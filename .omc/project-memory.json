@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1778606195373,
-  "projectRoot": "C:\\Users\\user\\Desktop\\ontology-metaverse",
+  "lastScanned": 1778719889996,
+  "projectRoot": "c:\\Users\\user\\Desktop\\ontology-metaverse",
   "techStack": {
     "languages": [],
     "frameworks": [],
@@ -35,30 +35,31 @@
     "Docs": {
       "path": "Docs",
       "purpose": "Documentation",
-      "fileCount": 1,
-      "lastAccessed": 1778606195148,
+      "fileCount": 2,
+      "lastAccessed": 1778719889927,
       "keyFiles": [
+        "auto_work_log.md",
         "docs.gitkeep"
       ]
     },
     "Functions": {
       "path": "Functions",
       "purpose": null,
-      "fileCount": 7,
-      "lastAccessed": 1778606195151,
+      "fileCount": 8,
+      "lastAccessed": 1778719889929,
       "keyFiles": [
         "functions.gitkeep",
         "ontology_engine.py",
         "requirements.txt",
-        "test_rules.py",
-        "test_triple_validator.py"
+        "test_ontology_engine.py",
+        "test_rules.py"
       ]
     },
     "Unity": {
       "path": "Unity",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778606195153,
+      "lastAccessed": 1778719889930,
       "keyFiles": [
         "ontology-metaverse.slnx",
         "Unity.slnx"
@@ -68,7 +69,7 @@
       "path": "Unity\\Assets",
       "purpose": "Static assets",
       "fileCount": 11,
-      "lastAccessed": 1778606195159,
+      "lastAccessed": 1778719889932,
       "keyFiles": [
         "01_Scenes.meta",
         "02_Scripts.meta",
@@ -78,51 +79,87 @@
   },
   "hotPaths": [
     {
+      "path": "Functions\\test_rules.py",
+      "accessCount": 71,
+      "lastAccessed": 1778691856649,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
+      "accessCount": 35,
+      "lastAccessed": 1778691838041,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\core.ttl",
+      "accessCount": 31,
+      "lastAccessed": 1778692075017,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\triple_validator.py",
+      "accessCount": 26,
+      "lastAccessed": 1778692074063,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\test_triple_validator.py",
+      "accessCount": 24,
+      "lastAccessed": 1778692074948,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology_engine.py",
+      "accessCount": 14,
+      "lastAccessed": 1778688109857,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\validate_ontology.py",
+      "accessCount": 11,
+      "lastAccessed": 1778688191805,
+      "type": "file"
+    },
+    {
       "path": "Functions\\test_ontology_engine.py",
       "accessCount": 9,
       "lastAccessed": 1778606883636,
       "type": "file"
     },
     {
-      "path": "Functions\\ontology_engine.py",
-      "accessCount": 2,
-      "lastAccessed": 1778606574543,
+      "path": ".claude\\agents\\ontology-reviewer.md",
+      "accessCount": 7,
+      "lastAccessed": 1778687657699,
       "type": "file"
     },
     {
-      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
-      "accessCount": 2,
-      "lastAccessed": 1778606575888,
+      "path": ".claude\\commands\\run-cycle.md",
+      "accessCount": 7,
+      "lastAccessed": 1778719969202,
       "type": "file"
     },
     {
-      "path": "Functions\\ontology\\core.ttl",
-      "accessCount": 2,
-      "lastAccessed": 1778606577235,
+      "path": ".claude\\agents\\ontology-architect.md",
+      "accessCount": 4,
+      "lastAccessed": 1778687480899,
       "type": "file"
     },
     {
-      "path": "Functions\\test_rules.py",
-      "accessCount": 2,
-      "lastAccessed": 1778606577566,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\validate_ontology.py",
-      "accessCount": 1,
-      "lastAccessed": 1778606443813,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\triple_validator.py",
-      "accessCount": 1,
-      "lastAccessed": 1778606457052,
+      "path": ".claude\\agents\\ontology-developer.md",
+      "accessCount": 4,
+      "lastAccessed": 1778687657191,
       "type": "file"
     },
     {
       "path": "Functions\\requirements.txt",
       "accessCount": 1,
       "lastAccessed": 1778606756231,
+      "type": "file"
+    },
+    {
+      "path": "Docs\\auto_work_log.md",
+      "accessCount": 1,
+      "lastAccessed": 1778667999562,
       "type": "file"
     }
   ],

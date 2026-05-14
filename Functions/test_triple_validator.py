@@ -716,6 +716,160 @@ def test_gps_coordinates() -> bool:
     return all(r)
 
 
+# ── Test 12: 확장 시간 속성 검증 (playedAt, recordedAt, startTime, endTime) ──
+
+def test_extended_datetime_props() -> bool:
+    print("\n[Test 12] 확장 시간 속성 검증 (playedAt / recordedAt / startTime / endTime)")
+    v = V()
+    r = []
+
+    music   = PROD + "music_ext"
+    weather = PROD + "weather_ext"
+    cal     = PROD + "cal_ext"
+
+    # ── playedAt (MusicListening 재생 시각) ──
+
+    # 정례: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "2026-05-14T09:00:00"}])
+    r.append(check("playedAt='2026-05-14T09:00:00' → 통과", len(valid) == 1))
+
+    # 정례: Z 타임존
+    valid, _ = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "2026-05-14T09:00:00Z"}])
+    r.append(check("playedAt='2026-05-14T09:00:00Z' → 통과", len(valid) == 1))
+
+    # 정례: +09:00 타임존
+    valid, _ = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "2026-05-14T09:00:00+09:00"}])
+    r.append(check("playedAt='2026-05-14T09:00:00+09:00' → 통과", len(valid) == 1))
+
+    # 정례: 밀리초 포함
+    valid, _ = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "2026-05-14T09:00:00.123Z"}])
+    r.append(check("playedAt 밀리초+Z → 통과", len(valid) == 1))
+
+    # 반례: 날짜만 (YYYY-MM-DD)
+    valid, w = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "2026-05-14"}])
+    r.append(check("playedAt='2026-05-14' (날짜만) → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 텍스트
+    valid, w = v.validate([{"subject": music, "predicate": "playedAt",
+                             "object": "morning"}])
+    r.append(check("playedAt='morning' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # ── recordedAt (Weather 기록 시각) ──
+
+    # 정례: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": weather, "predicate": "recordedAt",
+                             "object": "2026-05-14T06:00:00"}])
+    r.append(check("recordedAt='2026-05-14T06:00:00' → 통과", len(valid) == 1))
+
+    # 정례: Z 타임존
+    valid, _ = v.validate([{"subject": weather, "predicate": "recordedAt",
+                             "object": "2026-05-14T06:00:00Z"}])
+    r.append(check("recordedAt='2026-05-14T06:00:00Z' → 통과", len(valid) == 1))
+
+    # 정례: +09:00 타임존
+    valid, _ = v.validate([{"subject": weather, "predicate": "recordedAt",
+                             "object": "2026-05-14T06:00:00+09:00"}])
+    r.append(check("recordedAt='2026-05-14T06:00:00+09:00' → 통과", len(valid) == 1))
+
+    # 반례: Unix timestamp (숫자)
+    valid, w = v.validate([{"subject": weather, "predicate": "recordedAt",
+                             "object": "1747123456"}])
+    r.append(check("recordedAt='1747123456' (Unix) → 제외",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 빈 문자열
+    valid, w = v.validate([{"subject": weather, "predicate": "recordedAt",
+                             "object": ""}])
+    r.append(check("recordedAt='' → 제외",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # ── startTime (CalendarEvent 시작 시각) ──
+
+    # 정례: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": cal, "predicate": "startTime",
+                             "object": "2026-05-14T10:00:00"}])
+    r.append(check("startTime='2026-05-14T10:00:00' → 통과", len(valid) == 1))
+
+    # 정례: Z 타임존
+    valid, _ = v.validate([{"subject": cal, "predicate": "startTime",
+                             "object": "2026-05-14T10:00:00Z"}])
+    r.append(check("startTime='2026-05-14T10:00:00Z' → 통과", len(valid) == 1))
+
+    # 정례: 밀리초 + 타임존
+    valid, _ = v.validate([{"subject": cal, "predicate": "startTime",
+                             "object": "2026-05-14T10:00:00.500+09:00"}])
+    r.append(check("startTime 밀리초++09:00 → 통과", len(valid) == 1))
+
+    # 반례: HH:MM 형식 (날짜 없음)
+    valid, w = v.validate([{"subject": cal, "predicate": "startTime",
+                             "object": "10:00"}])
+    r.append(check("startTime='10:00' (시간만) → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 텍스트 날짜 표현
+    valid, w = v.validate([{"subject": cal, "predicate": "startTime",
+                             "object": "May 14 2026"}])
+    r.append(check("startTime='May 14 2026' → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # ── endTime (CalendarEvent 종료 시각) ──
+
+    # 정례: ISO 8601 기본 형식
+    valid, _ = v.validate([{"subject": cal, "predicate": "endTime",
+                             "object": "2026-05-14T11:00:00"}])
+    r.append(check("endTime='2026-05-14T11:00:00' → 통과", len(valid) == 1))
+
+    # 정례: Z 타임존
+    valid, _ = v.validate([{"subject": cal, "predicate": "endTime",
+                             "object": "2026-05-14T11:00:00Z"}])
+    r.append(check("endTime='2026-05-14T11:00:00Z' → 통과", len(valid) == 1))
+
+    # 정례: -05:00 타임존
+    valid, _ = v.validate([{"subject": cal, "predicate": "endTime",
+                             "object": "2026-05-14T11:00:00-05:00"}])
+    r.append(check("endTime='2026-05-14T11:00:00-05:00' → 통과", len(valid) == 1))
+
+    # 반례: YYYY/MM/DD 슬래시 형식
+    valid, w = v.validate([{"subject": cal, "predicate": "endTime",
+                             "object": "2026/05/14T11:00:00"}])
+    r.append(check("endTime='2026/05/14T11:00:00' (슬래시) → 제외 + 경고",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # 반례: 빈 문자열
+    valid, w = v.validate([{"subject": cal, "predicate": "endTime",
+                             "object": ""}])
+    r.append(check("endTime='' → 제외",
+                   len(valid) == 0 and any("시간 형식" in x for x in w)))
+
+    # ── 복합: startTime + endTime 동시 검증 ──
+
+    # 정례: 시작/종료 모두 유효
+    triples = [
+        {"subject": cal, "predicate": "startTime", "object": "2026-05-14T10:00:00+09:00"},
+        {"subject": cal, "predicate": "endTime",   "object": "2026-05-14T11:00:00+09:00"},
+    ]
+    valid, w = v.validate(triples)
+    r.append(check("startTime + endTime 둘 다 유효 → 2개 통과", len(valid) == 2))
+
+    # 반례: startTime 유효 + endTime 무효
+    triples = [
+        {"subject": cal, "predicate": "startTime", "object": "2026-05-14T10:00:00"},
+        {"subject": cal, "predicate": "endTime",   "object": "invalid-time"},
+    ]
+    valid, w = v.validate(triples)
+    r.append(check("startTime 유효 + endTime 무효 → 1개만 통과",
+                   len(valid) == 1 and any("시간 형식" in x and "endTime" in x for x in w)))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -735,6 +889,7 @@ def main() -> None:
         ("수면 시간 특별 검증",               test_sleep_duration_special),
         ("타임존 혼합 및 밀리초 엣지케이스",  test_timezone_millisecond_edge_cases),
         ("GPS 좌표 범위 검증",               test_gps_coordinates),
+        ("확장 시간 속성 검증",               test_extended_datetime_props),
     ]
 
     passed = 0

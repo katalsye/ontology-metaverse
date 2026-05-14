@@ -1,3 +1,24 @@
+## 시작 전 미완료 이슈 확인 (최우선)
+사이클 시작 시 반드시 아래 순서로 확인:
+
+1. 미완료 이슈 확인
+gh issue list --repo katalsye/ontology-metaverse \
+  --label ontology --state open
+
+2. open 상태 이슈가 있으면
+   → 새 Task 도출하지 말고 기존 미완료 이슈부터 처리
+   → 가장 오래된 이슈(번호가 낮은 것)부터 처리
+
+3. open 상태 이슈가 없으면
+   → 아키텍트가 새 Task 도출
+
+4. 현재 작업 중이던 파일 확인
+git status
+git diff --stat
+   → 수정된 파일이 있으면 해당 작업 먼저 완료 후 커밋
+
+---
+
 아래 순서대로 서브에이전트를 호출해서 한 사이클을 완주해줘. 중간에 멈추지 마.
 
 ## 중복 작업 방지
@@ -5,7 +26,6 @@
 gh issue list --repo katalsye/ontology-metaverse --state closed --label ontology
 
 이미 완료된 이슈와 동일한 작업은 절대 다시 하지 말 것.
-완료된 작업이 10개 이상이면 스스로 중단하고 요약만 출력할 것.
 
 1. ontology-architect 에이전트를 써서
    현재 Functions/ontology/ 상태를 분석하고
@@ -33,6 +53,12 @@ gh issue list --repo katalsye/ontology-metaverse --state closed --label ontology
 - 다음 사이클 예정 작업
 - 트리플 수 변화 (이전 → 현재)
 
+## 커밋 메시지 형식
+- 스키마 변경: "ontology: [자동] core.ttl {내용} (closes #{번호})"
+- 규칙 추가: "ontology: [자동] Rule {번호} {규칙명} 추가 (closes #{번호})"
+- 버그 수정: "fix: [자동] {내용} 수정 (closes #{번호})"
+- 테스트 추가: "test: [자동] {내용} (closes #{번호})"
+
 ## 작업 로그 기록
 각 사이클 완료 후 아래 명령어로 로그를 기록해줘:
 
@@ -42,7 +68,6 @@ echo "- 트리플: {이전} → {현재}" >> Docs/auto_work_log.md
 echo "- 문제점: {리뷰어 발견 문제점 수}개" >> Docs/auto_work_log.md
 echo "---" >> Docs/auto_work_log.md
 
-## 사이클 간 대기
-각 사이클 완료 후 다음 내용을 출력하고 멈출 것:
-"사이클 N 완료. 계속 진행하려면 다시 실행하세요."
-→ 완전 자동 반복 대신 사람이 확인 후 다음 사이클을 승인하는 구조
+## 사이클 연속 실행
+요약 출력 후 즉시 다음 사이클을 시작할 것.
+멈추지 말고 위의 전체 흐름(미완료 이슈 확인 → 아키텍트 → 개발자 → 리뷰어 → 아키텍트 비평 → 커밋 → 로그)을 반복한다.

@@ -40,7 +40,15 @@ RANGE_BOUNDS: dict[str, tuple] = {
 }
 
 # 시간대 검증 대상 속성 (ISO 8601 dateTime 형식 필요)
-DATETIME_PROPS: frozenset[str] = frozenset({"timestamp", "visitTime", "createdAt"})
+DATETIME_PROPS: frozenset[str] = frozenset({
+    "timestamp",    # 공통 시각
+    "visitTime",    # Location 방문 시각
+    "createdAt",    # Quest 생성 시각
+    "playedAt",     # MusicListening 재생 시각
+    "recordedAt",   # Weather 기록 시각
+    "startTime",    # CalendarEvent 시작 시각
+    "endTime",      # CalendarEvent 종료 시각
+})
 
 # 날짜 검증 대상 속성 (YYYY-MM-DD 형식 필요)
 DATE_PROPS: frozenset[str] = frozenset({"date"})
