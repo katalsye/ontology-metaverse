@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from triple_validator import TripleValidator
+from triple_validator import TripleValidator, validate_required_properties
 
 PROD  = "http://7team.dev/ontology#"
 XSD   = "http://www.w3.org/2001/XMLSchema#"
@@ -1172,6 +1172,147 @@ def test_numeric_ranges() -> bool:
     return all(r)
 
 
+# ── Test 15: validate_required_properties (필수 속성 누락 감지) ──────────────
+
+def test_validate_required_properties() -> bool:
+    print("\n[Test 15] validate_required_properties (필수 속성 누락 감지)")
+    from rdflib import Graph, RDF, URIRef, Literal
+    from rdflib.namespace import XSD
+
+    PROD_NS = "http://7team.dev/ontology#"
+    r = []
+
+    def make_uri(local: str) -> URIRef:
+        return URIRef(PROD_NS + local)
+
+    # ── 정례: User uid 있음 → WARNING 없음 ──
+    g = Graph()
+    user = make_uri("user_ok")
+    g.add((user, RDF.type, make_uri("User")))
+    g.add((user, make_uri("uid"), Literal("u001")))
+    warnings = validate_required_properties(g)
+    uid_warnings = [w for w in warnings if "uid" in w and "user_ok" in w]
+    r.append(check("User uid 있음 → uid WARNING 없음",
+                   len(uid_warnings) == 0, f"warnings: {warnings}"))
+
+    # ── 반례: User uid 없음 → WARNING 포함 ──
+    g2 = Graph()
+    user2 = make_uri("user_no_uid")
+    g2.add((user2, RDF.type, make_uri("User")))
+    g2.add((user2, make_uri("name"), Literal("홍길동")))
+    warnings2 = validate_required_properties(g2)
+    r.append(check("User uid 없음 → [WARNING] User ... uid 누락 포함",
+                   any("uid 누락" in w and "user_no_uid" in w for w in warnings2),
+                   f"warnings: {warnings2}"))
+    r.append(check("WARNING 메시지 형식 '[WARNING] User ...: uid 누락'",
+                   any(w.startswith("[WARNING] User") and "uid 누락" in w
+                       for w in warnings2)))
+
+    # ── 반례: Quest title 없음 → WARNING 포함 ──
+    g3 = Graph()
+    quest = make_uri("quest_no_title")
+    g3.add((quest, RDF.type, make_uri("Quest")))
+    g3.add((quest, make_uri("isCompleted"), Literal("false", datatype=XSD.boolean)))
+    warnings3 = validate_required_properties(g3)
+    r.append(check("Quest title 없음 → title WARNING 포함",
+                   any("title 누락" in w and "quest_no_title" in w for w in warnings3),
+                   f"warnings: {warnings3}"))
+
+    # ── 정례: Quest title 있음 → WARNING 없음 ──
+    g4 = Graph()
+    quest2 = make_uri("quest_ok")
+    g4.add((quest2, RDF.type, make_uri("Quest")))
+    g4.add((quest2, make_uri("title"), Literal("산책하기")))
+    warnings4 = validate_required_properties(g4)
+    title_warns = [w for w in warnings4 if "title" in w and "quest_ok" in w]
+    r.append(check("Quest title 있음 → title WARNING 없음",
+                   len(title_warns) == 0, f"warnings: {warnings4}"))
+
+    # ── 반례: SleepData duration 없음 → WARNING 포함 ──
+    g5 = Graph()
+    sleep = make_uri("sleep_no_dur")
+    g5.add((sleep, RDF.type, make_uri("SleepData")))
+    g5.add((sleep, make_uri("quality"), Literal(75, datatype=XSD.integer)))
+    warnings5 = validate_required_properties(g5)
+    r.append(check("SleepData duration 없음 → duration WARNING 포함",
+                   any("duration 누락" in w and "sleep_no_dur" in w for w in warnings5),
+                   f"warnings: {warnings5}"))
+
+    # ── 정례: SleepData duration 있음 → WARNING 없음 ──
+    g6 = Graph()
+    sleep2 = make_uri("sleep_ok")
+    g6.add((sleep2, RDF.type, make_uri("SleepData")))
+    g6.add((sleep2, make_uri("duration"), Literal(7.5, datatype=XSD.float)))
+    warnings6 = validate_required_properties(g6)
+    dur_warns = [w for w in warnings6 if "duration" in w and "sleep_ok" in w]
+    r.append(check("SleepData duration 있음 → duration WARNING 없음",
+                   len(dur_warns) == 0, f"warnings: {warnings6}"))
+
+    # ── 반례: AppUsage appName+usageDuration 모두 없음 → WARNING 2개 ──
+    g7 = Graph()
+    app = make_uri("app_no_props")
+    g7.add((app, RDF.type, make_uri("AppUsage")))
+    warnings7 = validate_required_properties(g7)
+    app_warns = [w for w in warnings7 if "app_no_props" in w]
+    r.append(check("AppUsage appName+usageDuration 모두 없음 → WARNING 2개",
+                   len(app_warns) == 2, f"경고 수: {len(app_warns)}, warnings: {app_warns}"))
+    r.append(check("appName 누락 경고 포함",
+                   any("appName 누락" in w for w in app_warns)))
+    r.append(check("usageDuration 누락 경고 포함",
+                   any("usageDuration 누락" in w for w in app_warns)))
+
+    # ── 정례: AppUsage 필수 속성 모두 있음 → WARNING 없음 ──
+    g8 = Graph()
+    app2 = make_uri("app_ok")
+    g8.add((app2, RDF.type, make_uri("AppUsage")))
+    g8.add((app2, make_uri("appName"), Literal("YouTube")))
+    g8.add((app2, make_uri("usageDuration"), Literal(90, datatype=XSD.integer)))
+    warnings8 = validate_required_properties(g8)
+    app2_warns = [w for w in warnings8 if "app_ok" in w]
+    r.append(check("AppUsage 필수 속성 모두 있음 → WARNING 없음",
+                   len(app2_warns) == 0, f"warnings: {app2_warns}"))
+
+    # ── 정례: 빈 그래프 → WARNING 없음 ──
+    g9 = Graph()
+    warnings9 = validate_required_properties(g9)
+    r.append(check("빈 그래프 → WARNING 없음",
+                   len(warnings9) == 0, f"warnings: {warnings9}"))
+
+    # ── 정례: 모든 필수 속성 있는 복합 그래프 → WARNING 없음 ──
+    g10 = Graph()
+    u = make_uri("user_full")
+    sl = make_uri("sleep_full")
+    sc = make_uri("sc_full")
+    au = make_uri("app_full")
+    q = make_uri("quest_full")
+    g10.add((u,  RDF.type, make_uri("User")))
+    g10.add((u,  make_uri("uid"), Literal("full_user")))
+    g10.add((sl, RDF.type, make_uri("SleepData")))
+    g10.add((sl, make_uri("duration"), Literal(8.0, datatype=XSD.float)))
+    g10.add((sc, RDF.type, make_uri("StepCount")))
+    g10.add((sc, make_uri("count"), Literal(8000, datatype=XSD.integer)))
+    g10.add((au, RDF.type, make_uri("AppUsage")))
+    g10.add((au, make_uri("appName"), Literal("Spotify")))
+    g10.add((au, make_uri("usageDuration"), Literal(60, datatype=XSD.integer)))
+    g10.add((q,  RDF.type, make_uri("Quest")))
+    g10.add((q,  make_uri("title"), Literal("스트레칭 10분")))
+    warnings10 = validate_required_properties(g10)
+    r.append(check("복합 그래프 필수 속성 모두 있음 → WARNING 없음",
+                   len(warnings10) == 0, f"warnings: {warnings10}"))
+
+    # ── 반례: StepCount count 없음 → WARNING 포함 ──
+    g11 = Graph()
+    sc2 = make_uri("sc_no_count")
+    g11.add((sc2, RDF.type, make_uri("StepCount")))
+    g11.add((sc2, make_uri("date"), Literal("2026-05-14")))
+    warnings11 = validate_required_properties(g11)
+    r.append(check("StepCount count 없음 → count WARNING 포함",
+                   any("count 누락" in w and "sc_no_count" in w for w in warnings11),
+                   f"warnings: {warnings11}"))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1194,6 +1335,7 @@ def main() -> None:
         ("확장 시간 속성 검증",               test_extended_datetime_props),
         ("updatedAt 시간 속성 검증",         test_updatedAt_prop),
         ("숫자 범위 검증",                   test_numeric_ranges),
+        ("필수 속성 누락 감지",               test_validate_required_properties),
     ]
 
     passed = 0

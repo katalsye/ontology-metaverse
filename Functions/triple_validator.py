@@ -448,6 +448,51 @@ class TripleValidator:
         return valid, warnings
 
 
+# ── 필수 속성 매핑 (core.ttl owl:minCardinality >= 1 기준) ────────────────────
+# WARNING 생성용 — 데이터 보완형 퀘스트 생성 신호로 사용됨
+
+REQUIRED_PROPERTY_MAP: dict[str, list[str]] = {
+    "User":      ["uid"],
+    "Quest":     ["title"],
+    "SleepData": ["duration"],
+    "StepCount": ["count"],
+    "AppUsage":  ["appName", "usageDuration"],
+}
+
+
+def validate_required_properties(graph) -> list[str]:
+    """
+    그래프 내 각 클래스 인스턴스가 필수 속성을 가지고 있는지 검증.
+    누락 시 WARNING 문자열 반환 (ERROR 아님 — 데이터 보완형 퀘스트 생성 유도).
+
+    Args:
+        graph: rdflib.Graph 인스턴스 (온톨로지 그래프)
+
+    Returns:
+        list[str]: 누락 속성에 대한 경고 메시지 목록.
+                   모든 필수 속성이 존재하면 빈 리스트 반환.
+    """
+    from rdflib import Graph as _Graph, RDF as _RDF, URIRef as _URIRef
+
+    warnings: list[str] = []
+
+    for class_name, required_props in REQUIRED_PROPERTY_MAP.items():
+        class_uri = _URIRef(str(PROD) + class_name)
+        # 해당 클래스의 모든 인스턴스 순회
+        for instance in graph.subjects(_RDF.type, class_uri):
+            instance_uri = str(instance)
+            for prop in required_props:
+                prop_uri = _URIRef(str(PROD) + prop)
+                # 인스턴스가 해당 속성을 하나라도 가지고 있는지 확인
+                has_prop = any(True for _ in graph.objects(instance, prop_uri))
+                if not has_prop:
+                    msg = f"[WARNING] {class_name} {instance_uri}: {prop} 누락"
+                    warnings.append(msg)
+                    logger.warning("validate_required_properties: %s", msg)
+
+    return warnings
+
+
 # ── 모듈 수준 헬퍼 ────────────────────────────────────────────────────────────
 
 def _coerce_bool(val_str: str) -> tuple[str, str]:
