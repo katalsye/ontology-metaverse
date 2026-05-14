@@ -636,7 +636,7 @@ prod:SleepData rdfs:subClassOf [
     ]
 ] .
 
-# StepCount.count: 0 이상 (비음수)
+# StepCount.count: 0 ~ 100000 (비음수, 하루 최대 10만 보)
 prod:StepCount rdfs:subClassOf [
     a owl:Restriction ;
     owl:onProperty prod:count ;
@@ -644,7 +644,8 @@ prod:StepCount rdfs:subClassOf [
         a rdfs:Datatype ;
         owl:onDatatype xsd:integer ;
         owl:withRestrictions (
-            [ xsd:minInclusive "0"^^xsd:integer ]
+            [ xsd:minInclusive "0"^^xsd:integer      ]
+            [ xsd:maxInclusive "100000"^^xsd:integer ]
         )
     ]
 ] .
@@ -673,6 +674,48 @@ prod:Weather rdfs:subClassOf [
         owl:withRestrictions (
             [ xsd:minInclusive "0.0"^^xsd:float   ]
             [ xsd:maxInclusive "100.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# Location.visitCount: 1 ~ 10000 (방문 횟수)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:visitCount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer     ]
+            [ xsd:maxInclusive "10000"^^xsd:integer ]
+        )
+    ]
+] .
+
+# AppUsage.usageDuration: 0 ~ 1440 (분, 하루 최대 24시간)
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:usageDuration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer    ]
+            [ xsd:maxInclusive "1440"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Reward.amount: 0 ~ 1000000 (보상 재화 수량)
+prod:Reward rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:amount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer       ]
+            [ xsd:maxInclusive "1000000"^^xsd:integer ]
         )
     ]
 ] .
