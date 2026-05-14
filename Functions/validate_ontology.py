@@ -85,6 +85,12 @@ RANGE_CONSTRAINTS = [
     ("Location",     "longitude"),
 ]
 
+DOMAIN_UNION_CONSTRAINTS = [
+    ("latitude",  ["GalleryPhoto", "Location"]),
+    ("longitude", ["GalleryPhoto", "Location"]),
+    ("placeType", ["GalleryPhoto", "Location"]),
+]
+
 RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
@@ -182,6 +188,51 @@ ASK {{
     return failures
 
 
+def validate_domain_union(g: Graph) -> int:
+    """[8] rdfs:domain owl:unionOf 멤버 검증."""
+    print("\n[8] rdfs:domain owl:unionOf 멤버 확인")
+    failures = 0
+
+    for prop, expected_classes in DOMAIN_UNION_CONSTRAINTS:
+        # 1. rdfs:domain 선언 존재 여부
+        has_domain = _ask(g, f"""
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+ASK {{ prod:{prop} rdfs:domain ?domain . }}""")
+        if not check(has_domain, f"{prop} — rdfs:domain 선언 존재"):
+            failures += 1
+            continue
+
+        # 2. domain이 owl:unionOf를 사용하는지 확인
+        has_union = _ask(g, f"""
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+ASK {{
+  prod:{prop} rdfs:domain ?domain .
+  ?domain owl:unionOf ?list .
+}}""")
+        if not check(has_union, f"{prop} — domain이 owl:unionOf 사용"):
+            failures += 1
+            continue
+
+        # 3. 각 예상 클래스가 unionOf 멤버에 포함되는지 확인
+        for cls in expected_classes:
+            member_ok = _ask(g, f"""
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+ASK {{
+  prod:{prop} rdfs:domain ?domain .
+  ?domain owl:unionOf/rdf:rest*/rdf:first prod:{cls} .
+}}""")
+            if not check(member_ok, f"{prop} — unionOf 멤버에 prod:{cls} 포함"):
+                failures += 1
+
+    return failures
+
+
 def validate_sparql_syntax(g: Graph, rules_text: str) -> int:
     """CONSTRUCT 블록별 파싱 시도."""
     print("\n[4] SPARQL CONSTRUCT 블록 파싱 확인")
@@ -225,6 +276,7 @@ def main() -> None:
 
     total_fail += validate_ttl(g)
     total_fail += validate_owl_constraints(g)
+    total_fail += validate_domain_union(g)
 
     # 추론 규칙 파일 로드
     print("\n[RULES] inference_rules.sparql 로드")
