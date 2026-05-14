@@ -901,7 +901,9 @@ WHERE {
         WHERE {
             ?user prod:hasCalendarEvent ?evt .
             ?evt  prod:startTime        ?st .
-            BIND (STRBEFORE(STR(?st), "T") AS ?evtDate)
+            BIND (STRBEFORE(STR(?st), "T") AS ?evtDateRaw)
+            FILTER (STRLEN(?evtDateRaw) = 10)
+            BIND (?evtDateRaw AS ?evtDate)
         }
         GROUP BY ?user ?evtDate
     }

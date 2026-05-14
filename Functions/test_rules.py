@@ -1833,6 +1833,21 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
     results.append(check("서로 다른 날에 CalendarEvent 1개씩 5일 → ScheduleOverload 미생성 (반례)",
                          (user, PROD.hasState, PROD.ScheduleOverload) not in g))
 
+    # 반례 C: xsd:date 타입(T 없음) CalendarEvent 5개 → ScheduleOverload 미생성
+    # STRBEFORE가 빈 문자열을 반환하고 FILTER(STRLEN=10)에 의해 제외됨
+    g = load_base_graph()
+    user = _add_user(g, "r29e")
+    for i in range(5):
+        evt = PROD[f"evt_r29e_{i}"]
+        g.add((evt, RDF.type, PROD.CalendarEvent))
+        g.add((evt, PROD.startTime,
+               Literal(f"2026-05-{14+i:02d}", datatype=XSD.date)))
+        g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["schedule_overload"])
+    results.append(check(
+        "xsd:date 타입(T 없음) CalendarEvent 5개 → ScheduleOverload 미생성 (엣지케이스)",
+        (user, PROD.hasState, PROD.ScheduleOverload) not in g))
+
     return all(results)
 
 
