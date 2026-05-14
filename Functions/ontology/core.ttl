@@ -720,6 +720,48 @@ prod:Reward rdfs:subClassOf [
     ]
 ] .
 
+# SleepData.deepSleepRatio: 0.0 ~ 1.0 (깊은 수면 비율)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:deepSleepRatio ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# GalleryPhoto.latitude: -90.0 ~ 90.0 (위도)
+prod:GalleryPhoto rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:latitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-90.0"^^xsd:float ]
+            [ xsd:maxInclusive "90.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# GalleryPhoto.longitude: -180.0 ~ 180.0 (경도)
+prod:GalleryPhoto rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:longitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-180.0"^^xsd:float ]
+            [ xsd:maxInclusive "180.0"^^xsd:float  ]
+        )
+    ]
+] .
+
 # ── 필수 속성 선언 (owl:minCardinality 1) ────────────────────────────────────
 
 # User는 반드시 uid를 가져야 함
