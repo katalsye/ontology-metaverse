@@ -241,12 +241,14 @@ prod:usageDuration a owl:DatatypeProperty ;
 prod:latitude a owl:DatatypeProperty ;
     rdfs:label   "latitude" ;
     rdfs:comment "사진 촬영 위도. EXIF GPS 정보. 단위: 도(float). 범위 -90.0~90.0." ;
-    rdfs:range  xsd:float .
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
+    rdfs:range   xsd:float .
 
 prod:longitude a owl:DatatypeProperty ;
     rdfs:label   "longitude" ;
     rdfs:comment "사진 촬영 경도. EXIF GPS 정보. 단위: 도(float). 범위 -180.0~180.0." ;
-    rdfs:range  xsd:float .
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
+    rdfs:range   xsd:float .
 
 prod:foodType a owl:DatatypeProperty ;
     rdfs:label   "foodType" ;
@@ -257,7 +259,8 @@ prod:foodType a owl:DatatypeProperty ;
 prod:placeType a owl:DatatypeProperty ;
     rdfs:label   "placeType" ;
     rdfs:comment "장소 유형. Gemma 3n 분석 또는 GPS 기반 추론. 예: 'cafe', 'restaurant', 'gym'. 형식: 문자열." ;
-    rdfs:range  xsd:string .
+    rdfs:domain  prod:GalleryPhoto ;
+    rdfs:range   xsd:string .
 
 prod:analyzedBy a owl:DatatypeProperty ;
     rdfs:label   "analyzedBy" ;
