@@ -29,6 +29,7 @@ import duckdb
 import firebase_admin
 from firebase_admin import firestore, messaging, storage
 from rdflib import Graph, Namespace, URIRef, Literal
+from triple_validator import validate_required_properties
 
 logger = logging.getLogger(__name__)
 
@@ -602,6 +603,11 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
     rules = _parse_rules(rules_sparql)
     new_triples = _apply_rules(g, rules)
 
+    # 5-a. 필수 속성 누락 경고 감지
+    prop_warnings = validate_required_properties(g)
+    for w in prop_warnings:
+        logger.warning(w)
+
     # 6. Firestore에 결과 저장
     new_quest_titles = _save_results_to_firestore(db, uid, g, new_triples)
 
@@ -616,6 +622,7 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
         "status": "ok",
         "triples": len(g),
         "new_quests": new_quest_titles,
+        "missing_property_warnings": prop_warnings,
     }
 
 
