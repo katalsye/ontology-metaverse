@@ -1,6 +1,6 @@
 """
 test_triple_validator.py
-TripleValidator 단위 테스트 — 14개 그룹, 172개 check 호출
+TripleValidator 단위 테스트 — 14개 그룹, 176개 check 호출
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -715,6 +715,35 @@ def test_gps_coordinates() -> bool:
     valid, w = v.validate(triples)
     r.append(check("lat+lon 둘 다 비정상 → 0개 통과, 경고 2개",
                    len(valid) == 0 and len([x for x in w if "범위 위반" in x]) == 2))
+
+    # ── 문자열 반례 (숫자 변환 불가 → 제외 + 경고) ──
+
+    # weather 노드 (온도 문자열 반례)
+    weather_node = PROD + "weather_str"
+
+    # temperature 문자열 반례
+    valid, w = v.validate([{"subject": weather_node, "predicate": "temperature",
+                             "object": "hot"}])
+    r.append(check("temperature='hot' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("temperature" in x for x in w)))
+
+    # latitude 문자열 반례
+    valid, w = v.validate([{"subject": photo, "predicate": "latitude",
+                             "object": "north"}])
+    r.append(check("latitude='north' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("latitude" in x for x in w)))
+
+    # longitude 문자열 반례
+    valid, w = v.validate([{"subject": photo, "predicate": "longitude",
+                             "object": "east"}])
+    r.append(check("longitude='east' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("longitude" in x for x in w)))
+
+    # humidity 문자열 반례
+    valid, w = v.validate([{"subject": weather_node, "predicate": "humidity",
+                             "object": "wet"}])
+    r.append(check("humidity='wet' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("humidity" in x for x in w)))
 
     return all(r)
 

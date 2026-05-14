@@ -47,10 +47,10 @@ RANGE_BOUNDS: dict[str, tuple] = {
 
 # 숫자 범위 검증 대상 속성 (min, max) — RANGE_BOUNDS에서 자동 파생
 # DATETIME_PROPS 근처에 위치시켜 범위 상수 일람 가능하도록 배치
+# temperature / humidity / latitude / longitude 포함: 문자열 입력 시 경고 발생
 NUMERIC_RANGES: dict[str, tuple[float, float]] = {
     k: (v[0], v[1])
     for k, v in RANGE_BOUNDS.items()
-    if k not in ("temperature", "humidity", "latitude", "longitude")
 }
 
 # 시간대 검증 대상 속성 (ISO 8601 dateTime 형식 필요)
