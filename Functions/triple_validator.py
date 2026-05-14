@@ -484,7 +484,7 @@ def validate_required_properties(graph) -> list[str]:
             for prop in required_props:
                 prop_uri = _URIRef(str(PROD) + prop)
                 # 인스턴스가 해당 속성을 하나라도 가지고 있는지 확인
-                has_prop = any(True for _ in graph.objects(instance, prop_uri))
+                has_prop = any(graph.objects(instance, prop_uri))
                 if not has_prop:
                     msg = f"[WARNING] {class_name} {instance_uri}: {prop} 누락"
                     warnings.append(msg)

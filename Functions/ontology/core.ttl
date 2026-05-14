@@ -819,3 +819,23 @@ prod:SleepData rdfs:subClassOf [
     owl:onProperty prod:duration ;
     owl:minCardinality "1"^^xsd:nonNegativeInteger
 ] .
+
+# StepCount는 반드시 count를 가져야 함
+prod:StepCount rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:count ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# AppUsage는 반드시 appName과 usageDuration을 가져야 함
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:appName ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:usageDuration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
