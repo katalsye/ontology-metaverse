@@ -1070,7 +1070,8 @@ def test_numeric_ranges() -> bool:
     r.append(check("visitCount=10000 (경계 최댓값) → 통과", len(valid) == 1))
 
     valid, w = v.validate([{"subject": loc, "predicate": "visitCount", "object": "10001"}])
-    r.append(check("visitCount=10001 (초과) → 제외 + 경고", len(valid) == 0 and len(w) > 0))
+    r.append(check("visitCount=10001 (초과) → 제외 + 경고",
+                   len(valid) == 0 and any("visitCount" in x for x in w)))
 
     # ── amount (보상 금액: 0 ~ 1_000_000) ──
     reward = PROD + "reward_rng"
@@ -1085,18 +1086,21 @@ def test_numeric_ranges() -> bool:
     r.append(check("amount=1000000 (경계 최댓값) → 통과", len(valid) == 1))
 
     valid, w = v.validate([{"subject": reward, "predicate": "amount", "object": "-1"}])
-    r.append(check("amount=-1 → 제외 + 경고", len(valid) == 0 and len(w) > 0))
+    r.append(check("amount=-1 → 제외 + 경고",
+                   len(valid) == 0 and any("amount" in x for x in w)))
 
     valid, w = v.validate([{"subject": reward, "predicate": "amount", "object": "1000001"}])
-    r.append(check("amount=1000001 (초과) → 제외 + 경고", len(valid) == 0 and len(w) > 0))
+    r.append(check("amount=1000001 (초과) → 제외 + 경고",
+                   len(valid) == 0 and any("amount" in x for x in w)))
 
     valid, w = v.validate([{"subject": reward, "predicate": "amount", "object": "abc"}])
-    r.append(check("amount='abc' → 제외 + 경고", len(valid) == 0 and len(w) > 0))
+    r.append(check("amount='abc' → 제외 + 경고",
+                   len(valid) == 0 and any("amount" in x for x in w)))
 
     # ── duration 문자열 반례 ──
     valid, w = v.validate([t("sl", "duration", "abc")])
     r.append(check("duration='abc' (문자열) → 제외 + 경고",
-                   len(valid) == 0 and len(w) > 0))
+                   len(valid) == 0 and any("duration" in x for x in w)))
 
     return all(r)
 
