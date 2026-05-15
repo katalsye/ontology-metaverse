@@ -72,6 +72,9 @@ MIN_CARDINALITY_1 = [
     ("User",           "uid"),
     ("Quest",          "title"),
     ("SleepData",      "duration"),
+    ("StepCount",      "count"),
+    ("AppUsage",       "appName"),
+    ("AppUsage",       "usageDuration"),
     ("MusicListening", "listenDuration"),
 ]
 

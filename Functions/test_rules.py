@@ -9,6 +9,7 @@ Usage:
 
 import re
 import sys
+import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF, Literal, URIRef
 from rdflib.namespace import XSD
@@ -51,6 +52,12 @@ def parse_rules(rules_text: str) -> dict[str, str]:
         r"#\s*RULE_ID:\s*(\w+)\s*\n(CONSTRUCT[\s\S]+?)(?=\n#\s*RULE_ID:|\Z)"
     )
     return {m.group(1): m.group(2).strip() for m in pattern.finditer(rules_text)}
+
+
+@pytest.fixture(scope="module")
+def rules():
+    text = RULES_PATH.read_text(encoding="utf-8")
+    return parse_rules(text)
 
 
 def apply_rule(g: Graph, sparql: str) -> list:
