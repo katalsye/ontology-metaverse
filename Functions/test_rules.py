@@ -1,6 +1,6 @@
 """
 test_rules.py
-추론 규칙 단위 테스트 — 25개 규칙 전체 + 엣지케이스
+추론 규칙 단위 테스트 — 29개 규칙 전체 + 엣지케이스
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -136,7 +136,7 @@ def test_rule_parser(rules: dict[str, str]) -> bool:
     ok = check(f"29개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
-    return ok
+    assert ok
 
 
 # ── Test 2: fatigue_risk ──────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ def test_fatigue_risk(rules: dict[str, str]) -> bool:
     results.append(check("수면 7h + 주말 카페인 점수 5.0 → FatigueRisk 미생성 (반례, 수면 충분)",
                          (user, PROD.hasState, PROD.FatigueRisk) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 3: burnout_warning ───────────────────────────────────────────────────
@@ -270,7 +270,7 @@ def test_burnout_warning(rules: dict[str, str]) -> bool:
     results.append(check("운동 퀘스트 2개 → BurnoutWarning 미생성 (반례)",
                          (user, PROD.hasState, PROD.BurnoutWarning) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 4: sedentary_pattern ─────────────────────────────────────────────────
@@ -317,7 +317,7 @@ def test_sedentary_pattern(rules: dict[str, str]) -> bool:
     results.append(check("hasConsecutiveLowStepDays 없음 → SedentaryPattern 미생성 (반례)",
                          (user, PROD.hasState, PROD.SedentaryPattern) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 5: place_habit ───────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ def test_place_habit(rules: dict[str, str]) -> bool:
     results.append(check("각기 다른 장소 1회씩 → PlaceHabit 미생성 (반례)",
                          (user, PROD.hasState, PROD.PlaceHabit) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 6: late_caffeine_sleep_quality ───────────────────────────────────────
@@ -388,7 +388,7 @@ def test_late_caffeine_sleep_quality(rules: dict[str, str]) -> bool:
     results.append(check("오전 카페 → 퀘스트 미생성 (반례)",
                          "오후엔 디카페인 어때요?" not in quest_titles(g)))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 7: 빈 노드 감지 (Rules 6, 6B–6F) ────────────────────────────────────
@@ -813,7 +813,7 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
                          True,  # NOW() 함수 동작 불확실성으로 인해 항상 통과
                          f"미래 이벤트 퀘스트 생성 여부: {len(titles_future)}개"))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 8: indoor_day_pattern ────────────────────────────────────────────────
@@ -889,7 +889,7 @@ def test_indoor_day_pattern(rules: dict[str, str]) -> bool:
     results.append(check("IndoorDayPattern 없음 → 퀘스트 미생성 (반례)",
                          "날씨가 맑아요! 지금 딱 산책하기 좋아요" not in quest_titles(g)))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 9: routine_detection + music_mood ────────────────────────────────────
@@ -947,7 +947,7 @@ def test_routine_and_music_mood(rules: dict[str, str]) -> bool:
     results.append(check("60분 청취 → MusicMood 미생성 (반례)",
                          (user, PROD.hasState, PROD.MusicMood) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 10: 인과 체인 단계별 (Rules 10–13) ───────────────────────────────────
@@ -1026,7 +1026,7 @@ def test_causal_chain(rules: dict[str, str]) -> bool:
     results.append(check("전체 체인 10→11→12→13 순서 실행 → 4단계 모두 발동",
                          chain_ok))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 11: persona rules (P1–P6) ───────────────────────────────────────────
@@ -1186,7 +1186,7 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P6: 오전 방문만 → Persona 미생성 (반례)",
                          not any(True for _ in g.objects(user, PROD.hasPersona))))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 11-E: persona rules P1-P6 엣지케이스 (Issue #25) ────────────────────
@@ -1465,7 +1465,7 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
     ))
 
     print(f"  총 {len(results)}개 테스트 실행")
-    return all(results)
+    assert all(results)
 
 
 # ── Test 12: 엣지 케이스 ──────────────────────────────────────────────────────
@@ -1479,8 +1479,9 @@ def test_edge_empty_graph(rules: dict[str, str]) -> bool:
         if sparql:
             apply_rule(g, sparql)
     added = len(g) - base_triples
-    return check("빈 그래프 → 모든 규칙 트리플 추가 없음",
-                 added == 0, f"추가된 트리플: {added}개")
+    ok = check("빈 그래프 → 모든 규칙 트리플 추가 없음",
+               added == 0, f"추가된 트리플: {added}개")
+    assert ok
 
 
 # ── Test 13: Spotify 음악 청취 패턴 규칙 (Issue #16) ──────────────────────────
@@ -1776,7 +1777,7 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("팝 10:00 + 외출 13:30 (3.5시간 차이) → SocialActivity 미생성 (반례, 경계 초과)",
                          (user, PROD.hasState, PROD.SocialActivity) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── Test 14: schedule_overload ────────────────────────────────────────────────
@@ -1856,14 +1857,14 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
         "xsd:date 타입(T 없음) CalendarEvent 5개 → ScheduleOverload 미생성 (엣지케이스)",
         (user, PROD.hasState, PROD.ScheduleOverload) not in g))
 
-    return all(results)
+    assert all(results)
 
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     print("=" * 60)
-    print("inference_rules.sparql 단위 테스트 (25개 규칙 전체 + Persona 엣지케이스)")
+    print("inference_rules.sparql 단위 테스트 (29개 규칙 전체 + Persona 엣지케이스)")
     print("=" * 60)
 
     rules_text = RULES_PATH.read_text(encoding="utf-8")
@@ -1891,7 +1892,10 @@ def main() -> None:
     failed_groups = []
     for name, fn in test_groups:
         try:
-            ok = fn()
+            fn()
+            ok = True
+        except AssertionError:
+            ok = False
         except Exception as exc:
             print(f"  [EXCEPTION] {name}: {exc}")
             ok = False
