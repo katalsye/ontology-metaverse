@@ -37,6 +37,7 @@ RANGE_BOUNDS: dict[str, tuple] = {
     "count":          (0,      100_000,     int),    # StepCount.count 상한 10만
     "deepSleepRatio": (0.0,    1.0,         float),  # SleepData.deepSleepRatio
     "usageDuration":  (0,      1440,        int),    # AppUsage.usageDuration (분)
+    "listenDuration": (1,      1440,        int),    # MusicListening.listenDuration (분, 1분 이상)
     "visitCount":     (1,      10_000,      int),    # Location.visitCount 최솟값 1
     "amount":         (0,      1_000_000,   int),    # Reward.amount
     "temperature":    (-50.0,  60.0,        float),

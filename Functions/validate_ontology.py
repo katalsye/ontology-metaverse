@@ -84,10 +84,11 @@ RANGE_CONSTRAINTS = [
     ("Location",  "visitCount"),
     ("AppUsage",  "usageDuration"),
     ("Reward",    "amount"),
-    ("GalleryPhoto", "latitude"),
-    ("GalleryPhoto", "longitude"),
-    ("Location",     "latitude"),
-    ("Location",     "longitude"),
+    ("GalleryPhoto",    "latitude"),
+    ("GalleryPhoto",    "longitude"),
+    ("Location",        "latitude"),
+    ("Location",        "longitude"),
+    ("MusicListening",  "listenDuration"),
 ]
 
 DOMAIN_UNION_CONSTRAINTS = [

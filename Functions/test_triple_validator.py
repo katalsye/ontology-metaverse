@@ -1313,6 +1313,67 @@ def test_validate_required_properties() -> bool:
     return all(r)
 
 
+# ── Test 16: listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440) ──
+
+def test_listen_duration_range() -> bool:
+    print("\n[Test 16] listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440분)")
+    v = V()
+    r = []
+
+    music = PROD + "music_ld"
+
+    def t(obj: str):
+        return {"subject": music, "predicate": PROD + "listenDuration", "object": obj}
+
+    # ── 정상값 ──
+
+    # 정례: 30분 (일반적인 청취 시간)
+    valid, _ = v.validate([t("30")])
+    r.append(check("listenDuration=30 (정상) → 통과", len(valid) == 1))
+
+    # 정례: 120분 (MusicMood 추론 임계값)
+    valid, _ = v.validate([t("120")])
+    r.append(check("listenDuration=120 (MusicMood 임계값) → 통과", len(valid) == 1))
+
+    # 정례: 180분 (3시간, FocusMode 추론 임계값)
+    valid, _ = v.validate([t("180")])
+    r.append(check("listenDuration=180 (FocusMode 임계값) → 통과", len(valid) == 1))
+
+    # ── 경계값 ──
+
+    # 하한 경계값: 1분
+    valid, _ = v.validate([t("1")])
+    r.append(check("listenDuration=1 (하한 경계값) → 통과", len(valid) == 1))
+
+    # 상한 경계값: 1440분 (24시간)
+    valid, _ = v.validate([t("1440")])
+    r.append(check("listenDuration=1440 (상한 경계값, 24시간) → 통과", len(valid) == 1))
+
+    # ── 비정상값 ──
+
+    # 하한 미만: 0분 (1분 미만은 청취 기록 불필요)
+    valid, w = v.validate([t("0")])
+    r.append(check("listenDuration=0 (하한 미만) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+
+    # 상한 초과: 1441분
+    valid, w = v.validate([t("1441")])
+    r.append(check("listenDuration=1441 (상한 초과) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+
+    # 음수: -1분
+    valid, w = v.validate([t("-1")])
+    r.append(check("listenDuration=-1 (음수) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+
+    # 문자열: 숫자 변환 불가
+    valid, w = v.validate([t("long")])
+    r.append(check("listenDuration='long' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+
+    return all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1336,6 +1397,7 @@ def main() -> None:
         ("updatedAt 시간 속성 검증",         test_updatedAt_prop),
         ("숫자 범위 검증",                   test_numeric_ranges),
         ("필수 속성 누락 감지",               test_validate_required_properties),
+        ("listenDuration 범위 검증",         test_listen_duration_range),
     ]
 
     passed = 0

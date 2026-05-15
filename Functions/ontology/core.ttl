@@ -699,6 +699,20 @@ prod:Location rdfs:subClassOf [
     ]
 ] .
 
+# MusicListening.listenDuration: 1 ~ 1440 (분, 1분 이상 하루 최대 24시간)
+prod:MusicListening rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:listenDuration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer    ]
+            [ xsd:maxInclusive "1440"^^xsd:integer ]
+        )
+    ]
+] .
+
 # AppUsage.usageDuration: 0 ~ 1440 (분, 하루 최대 24시간)
 prod:AppUsage rdfs:subClassOf [
     a owl:Restriction ;
