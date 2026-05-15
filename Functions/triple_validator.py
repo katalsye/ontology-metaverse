@@ -453,11 +453,12 @@ class TripleValidator:
 # WARNING 생성용 — 데이터 보완형 퀘스트 생성 신호로 사용됨
 
 REQUIRED_PROPERTY_MAP: dict[str, list[str]] = {
-    "User":      ["uid"],
-    "Quest":     ["title"],
-    "SleepData": ["duration"],
-    "StepCount": ["count"],
-    "AppUsage":  ["appName", "usageDuration"],
+    "User":           ["uid"],
+    "Quest":          ["title"],
+    "SleepData":      ["duration"],
+    "StepCount":      ["count"],
+    "AppUsage":       ["appName", "usageDuration"],
+    "MusicListening": ["listenDuration"],
 }
 
 

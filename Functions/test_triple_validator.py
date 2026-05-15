@@ -1315,10 +1315,9 @@ def test_validate_required_properties() -> bool:
 
 # ── Test 16: listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440) ──
 
-def test_listen_duration_range() -> bool:
+def test_listen_duration_range() -> None:
     print("\n[Test 16] listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440분)")
     v = V()
-    r = []
 
     music = PROD + "music_ld"
 
@@ -1329,49 +1328,62 @@ def test_listen_duration_range() -> bool:
 
     # 정례: 30분 (일반적인 청취 시간)
     valid, _ = v.validate([t("30")])
-    r.append(check("listenDuration=30 (정상) → 통과", len(valid) == 1))
+    assert check("listenDuration=30 (정상) → 통과", len(valid) == 1)
 
     # 정례: 120분 (MusicMood 추론 임계값)
     valid, _ = v.validate([t("120")])
-    r.append(check("listenDuration=120 (MusicMood 임계값) → 통과", len(valid) == 1))
+    assert check("listenDuration=120 (MusicMood 임계값) → 통과", len(valid) == 1)
 
     # 정례: 180분 (3시간, FocusMode 추론 임계값)
     valid, _ = v.validate([t("180")])
-    r.append(check("listenDuration=180 (FocusMode 임계값) → 통과", len(valid) == 1))
+    assert check("listenDuration=180 (FocusMode 임계값) → 통과", len(valid) == 1)
 
     # ── 경계값 ──
 
     # 하한 경계값: 1분
     valid, _ = v.validate([t("1")])
-    r.append(check("listenDuration=1 (하한 경계값) → 통과", len(valid) == 1))
+    assert check("listenDuration=1 (하한 경계값) → 통과", len(valid) == 1)
 
     # 상한 경계값: 1440분 (24시간)
     valid, _ = v.validate([t("1440")])
-    r.append(check("listenDuration=1440 (상한 경계값, 24시간) → 통과", len(valid) == 1))
+    assert check("listenDuration=1440 (상한 경계값, 24시간) → 통과", len(valid) == 1)
 
     # ── 비정상값 ──
 
     # 하한 미만: 0분 (1분 미만은 청취 기록 불필요)
     valid, w = v.validate([t("0")])
-    r.append(check("listenDuration=0 (하한 미만) → 제외 + 경고",
-                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+    assert check("listenDuration=0 (하한 미만) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
 
     # 상한 초과: 1441분
     valid, w = v.validate([t("1441")])
-    r.append(check("listenDuration=1441 (상한 초과) → 제외 + 경고",
-                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+    assert check("listenDuration=1441 (상한 초과) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
 
     # 음수: -1분
     valid, w = v.validate([t("-1")])
-    r.append(check("listenDuration=-1 (음수) → 제외 + 경고",
-                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+    assert check("listenDuration=-1 (음수) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
 
     # 문자열: 숫자 변환 불가
     valid, w = v.validate([t("long")])
-    r.append(check("listenDuration='long' (문자열) → 제외 + 경고",
-                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+    assert check("listenDuration='long' (문자열) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
 
-    return all(r)
+    # ── float 입력 케이스 ──
+    # listenDuration은 int 타입(RANGE_BOUNDS 기준). float 문자열 입력 시
+    # int() 변환에서 ValueError 발생 → _check_numeric_range가 "숫자 변환 실패" 경고 반환
+    # → 트리플 제외됨.
+
+    # float 입력: "1.5" → int 변환 불가 → 제외 + 경고
+    valid, w = v.validate([t("1.5")])
+    assert check("listenDuration='1.5' (float 문자열) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
+
+    # float 입력: "120.0" → int 변환 불가 → 제외 + 경고
+    valid, w = v.validate([t("120.0")])
+    assert check("listenDuration='120.0' (float 문자열) → 제외 + 경고",
+                 len(valid) == 0 and any("listenDuration" in x for x in w))
 
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────
@@ -1404,8 +1416,10 @@ def main() -> None:
     failed: list[str] = []
     for name, fn in test_groups:
         try:
-            ok = fn()
-        except Exception as exc:
+            result = fn()
+            # assert 기반 테스트(None 반환)와 bool 반환 테스트 모두 지원
+            ok = True if result is None else bool(result)
+        except (AssertionError, Exception) as exc:
             import traceback
             print(f"  [EXCEPTION] {name}: {exc}")
             traceback.print_exc()
