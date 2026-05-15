@@ -312,6 +312,21 @@ class TripleValidator:
         except (ValueError, TypeError):
             return False
 
+    # ── subject URI 형식 검증 ─────────────────────────────────────────────────────
+
+    @staticmethod
+    def _validate_subject_uri(uri: str) -> list[str]:
+        """subject URI 형식 검증. 문제가 있으면 경고 메시지 목록 반환."""
+        warnings: list[str] = []
+        if not uri or not uri.strip():
+            warnings.append(f"subject URI가 비어있거나 공백: {repr(uri)}")
+            return warnings
+        if " " in uri:
+            warnings.append(f"subject URI에 공백 포함: {uri}")
+        if not uri.startswith(("http://", "https://")):
+            warnings.append(f"subject URI가 절대 URI가 아님: {uri}")
+        return warnings
+
     # ── User 연결 감지 ────────────────────────────────────────────────────────
 
     @staticmethod
@@ -358,7 +373,15 @@ class TripleValidator:
             obj_val  = t.get("object", "")
             datatype = t.get("datatype")
 
-            # ① predicate 정규화
+            # ① subject URI 형식 검증
+            subj_uri_warns = self._validate_subject_uri(str(subj))
+            if subj_uri_warns:
+                for msg in subj_uri_warns:
+                    warnings.append(msg)
+                    logger.warning("TripleValidator: %s", msg)
+                continue
+
+            # ② predicate 정규화
             pred_uri = self._normalize_pred(pred_raw)
             if pred_uri is None:
                 msg = f"알 수 없는 predicate '{pred_raw}' — 트리플 제외 (subject: {subj})"
@@ -368,10 +391,10 @@ class TripleValidator:
 
             prop_local = pred_uri.split("#")[-1]
 
-            # ② 타입 변환
+            # ③ 타입 변환
             coerced_val, coerced_dt = self._coerce(pred_uri, obj_val, datatype)
 
-            # ③ 범위 검사 (RANGE_BOUNDS 전체 — 경계 위반 감지)
+            # ④ 범위 검사 (RANGE_BOUNDS 전체 — 경계 위반 감지)
             if not self._in_bounds(prop_local, coerced_val):
                 lo, hi, _ = RANGE_BOUNDS[prop_local]
                 msg = (
@@ -382,7 +405,7 @@ class TripleValidator:
                 logger.warning("TripleValidator: %s", msg)
                 continue
 
-            # ③-a NUMERIC_RANGES 숫자 변환 실패 감지
+            # ④-a NUMERIC_RANGES 숫자 변환 실패 감지
             #     (_in_bounds는 변환 불가 시 True 반환하므로 여기서 별도 처리)
             numeric_warn = self._check_numeric_range(prop_local, coerced_val)
             if numeric_warn is not None:
@@ -391,7 +414,7 @@ class TripleValidator:
                 logger.warning("TripleValidator: %s", msg)
                 continue
 
-            # ④ 시간대 검증 (timestamp, visitTime, createdAt)
+            # ⑤ 시간대 검증 (timestamp, visitTime, createdAt)
             if prop_local in DATETIME_PROPS:
                 if not self._validate_datetime_format(str(coerced_val)):
                     msg = (
@@ -407,7 +430,7 @@ class TripleValidator:
                     warnings.append(msg)
                     logger.warning("TripleValidator: %s", msg)
 
-            # ⑤ 날짜 검증 (date)
+            # ⑥ 날짜 검증 (date)
             if prop_local in DATE_PROPS:
                 if not self._validate_date_format(str(coerced_val)):
                     msg = (
@@ -418,7 +441,7 @@ class TripleValidator:
                     logger.warning("TripleValidator: %s", msg)
                     continue
 
-            # ⑥ 수면 시간 특별 검증 (0.5~18.0 시간)
+            # ⑦ 수면 시간 특별 검증 (0.5~18.0 시간)
             if prop_local == "duration":
                 # duration은 이미 범위 검사(0.0~24.0)를 통과했지만,
                 # 수면 데이터의 경우 더 엄격한 검증 (0.5~18.0)
@@ -440,7 +463,7 @@ class TripleValidator:
                 clean["datatype"] = coerced_dt
             valid.append(clean)
 
-        # ⑦ User 연결 감지 (경고만, 트리플 제외 안 함)
+        # ⑧ User 연결 감지 (경고만, 트리플 제외 안 함)
         for node in self._find_orphans(valid):
             msg = f"User 연결 없는 고립 노드: {node}"
             warnings.append(msg)
@@ -496,6 +519,16 @@ def validate_required_properties(graph) -> list[str]:
 
 
 # ── 모듈 수준 헬퍼 ────────────────────────────────────────────────────────────
+
+
+def _validate_subject_uri(uri: str) -> list[str]:
+    """subject URI 형식 검증. 문제가 있으면 경고 메시지 목록 반환.
+
+    모듈 수준 노출 함수 — TripleValidator._validate_subject_uri의 래퍼.
+    테스트 및 외부 호출에서 직접 import해서 사용 가능.
+    """
+    return TripleValidator._validate_subject_uri(uri)
+
 
 def _coerce_bool(val_str: str) -> tuple[str, str]:
     v = val_str.lower()

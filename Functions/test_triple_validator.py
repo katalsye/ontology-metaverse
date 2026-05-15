@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from triple_validator import TripleValidator, validate_required_properties
+from triple_validator import TripleValidator, validate_required_properties, _validate_subject_uri
 
 PROD  = "http://7team.dev/ontology#"
 XSD   = "http://www.w3.org/2001/XMLSchema#"
@@ -1386,6 +1386,94 @@ def test_listen_duration_range() -> None:
                  len(valid) == 0 and any("listenDuration" in x for x in w))
 
 
+# ── Test 17: _validate_subject_uri 직접 검증 ─────────────────────────────────
+
+def test_validate_subject_uri() -> None:
+    print("\n[Test 17] _validate_subject_uri (subject URI 형식 검증)")
+
+    # 정례: 유효한 http:// URI → 빈 리스트
+    result = _validate_subject_uri("http://7team.dev/ontology#user1")
+    assert check("유효한 http:// URI → 경고 없음",
+                 result == [], f"실제: {result}")
+
+    # 정례: 유효한 https:// URI → 빈 리스트
+    result = _validate_subject_uri("https://example.com/resource/1")
+    assert check("유효한 https:// URI → 경고 없음",
+                 result == [], f"실제: {result}")
+
+    # 반례: 빈 문자열 → 경고 반환
+    result = _validate_subject_uri("")
+    assert check("빈 문자열 → 경고 반환",
+                 len(result) >= 1 and any("비어있거나 공백" in w for w in result),
+                 f"실제: {result}")
+
+    # 반례: 공백만 있는 문자열 → 경고 반환
+    result = _validate_subject_uri("   ")
+    assert check("공백만 있는 문자열 → 경고 반환",
+                 len(result) >= 1 and any("비어있거나 공백" in w for w in result),
+                 f"실제: {result}")
+
+    # 반례: URI에 공백 포함 → 경고 반환
+    result = _validate_subject_uri("http://7team.dev/ontology#user 1")
+    assert check("URI에 공백 포함 → 공백 경고 반환",
+                 len(result) >= 1 and any("공백 포함" in w for w in result),
+                 f"실제: {result}")
+
+    # 반례: 상대 URI (http:// 없음) → 경고 반환
+    result = _validate_subject_uri("user1")
+    assert check("상대 URI 'user1' → 절대 URI 아님 경고",
+                 len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
+                 f"실제: {result}")
+
+    # 반례: 상대 URI (prod: 접두사) → 경고 반환
+    result = _validate_subject_uri("prod:user1")
+    assert check("상대 URI 'prod:user1' → 절대 URI 아님 경고",
+                 len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
+                 f"실제: {result}")
+
+    # 반례: 특수문자 포함 URI (공백 없음, http:// 있음) → 경고 없음
+    # (특수문자 자체는 URI 스펙상 인코딩 가능, 공백만 명시적으로 검사)
+    result = _validate_subject_uri("http://7team.dev/ontology#user-1_test")
+    assert check("http:// URI + 하이픈/언더스코어 → 경고 없음",
+                 result == [], f"실제: {result}")
+
+    # validate()와 연동: subject URI 문제 시 트리플 제외 + 경고 누적
+    v = V()
+
+    # 빈 subject → 트리플 제외 + 경고
+    valid, warnings = v.validate([{"subject": "", "predicate": PROD + "uid", "object": "u1"}])
+    assert check("validate(): subject='' → 트리플 제외",
+                 len(valid) == 0, f"실제 valid: {len(valid)}")
+    assert check("validate(): subject='' → 경고 포함",
+                 any("비어있거나 공백" in w for w in warnings),
+                 f"실제 warnings: {warnings}")
+
+    # 상대 URI subject → 트리플 제외 + 경고
+    valid, warnings = v.validate([{"subject": "relative_uri", "predicate": PROD + "uid",
+                                   "object": "u1"}])
+    assert check("validate(): subject='relative_uri' → 트리플 제외",
+                 len(valid) == 0, f"실제 valid: {len(valid)}")
+    assert check("validate(): subject='relative_uri' → 절대 URI 경고",
+                 any("절대 URI가 아님" in w for w in warnings),
+                 f"실제 warnings: {warnings}")
+
+    # 공백 포함 subject → 트리플 제외 + 경고
+    valid, warnings = v.validate([{"subject": "http://7team.dev/ontology#user 1",
+                                   "predicate": PROD + "uid", "object": "u1"}])
+    assert check("validate(): subject에 공백 포함 → 트리플 제외",
+                 len(valid) == 0, f"실제 valid: {len(valid)}")
+    assert check("validate(): subject에 공백 포함 → 공백 경고",
+                 any("공백 포함" in w for w in warnings),
+                 f"실제 warnings: {warnings}")
+
+    # 유효한 subject → 정상 통과
+    valid, warnings = v.validate([{"subject": PROD + "user1", "predicate": PROD + "uid",
+                                   "object": "u1"}])
+    subj_warns = [w for w in warnings if "subject URI" in w]
+    assert check("validate(): 유효한 subject → subject URI 경고 없음",
+                 len(subj_warns) == 0, f"실제 subject URI 경고: {subj_warns}")
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1410,6 +1498,7 @@ def main() -> None:
         ("숫자 범위 검증",                   test_numeric_ranges),
         ("필수 속성 누락 감지",               test_validate_required_properties),
         ("listenDuration 범위 검증",         test_listen_duration_range),
+        ("subject URI 형식 검증",            test_validate_subject_uri),
     ]
 
     passed = 0
