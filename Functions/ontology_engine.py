@@ -29,7 +29,7 @@ import duckdb
 import firebase_admin
 from firebase_admin import firestore, messaging, storage
 from rdflib import Graph, Namespace, URIRef, Literal
-from triple_validator import validate_required_properties
+from triple_validator import validate_required_properties, deduplicate_quests
 
 logger = logging.getLogger(__name__)
 
@@ -381,45 +381,6 @@ def _apply_rules(g: Graph, rules: dict[str, str]) -> list[tuple]:
     return new_triples
 
 
-# ── 중복 Quest 제거 ──────────────────────────────────────────────────────────
-
-def _deduplicate_quests(graph: Graph) -> int:
-    """동일 사용자+questType+title 조합의 중복 Quest 트리플 제거. 제거된 수 반환.
-
-    RDFLib CONSTRUCT는 WHERE절 매칭을 모두 모은 뒤 한 번에 그래프에 추가하므로,
-    FILTER NOT EXISTS가 동시 실행 시 중복을 막지 못한다.
-    이 함수는 CONSTRUCT 실행 완료 후 후처리로 중복을 제거한다.
-
-    집계 SPARQL 대신 Python 레벨에서 중복 탐지하여 RDFLib 버전 호환성을 보장한다.
-    """
-    all_quests_query = """
-    PREFIX prod: <http://7team.dev/ontology#>
-    SELECT ?user ?quest ?questType ?title
-    WHERE {
-        ?user prod:receivesQuest ?quest .
-        ?quest a prod:Quest ;
-               prod:questType ?questType ;
-               prod:title ?title .
-    }
-    """
-    rows = list(graph.query(all_quests_query))
-
-    # (user, questType, title) → 첫 번째 quest(keep) 기록, 나머지는 제거 대상
-    seen: dict[tuple, URIRef] = {}
-    to_remove: list[URIRef] = []
-    for row in rows:
-        key = (str(row.user), str(row.questType), str(row.title))
-        if key not in seen:
-            seen[key] = row.quest
-        else:
-            to_remove.append(row.quest)
-
-    for quest in to_remove:
-        graph.remove((None, None, quest))
-        graph.remove((quest, None, None))
-
-    return len(to_remove)
-
 
 # ── Firestore 저장 ───────────────────────────────────────────────────────────
 
@@ -647,7 +608,7 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
     #      RDFLib CONSTRUCT는 WHERE 매칭 결과를 모두 모은 후 한 번에 추가하므로
     #      FILTER NOT EXISTS가 동시 실행 중 중복을 막지 못하는 한계가 있음.
     #      후처리로 동일 user+questType+title 조합의 중복 Quest를 제거한다.
-    removed_count = _deduplicate_quests(g)
+    removed_count = deduplicate_quests(g)
     if removed_count > 0:
         logger.info("중복 Quest %d개 제거됨", removed_count)
 

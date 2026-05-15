@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1778719889996,
+  "lastScanned": 1778822271086,
   "projectRoot": "c:\\Users\\user\\Desktop\\ontology-metaverse",
   "techStack": {
     "languages": [],
@@ -36,7 +36,7 @@
       "path": "Docs",
       "purpose": "Documentation",
       "fileCount": 2,
-      "lastAccessed": 1778719889927,
+      "lastAccessed": 1778822270994,
       "keyFiles": [
         "auto_work_log.md",
         "docs.gitkeep"
@@ -46,7 +46,7 @@
       "path": "Functions",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1778719889929,
+      "lastAccessed": 1778822270996,
       "keyFiles": [
         "functions.gitkeep",
         "ontology_engine.py",
@@ -59,7 +59,7 @@
       "path": "Unity",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1778719889930,
+      "lastAccessed": 1778822270997,
       "keyFiles": [
         "ontology-metaverse.slnx",
         "Unity.slnx"
@@ -69,7 +69,7 @@
       "path": "Unity\\Assets",
       "purpose": "Static assets",
       "fileCount": 11,
-      "lastAccessed": 1778719889932,
+      "lastAccessed": 1778822270999,
       "keyFiles": [
         "01_Scenes.meta",
         "02_Scripts.meta",
@@ -80,44 +80,44 @@
   "hotPaths": [
     {
       "path": "Functions\\test_rules.py",
-      "accessCount": 71,
-      "lastAccessed": 1778691856649,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
-      "accessCount": 35,
-      "lastAccessed": 1778691838041,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\ontology\\core.ttl",
-      "accessCount": 31,
-      "lastAccessed": 1778692075017,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\triple_validator.py",
-      "accessCount": 26,
-      "lastAccessed": 1778692074063,
+      "accessCount": 199,
+      "lastAccessed": 1778854205108,
       "type": "file"
     },
     {
       "path": "Functions\\test_triple_validator.py",
-      "accessCount": 24,
-      "lastAccessed": 1778692074948,
+      "accessCount": 94,
+      "lastAccessed": 1778823661619,
       "type": "file"
     },
     {
-      "path": "Functions\\ontology_engine.py",
-      "accessCount": 14,
-      "lastAccessed": 1778688109857,
+      "path": "Functions\\ontology\\core.ttl",
+      "accessCount": 91,
+      "lastAccessed": 1778854035610,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\triple_validator.py",
+      "accessCount": 82,
+      "lastAccessed": 1778854320859,
       "type": "file"
     },
     {
       "path": "Functions\\validate_ontology.py",
-      "accessCount": 11,
-      "lastAccessed": 1778688191805,
+      "accessCount": 68,
+      "lastAccessed": 1778823990181,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
+      "accessCount": 56,
+      "lastAccessed": 1778824726281,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology_engine.py",
+      "accessCount": 56,
+      "lastAccessed": 1778854321422,
       "type": "file"
     },
     {
@@ -139,6 +139,12 @@
       "type": "file"
     },
     {
+      "path": "Functions\\ontology_utils.py",
+      "accessCount": 5,
+      "lastAccessed": 1778854148384,
+      "type": "file"
+    },
+    {
       "path": ".claude\\agents\\ontology-architect.md",
       "accessCount": 4,
       "lastAccessed": 1778687480899,
@@ -152,8 +158,8 @@
     },
     {
       "path": "Functions\\requirements.txt",
-      "accessCount": 1,
-      "lastAccessed": 1778606756231,
+      "accessCount": 2,
+      "lastAccessed": 1778826091873,
       "type": "file"
     },
     {

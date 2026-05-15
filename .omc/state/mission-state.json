@@ -1,4 +1,89 @@
 {
-  "updatedAt": "2026-05-13T17:10:24.578Z",
-  "missions": []
+  "updatedAt": "2026-05-15T14:12:36.951Z",
+  "missions": [
+    {
+      "id": "session:d4efaeac-590a-434d-a823-19b2a1f7c50c:none",
+      "source": "session",
+      "name": "none",
+      "objective": "Session mission",
+      "createdAt": "2026-05-15T14:06:49.079Z",
+      "updatedAt": "2026-05-15T14:12:36.951Z",
+      "status": "done",
+      "workerCount": 3,
+      "taskCounts": {
+        "total": 3,
+        "pending": 0,
+        "blocked": 0,
+        "inProgress": 0,
+        "completed": 3,
+        "failed": 0
+      },
+      "agents": [
+        {
+          "name": "ontology-reviewer:ad07ddd",
+          "role": "ontology-reviewer",
+          "ownership": "ad07dddbb6817dc18",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-15T14:08:33.371Z"
+        },
+        {
+          "name": "ontology-developer:a2ca8fc",
+          "role": "ontology-developer",
+          "ownership": "a2ca8fcae934b0af6",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-15T14:11:06.260Z"
+        },
+        {
+          "name": "ontology-architect:a4a6fae",
+          "role": "ontology-architect",
+          "ownership": "a4a6fae37fd9cd320",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-15T14:12:36.951Z"
+        }
+      ],
+      "timeline": [
+        {
+          "id": "session-start:a2ca8fcae934b0af6:2026-05-15T14:09:04.550Z",
+          "at": "2026-05-15T14:09:04.550Z",
+          "kind": "update",
+          "agent": "ontology-developer:a2ca8fc",
+          "detail": "started ontology-developer:a2ca8fc",
+          "sourceKey": "session-start:a2ca8fcae934b0af6"
+        },
+        {
+          "id": "session-stop:a2ca8fcae934b0af6:2026-05-15T14:11:06.260Z",
+          "at": "2026-05-15T14:11:06.260Z",
+          "kind": "completion",
+          "agent": "ontology-developer:a2ca8fc",
+          "detail": "completed",
+          "sourceKey": "session-stop:a2ca8fcae934b0af6"
+        },
+        {
+          "id": "session-start:a4a6fae37fd9cd320:2026-05-15T14:11:57.123Z",
+          "at": "2026-05-15T14:11:57.123Z",
+          "kind": "update",
+          "agent": "ontology-architect:a4a6fae",
+          "detail": "started ontology-architect:a4a6fae",
+          "sourceKey": "session-start:a4a6fae37fd9cd320"
+        },
+        {
+          "id": "session-stop:a4a6fae37fd9cd320:2026-05-15T14:12:36.951Z",
+          "at": "2026-05-15T14:12:36.951Z",
+          "kind": "completion",
+          "agent": "ontology-architect:a4a6fae",
+          "detail": "completed",
+          "sourceKey": "session-stop:a4a6fae37fd9cd320"
+        }
+      ]
+    }
+  ]
 }

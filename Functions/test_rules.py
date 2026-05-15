@@ -15,39 +15,7 @@ from rdflib import Graph, Namespace, RDF, Literal, URIRef
 from rdflib.namespace import XSD
 
 
-def _deduplicate_quests(graph: Graph) -> int:
-    """동일 사용자+questType+title 조합의 중복 Quest 트리플 제거. 제거된 수 반환.
-
-    ontology_engine._deduplicate_quests와 동일한 로직.
-    테스트 환경에서 firebase_admin 없이 사용하기 위해 인라인 정의.
-    Python 레벨 중복 탐지로 RDFLib 버전 호환성 보장.
-    """
-    all_quests_query = """
-    PREFIX prod: <http://7team.dev/ontology#>
-    SELECT ?user ?quest ?questType ?title
-    WHERE {
-        ?user prod:receivesQuest ?quest .
-        ?quest a prod:Quest ;
-               prod:questType ?questType ;
-               prod:title ?title .
-    }
-    """
-    rows = list(graph.query(all_quests_query))
-
-    seen: dict = {}
-    to_remove = []
-    for row in rows:
-        key = (str(row.user), str(row.questType), str(row.title))
-        if key not in seen:
-            seen[key] = row.quest
-        else:
-            to_remove.append(row.quest)
-
-    for quest in to_remove:
-        graph.remove((None, None, quest))
-        graph.remove((quest, None, None))
-
-    return len(to_remove)
+from triple_validator import deduplicate_quests
 
 PROD = Namespace("http://7team.dev/ontology#")
 TTL_PATH   = Path("Functions/ontology/core.ttl")
@@ -705,19 +673,19 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
                          dup_count == 1, f"실제 {dup_count}개"))
 
     # 엣지 E1: quality 50, 55, 70인 수면 3개 → 60 미만 2개 조건 충족, 중복 방지로 1개만
-    # _deduplicate_quests 후처리로 동일 title 중복 제거 → 정확히 1개
+    # deduplicate_quests 후처리로 동일 title 중복 제거 → 정확히 1개
     g = load_base_graph()
     user = _add_user(g, "r6_edge_e1")
     for i, qual in enumerate([50, 55, 70]):
         _add_sleep(g, user, f"r6_edge_e1_{i}", 6.0, quality=qual)
     apply_rule(g, rules["missing_sleep_cause"])
-    removed_e1 = _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
+    removed_e1 = deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
     results.append(check("여러 저품질 수면(50, 55) → 중복 Quest 제거 후 정확히 1개",
-                         quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
-    assert removed_e1 >= 1, f"E1: _deduplicate_quests 제거 수 {removed_e1} (기대 >= 1)"
+                         quest_count == 1, f"실제 {quest_count}개 (deduplicate_quests 적용)"))
+    assert removed_e1 >= 1, f"E1: deduplicate_quests 제거 수 {removed_e1} (기대 >= 1)"
 
-    # 엣지 E2: 3일 연속 저품질 수면 → _deduplicate_quests 후처리로 1개 유지
+    # 엣지 E2: 3일 연속 저품질 수면 → deduplicate_quests 후처리로 1개 유지
     g = load_base_graph()
     user = _add_user(g, "r6_edge_e2")
     for day in range(3):
@@ -727,11 +695,11 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
         g.add((sleep, PROD.quality, Literal(45, datatype=XSD.integer)))
         g.add((user, PROD.hasSleepData, sleep))
     apply_rule(g, rules["missing_sleep_cause"])
-    removed_e2 = _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
+    removed_e2 = deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
     results.append(check("3일 연속 저품질 수면 → 중복 Quest 제거 후 정확히 1개",
-                         quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
-    assert removed_e2 >= 1, f"E2: _deduplicate_quests 제거 수 {removed_e2} (기대 >= 1)"
+                         quest_count == 1, f"실제 {quest_count}개 (deduplicate_quests 적용)"))
+    assert removed_e2 >= 1, f"E2: deduplicate_quests 제거 수 {removed_e2} (기대 >= 1)"
 
     # 반례 E1: quality 60 (경계값) → 미생성
     g = load_base_graph()
@@ -1893,8 +1861,8 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
 
 # ── Test 다중 규칙 중복 Quest 통합 테스트 (Issue #61) ─────────────────────────
 
-def test_deduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
-    """다중 규칙이 동일 Quest를 생성할 때 _deduplicate_quests가 정확히 1개만 남기는지 검증."""
+def testdeduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
+    """다중 규칙이 동일 Quest를 생성할 때 deduplicate_quests가 정확히 1개만 남기는지 검증."""
     print("\n[Test E61] 다중 규칙 중복 Quest 제거 — fatigue_risk + burnout_warning 시뮬레이션")
 
     # 시나리오: fatigue_risk와 burnout_warning 두 규칙이 같은 사용자에게
@@ -1922,14 +1890,14 @@ def test_deduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
     quest_count_before = sum(1 for _ in g.subjects(RDF.type, PROD.Quest))
 
     # 중복 제거 실행
-    removed = _deduplicate_quests(g)
+    removed = deduplicate_quests(g)
 
     # 검증
     quest_count_after = sum(1 for _ in g.subjects(RDF.type, PROD.Quest))
 
     ok1 = check("중복 제거 전 Quest 수 == 2",
                 quest_count_before == 2, f"실제 {quest_count_before}개")
-    ok2 = check("_deduplicate_quests 제거 수 == 1",
+    ok2 = check("deduplicate_quests 제거 수 == 1",
                 removed == 1, f"실제 {removed}개")
     ok3 = check("중복 제거 후 Quest 수 == 1",
                 quest_count_after == 1, f"실제 {quest_count_after}개")
@@ -1973,7 +1941,7 @@ def main() -> None:
         ("spotify_music",     lambda: test_spotify_music_patterns(rules)),
         ("schedule_overload", lambda: test_schedule_overload(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
-        ("다중 규칙 중복 Quest 제거", lambda: test_deduplicate_quests_multi_rule(rules)),
+        ("다중 규칙 중복 Quest 제거", lambda: testdeduplicate_quests_multi_rule(rules)),
     ]
 
     passed = 0

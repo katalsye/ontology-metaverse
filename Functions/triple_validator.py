@@ -504,3 +504,53 @@ def _coerce_bool(val_str: str) -> tuple[str, str]:
     if v in ("false", "0", "no"):
         return "false", str(XSD.boolean)
     return val_str, str(XSD.boolean)
+
+
+# ── Quest 중복 제거 ───────────────────────────────────────────────────────────
+
+def deduplicate_quests(graph: Graph) -> int:
+    """(user, questType, title) 조합의 중복 Quest 트리플 제거. 제거된 Quest 수 반환.
+
+    RDFLib CONSTRUCT는 WHERE절 매칭을 모두 모은 뒤 한 번에 그래프에 추가하므로,
+    FILTER NOT EXISTS가 동시 실행 시 중복을 막지 못한다.
+    이 함수는 CONSTRUCT 실행 완료 후 후처리로 중복을 제거한다.
+
+    집계 SPARQL 대신 Python 레벨에서 중복 탐지하여 RDFLib 버전 호환성을 보장한다.
+
+    Args:
+        graph: 추론이 완료된 RDFLib Graph 객체.
+
+    Returns:
+        제거된 Quest 노드 수.
+    """
+    from rdflib import URIRef as _URIRef
+
+    all_quests_query = """
+    PREFIX prod: <http://7team.dev/ontology#>
+    SELECT ?user ?quest ?questType ?title
+    WHERE {
+        ?user prod:receivesQuest ?quest .
+        ?quest a prod:Quest ;
+               prod:questType ?questType ;
+               prod:title ?title .
+    }
+    """
+    rows = list(graph.query(all_quests_query))
+
+    # (user, questType, title) → 첫 번째 Quest URI만 유지, 나머지는 제거 대상
+    seen: dict[tuple, _URIRef] = {}
+    to_remove: list[_URIRef] = []
+    for row in rows:
+        key = (str(row.user), str(row.questType), str(row.title))
+        if key not in seen:
+            seen[key] = row.quest
+        else:
+            to_remove.append(row.quest)
+
+    for quest in to_remove:
+        for s, p, o in list(graph.triples((None, None, quest))):
+            graph.remove((s, p, o))
+        for s, p, o in list(graph.triples((quest, None, None))):
+            graph.remove((s, p, o))
+
+    return len(to_remove)

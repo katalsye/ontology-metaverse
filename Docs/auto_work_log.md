@@ -115,3 +115,83 @@
 - 트리플: 565 → 565
 - 문제점: 3개 (설계결함1, 잔존1, 낭비1)
 ---
+## 사이클 완료: 2026년 05월 14일 목 22:06:16
+- 이슈: #40 [온톨로지] deepSleepRatio/latitude/longitude OWL 범위 제약 및 RANGE_CONSTRAINTS 동기화
+- 트리플: 이전 → 604개 (core.ttl OWL 제약 3개 추가)
+- 문제점: 4개 (Location OWL 누락·RANGE_BOUNDS 동기화 미검증·Test11 케이스·placeType 미등재)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:11:26
+- 이슈: #46 [온톨로지] Location 클래스 OWL 범위 제약 누락 + placeType 검증 등록
+- 트리플: 604 → 630 (+26개)
+- 문제점: 5개 (domain 미선언 2·경계값 비대칭·경고 포맷·REQUIRED 누락)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:17:25
+- 이슈: #47 [온톨로지] latitude/longitude/placeType rdfs:domain owl:unionOf 선언 추가
+- 트리플: 630 → 645 (+15개)
+- 문제점: 4개 (placeType 도메인 충돌 핫픽스·domain 검증 누락·테스트 누락·교차검증 없음)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:22:44
+- 이슈: #48 [온톨로지] validate_ontology.py rdfs:domain unionOf 검증 로직 추가
+- 트리플: 645 → 651 (검증 스크립트 추가, 온톨로지 변경 없음)
+- 문제점: 4개 (섹션 번호 불일치·에러 메시지·테스트 누락·상수 중복)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:26:46
+- 이슈: #49 [온톨로지] validate_ontology.py 섹션 번호 순차 정렬
+- 트리플: 651 → 651 (번호 재정렬만, 온톨로지 변경 없음)
+- 문제점: 3개 ([RULES] 번호 누락·docstring 미갱신·함수 정의 순서 역전)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:30:48
+- 이슈: #50 [온톨로지] validate_ontology.py 섹션 번호 완전 통일 및 docstring 갱신
+- 트리플: 651 → 651 (docstring/메시지 수정만, 온톨로지 변경 없음)
+- 문제점: 2개 (RULES_PATH 로드 번호 누락·docstring >= vs ≥ 불일치)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:39:17
+- 이슈: #51 [온톨로지] CalendarEvent 과부하 감지 규칙 추가 (ScheduleOverload)
+- 트리플: 651 → 654 (+3개, ScheduleOverload 클래스)
+- 문제점: 5개 (questType 오류·RULE_ORDER 누락 핫픽스·STRBEFORE 엣지케이스·체인 미연결·hasState range 미선언)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:47:49
+- 이슈: #52 [온톨로지] Rule 29 STRBEFORE xsd:date 엣지케이스 수정
+- 트리플: 654 → 654 (규칙 버그 수정만, 온톨로지 변경 없음)
+- 문제점: 3개 (STRLEN방식 논쟁·반례C 독립검증 핫픽스·주석 수정)
+---
+## 사이클 완료: 2026년 05월 14일 목 22:53:59
+- 이슈: #53 [온톨로지] triple_validator Gemma 3n 출력 검증 강화 — 필수 속성 누락 감지
+- 트리플: 654 → 672 (+18개, StepCount/AppUsage minCardinality 제약 추가)
+- 문제점: 6개 (minCardinality 누락·dead code·탐색 한계·테스트·제너레이터·멀티타입)
+---
+## 사이클 완료: 2026년 05월 15일 금 14:27:12
+- 이슈: #55 MusicListening.listenDuration 범위 제약 및 검증 로직 추가
+- 트리플: 666 → 679
+- 문제점: 6개
+---
+## 사이클 완료: 2026년 05월 15일 금 14:34:56
+- 이슈: #56 MusicListening.listenDuration 필수 속성 등록 및 pytest 호환성 수정 (이슈 #55 커밋에 함께 포함)
+- 트리플: 679 → 679 (코드/테스트만 변경)
+- 문제점: 4개
+---
+## 사이클 완료: 2026년 05월 15일 금 14:43:07
+- 이슈: #57 MusicListening.listenDuration owl:minCardinality 1 선언 (이전 커밋에 포함)
+- 트리플: 679 → 683
+- 문제점: 3개
+---
+## 사이클 완료: 2026년 05월 15일 금 14:50:55
+- 이슈: #58 test_rules.py pytest fixture 추가 + validate_ontology.py MIN_CARDINALITY_1 동기화
+- 트리플: 683 → 683 (코드/테스트만 변경)
+- 문제점: 4개
+---
+## 사이클 완료: 2026년 05월 15일 금 14:59:57
+- 이슈: #59 test_rules.py return bool → assert 교체 + 주석 29개 수정
+- 트리플: 683 → 683 (테스트 코드만 변경)
+- 문제점: 5개
+---
+## 사이클 완료: 2026년 05월 15일 금 15:10:21
+- 이슈: #60 RDFLib CONSTRUCT 중복 Quest 제거 로직 추가 (_deduplicate_quests)
+- 트리플: 683 → 683 (로직 추가, 트리플 변화 없음)
+- 문제점: 6개
+---
+## 사이클 완료: 2026년 05월 15일 금 15:17:09
+- 이슈: #61 다중 규칙 중복 Quest 시나리오 통합 테스트 추가 (test_deduplicate_quests_multi_rule)
+- 트리플: 683 → 683 (테스트 코드만 변경)
+- 문제점: 4개
+---
