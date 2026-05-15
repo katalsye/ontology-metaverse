@@ -711,10 +711,11 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     for i, qual in enumerate([50, 55, 70]):
         _add_sleep(g, user, f"r6_edge_e1_{i}", 6.0, quality=qual)
     apply_rule(g, rules["missing_sleep_cause"])
-    _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
+    removed_e1 = _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
     results.append(check("여러 저품질 수면(50, 55) → 중복 Quest 제거 후 정확히 1개",
                          quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
+    assert removed_e1 >= 1, f"E1: _deduplicate_quests 제거 수 {removed_e1} (기대 >= 1)"
 
     # 엣지 E2: 3일 연속 저품질 수면 → _deduplicate_quests 후처리로 1개 유지
     g = load_base_graph()
@@ -726,10 +727,11 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
         g.add((sleep, PROD.quality, Literal(45, datatype=XSD.integer)))
         g.add((user, PROD.hasSleepData, sleep))
     apply_rule(g, rules["missing_sleep_cause"])
-    _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
+    removed_e2 = _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
     results.append(check("3일 연속 저품질 수면 → 중복 Quest 제거 후 정확히 1개",
                          quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
+    assert removed_e2 >= 1, f"E2: _deduplicate_quests 제거 수 {removed_e2} (기대 >= 1)"
 
     # 반례 E1: quality 60 (경계값) → 미생성
     g = load_base_graph()
@@ -1889,6 +1891,62 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
     assert all(results)
 
 
+# ── Test 다중 규칙 중복 Quest 통합 테스트 (Issue #61) ─────────────────────────
+
+def test_deduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
+    """다중 규칙이 동일 Quest를 생성할 때 _deduplicate_quests가 정확히 1개만 남기는지 검증."""
+    print("\n[Test E61] 다중 규칙 중복 Quest 제거 — fatigue_risk + burnout_warning 시뮬레이션")
+
+    # 시나리오: fatigue_risk와 burnout_warning 두 규칙이 같은 사용자에게
+    # 동일한 title의 Quest를 생성하는 상황 시뮬레이션
+    g = load_base_graph()
+
+    # 수동으로 중복 Quest 트리플 생성 (두 규칙이 만든 상황 시뮬레이션)
+    user = PROD["user_dedup_test"]
+    quest1 = PROD["quest_dedup_1"]
+    quest2 = PROD["quest_dedup_2"]
+
+    # 동일 user + questType + title로 2개 Quest 생성
+    g.add((user, RDF.type, PROD.User))
+    g.add((user, PROD.uid, Literal("dedup_test")))
+    g.add((user, PROD.receivesQuest, quest1))
+    g.add((quest1, RDF.type, PROD.Quest))
+    g.add((quest1, PROD.questType, Literal("삶 개선형")))
+    g.add((quest1, PROD.title, Literal("가벼운 스트레칭 10분")))
+    g.add((user, PROD.receivesQuest, quest2))
+    g.add((quest2, RDF.type, PROD.Quest))
+    g.add((quest2, PROD.questType, Literal("삶 개선형")))
+    g.add((quest2, PROD.title, Literal("가벼운 스트레칭 10분")))
+
+    # 중복 제거 전: 2개
+    quest_count_before = sum(1 for _ in g.subjects(RDF.type, PROD.Quest))
+
+    # 중복 제거 실행
+    removed = _deduplicate_quests(g)
+
+    # 검증
+    quest_count_after = sum(1 for _ in g.subjects(RDF.type, PROD.Quest))
+
+    ok1 = check("중복 제거 전 Quest 수 == 2",
+                quest_count_before == 2, f"실제 {quest_count_before}개")
+    ok2 = check("_deduplicate_quests 제거 수 == 1",
+                removed == 1, f"실제 {removed}개")
+    ok3 = check("중복 제거 후 Quest 수 == 1",
+                quest_count_after == 1, f"실제 {quest_count_after}개")
+
+    # 남은 Quest의 title이 올바른지 확인
+    remaining = list(g.subjects(RDF.type, PROD.Quest))
+    assert len(remaining) == 1, f"남은 Quest 노드 수 {len(remaining)} (기대 1)"
+    title = str(g.value(remaining[0], PROD.title))
+    ok4 = check("남은 Quest title == '가벼운 스트레칭 10분'",
+                title == "가벼운 스트레칭 10분", f"실제 title: {title}")
+
+    assert quest_count_before == 2, f"초기 Quest 수: {quest_count_before} (기대 2)"
+    assert removed == 1, f"제거된 Quest 수: {removed} (기대 1)"
+    assert quest_count_after == 1, f"최종 Quest 수: {quest_count_after} (기대 1)"
+    assert ok4, f"남은 Quest title 불일치: {title}"
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1915,6 +1973,7 @@ def main() -> None:
         ("spotify_music",     lambda: test_spotify_music_patterns(rules)),
         ("schedule_overload", lambda: test_schedule_overload(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
+        ("다중 규칙 중복 Quest 제거", lambda: test_deduplicate_quests_multi_rule(rules)),
     ]
 
     passed = 0
