@@ -321,8 +321,8 @@ class TripleValidator:
         if not uri or not uri.strip():
             warnings.append(f"subject URI가 비어있거나 공백: {repr(uri)}")
             return warnings
-        if " " in uri:
-            warnings.append(f"subject URI에 공백 포함: {uri}")
+        if any(c in uri for c in (" ", "\t", "\n", "\r")):
+            warnings.append(f"subject URI에 공백/제어문자 포함: {repr(uri)}")
         if not uri.startswith(("http://", "https://")):
             warnings.append(f"subject URI가 절대 URI가 아님: {uri}")
         return warnings

@@ -1415,8 +1415,8 @@ def test_validate_subject_uri() -> None:
 
     # 반례: URI에 공백 포함 → 경고 반환
     result = _validate_subject_uri("http://7team.dev/ontology#user 1")
-    assert check("URI에 공백 포함 → 공백 경고 반환",
-                 len(result) >= 1 and any("공백 포함" in w for w in result),
+    assert check("URI에 공백 포함 → 공백/제어문자 경고 반환",
+                 len(result) >= 1 and any("공백/제어문자 포함" in w for w in result),
                  f"실제: {result}")
 
     # 반례: 상대 URI (http:// 없음) → 경고 반환
@@ -1440,6 +1440,14 @@ def test_validate_subject_uri() -> None:
     # 반례: 공백 포함 상대 URI → 경고 2개 이상 (공백 포함 + 절대 URI 아님)
     result = _validate_subject_uri("user name")
     assert len(result) >= 2, f"공백+상대URI는 경고 2개 이상: {result}"
+
+    # 반례: 탭 문자 포함 URI → 경고 반환
+    result = _validate_subject_uri("http://foo.org/user\t1")
+    assert any("공백/제어문자 포함" in w for w in result), f"탭 포함 URI는 경고 반환: {result}"
+
+    # 반례: 개행 문자 포함 URI → 경고 반환
+    result = _validate_subject_uri("http://foo.org/user\n1")
+    assert any("공백/제어문자 포함" in w for w in result), f"개행 포함 URI는 경고 반환: {result}"
 
     # validate()와 연동: subject URI 문제 시 트리플 제외 + 경고 누적
     v = V()
@@ -1466,8 +1474,8 @@ def test_validate_subject_uri() -> None:
                                    "predicate": PROD + "uid", "object": "u1"}])
     assert check("validate(): subject에 공백 포함 → 트리플 제외",
                  len(valid) == 0, f"실제 valid: {len(valid)}")
-    assert check("validate(): subject에 공백 포함 → 공백 경고",
-                 any("공백 포함" in w for w in warnings),
+    assert check("validate(): subject에 공백 포함 → 공백/제어문자 경고",
+                 any("공백/제어문자 포함" in w for w in warnings),
                  f"실제 warnings: {warnings}")
 
     # 유효한 subject → 정상 통과
