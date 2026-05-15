@@ -1296,6 +1296,19 @@ def test_validate_required_properties() -> bool:
     g10.add((au, make_uri("usageDuration"), Literal(60, datatype=XSD.integer)))
     g10.add((q,  RDF.type, make_uri("Quest")))
     g10.add((q,  make_uri("title"), Literal("스트레칭 10분")))
+    # 신규 4개 클래스 인스턴스 추가
+    ml_full = make_uri("ml_full")
+    cal_full = make_uri("cal_full")
+    loc_full = make_uri("loc_full")
+    wt_full  = make_uri("wt_full")
+    g10.add((ml_full,  RDF.type, make_uri("MusicListening")))
+    g10.add((ml_full,  make_uri("listenDuration"), Literal(60, datatype=XSD.integer)))
+    g10.add((cal_full, RDF.type, make_uri("CalendarEvent")))
+    g10.add((cal_full, make_uri("startTime"), Literal("2026-05-15T09:00:00Z", datatype=XSD.dateTime)))
+    g10.add((loc_full, RDF.type, make_uri("Location")))
+    g10.add((loc_full, make_uri("placeName"), Literal("강남역")))
+    g10.add((wt_full,  RDF.type, make_uri("Weather")))
+    g10.add((wt_full,  make_uri("recordedAt"), Literal("2026-05-15T12:00:00Z", datatype=XSD.dateTime)))
     warnings10 = validate_required_properties(g10)
     r.append(check("복합 그래프 필수 속성 모두 있음 → WARNING 없음",
                    len(warnings10) == 0, f"warnings: {warnings10}"))
@@ -1309,6 +1322,82 @@ def test_validate_required_properties() -> bool:
     r.append(check("StepCount count 없음 → count WARNING 포함",
                    any("count 누락" in w and "sc_no_count" in w for w in warnings11),
                    f"warnings: {warnings11}"))
+
+    # ── 정례: MusicListening listenDuration 있음 → WARNING 없음 ──
+    g12 = Graph()
+    ml_ok = make_uri("music_ok")
+    g12.add((ml_ok, RDF.type, make_uri("MusicListening")))
+    g12.add((ml_ok, make_uri("listenDuration"), Literal(30, datatype=XSD.integer)))
+    warnings12 = validate_required_properties(g12)
+    ml_warns = [w for w in warnings12 if "listenDuration" in w and "music_ok" in w]
+    r.append(check("MusicListening listenDuration 있음 → listenDuration WARNING 없음",
+                   len(ml_warns) == 0, f"warnings: {warnings12}"))
+
+    # ── 반례: MusicListening listenDuration 없음 → WARNING 포함 ──
+    g13 = Graph()
+    ml_no = make_uri("music_no_dur")
+    g13.add((ml_no, RDF.type, make_uri("MusicListening")))
+    warnings13 = validate_required_properties(g13)
+    r.append(check("MusicListening listenDuration 없음 → listenDuration WARNING 포함",
+                   any("listenDuration 누락" in w and "music_no_dur" in w for w in warnings13),
+                   f"warnings: {warnings13}"))
+
+    # ── 정례: CalendarEvent startTime 있음 → WARNING 없음 ──
+    g14 = Graph()
+    cal_ok = make_uri("cal_ok")
+    g14.add((cal_ok, RDF.type, make_uri("CalendarEvent")))
+    g14.add((cal_ok, make_uri("startTime"), Literal("2026-05-15T09:00:00Z", datatype=XSD.dateTime)))
+    warnings14 = validate_required_properties(g14)
+    cal_warns = [w for w in warnings14 if "startTime" in w and "cal_ok" in w]
+    r.append(check("CalendarEvent startTime 있음 → startTime WARNING 없음",
+                   len(cal_warns) == 0, f"warnings: {warnings14}"))
+
+    # ── 반례: CalendarEvent startTime 없음 → WARNING 포함 ──
+    g15 = Graph()
+    cal_no = make_uri("cal_no_start")
+    g15.add((cal_no, RDF.type, make_uri("CalendarEvent")))
+    warnings15 = validate_required_properties(g15)
+    r.append(check("CalendarEvent startTime 없음 → startTime WARNING 포함",
+                   any("startTime 누락" in w and "cal_no_start" in w for w in warnings15),
+                   f"warnings: {warnings15}"))
+
+    # ── 정례: Location placeName 있음 → WARNING 없음 ──
+    g16 = Graph()
+    loc_ok = make_uri("loc_ok")
+    g16.add((loc_ok, RDF.type, make_uri("Location")))
+    g16.add((loc_ok, make_uri("placeName"), Literal("강남역")))
+    warnings16 = validate_required_properties(g16)
+    loc_warns = [w for w in warnings16 if "placeName" in w and "loc_ok" in w]
+    r.append(check("Location placeName 있음 → placeName WARNING 없음",
+                   len(loc_warns) == 0, f"warnings: {warnings16}"))
+
+    # ── 반례: Location placeName 없음 → WARNING 포함 ──
+    g17 = Graph()
+    loc_no = make_uri("loc_no_name")
+    g17.add((loc_no, RDF.type, make_uri("Location")))
+    warnings17 = validate_required_properties(g17)
+    r.append(check("Location placeName 없음 → placeName WARNING 포함",
+                   any("placeName 누락" in w and "loc_no_name" in w for w in warnings17),
+                   f"warnings: {warnings17}"))
+
+    # ── 정례: Weather recordedAt 있음 → WARNING 없음 ──
+    g18 = Graph()
+    wt_ok = make_uri("weather_ok")
+    g18.add((wt_ok, RDF.type, make_uri("Weather")))
+    g18.add((wt_ok, make_uri("recordedAt"), Literal("2026-05-15T12:00:00Z", datatype=XSD.dateTime)))
+    warnings18 = validate_required_properties(g18)
+    wt_warns = [w for w in warnings18 if "recordedAt" in w and "weather_ok" in w]
+    r.append(check("Weather recordedAt 있음 → recordedAt WARNING 없음",
+                   len(wt_warns) == 0, f"warnings: {warnings18}"))
+
+    # ── 반례: Weather recordedAt 없음 → WARNING 포함 ──
+    g19 = Graph()
+    wt_no = make_uri("weather_no_rec")
+    g19.add((wt_no, RDF.type, make_uri("Weather")))
+    warnings19 = validate_required_properties(g19)
+    r.append(check("Weather recordedAt 없음 → recordedAt WARNING 포함",
+                   any("recordedAt 누락" in w and "weather_no_rec" in w for w in warnings19),
+                   f"warnings: {warnings19}"))
 
     return all(r)
 
