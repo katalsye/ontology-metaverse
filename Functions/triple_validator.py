@@ -482,6 +482,9 @@ REQUIRED_PROPERTY_MAP: dict[str, list[str]] = {
     "StepCount":      ["count"],
     "AppUsage":       ["appName", "usageDuration"],
     "MusicListening": ["listenDuration"],
+    "CalendarEvent":  ["startTime"],
+    "Location":       ["visitTime"],
+    "Weather":        ["recordedAt"],
 }
 
 

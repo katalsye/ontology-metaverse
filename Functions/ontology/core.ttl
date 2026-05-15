@@ -860,3 +860,24 @@ prod:MusicListening rdfs:subClassOf [
     owl:onProperty prod:listenDuration ;
     owl:minCardinality "1"^^xsd:nonNegativeInteger
 ] .
+
+# CalendarEvent는 반드시 startTime을 가져야 함 (Rule 8 routine_detection, Rule 29 schedule_overload에서 사용)
+prod:CalendarEvent rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:startTime ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Location은 반드시 visitTime을 가져야 함 (Rules 1, 5, 10, P6에서 사용)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:visitTime ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Weather는 반드시 recordedAt을 가져야 함 (Rule 7 계절 판단에서 사용)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:recordedAt ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .

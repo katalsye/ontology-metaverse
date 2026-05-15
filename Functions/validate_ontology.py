@@ -76,6 +76,12 @@ MIN_CARDINALITY_1 = [
     ("AppUsage",       "appName"),
     ("AppUsage",       "usageDuration"),
     ("MusicListening", "listenDuration"),
+    # CalendarEvent
+    ("CalendarEvent",  "startTime"),
+    # Location
+    ("Location",       "visitTime"),
+    # Weather
+    ("Weather",        "recordedAt"),
 ]
 
 RANGE_CONSTRAINTS = [
