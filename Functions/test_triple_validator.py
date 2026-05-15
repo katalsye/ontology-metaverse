@@ -36,7 +36,7 @@ def V() -> TripleValidator:
 
 def test_predicate_normalization() -> None:
     print("\n[Test 1] predicate 정규화")
-    v = make_v = V()
+    v = V()
     r = []
 
     # 로컬명 → full URI
@@ -1407,6 +1407,7 @@ def test_validate_required_properties() -> None:
 def test_listen_duration_range() -> None:
     print("\n[Test 16] listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440분)")
     v = V()
+    r = []
 
     music = PROD + "music_ld"
 
@@ -1417,47 +1418,47 @@ def test_listen_duration_range() -> None:
 
     # 정례: 30분 (일반적인 청취 시간)
     valid, _ = v.validate([t("30")])
-    assert check("listenDuration=30 (정상) → 통과", len(valid) == 1)
+    r.append(check("listenDuration=30 (정상) → 통과", len(valid) == 1))
 
     # 정례: 120분 (MusicMood 추론 임계값)
     valid, _ = v.validate([t("120")])
-    assert check("listenDuration=120 (MusicMood 임계값) → 통과", len(valid) == 1)
+    r.append(check("listenDuration=120 (MusicMood 임계값) → 통과", len(valid) == 1))
 
     # 정례: 180분 (3시간, FocusMode 추론 임계값)
     valid, _ = v.validate([t("180")])
-    assert check("listenDuration=180 (FocusMode 임계값) → 통과", len(valid) == 1)
+    r.append(check("listenDuration=180 (FocusMode 임계값) → 통과", len(valid) == 1))
 
     # ── 경계값 ──
 
     # 하한 경계값: 1분
     valid, _ = v.validate([t("1")])
-    assert check("listenDuration=1 (하한 경계값) → 통과", len(valid) == 1)
+    r.append(check("listenDuration=1 (하한 경계값) → 통과", len(valid) == 1))
 
     # 상한 경계값: 1440분 (24시간)
     valid, _ = v.validate([t("1440")])
-    assert check("listenDuration=1440 (상한 경계값, 24시간) → 통과", len(valid) == 1)
+    r.append(check("listenDuration=1440 (상한 경계값, 24시간) → 통과", len(valid) == 1))
 
     # ── 비정상값 ──
 
     # 하한 미만: 0분 (1분 미만은 청취 기록 불필요)
     valid, w = v.validate([t("0")])
-    assert check("listenDuration=0 (하한 미만) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration=0 (하한 미만) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
 
     # 상한 초과: 1441분
     valid, w = v.validate([t("1441")])
-    assert check("listenDuration=1441 (상한 초과) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration=1441 (상한 초과) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
 
     # 음수: -1분
     valid, w = v.validate([t("-1")])
-    assert check("listenDuration=-1 (음수) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration=-1 (음수) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
 
     # 문자열: 숫자 변환 불가
     valid, w = v.validate([t("long")])
-    assert check("listenDuration='long' (문자열) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration='long' (문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
 
     # ── float 입력 케이스 ──
     # listenDuration은 int 타입(RANGE_BOUNDS 기준). float 문자열 입력 시
@@ -1466,113 +1467,123 @@ def test_listen_duration_range() -> None:
 
     # float 입력: "1.5" → int 변환 불가 → 제외 + 경고
     valid, w = v.validate([t("1.5")])
-    assert check("listenDuration='1.5' (float 문자열) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration='1.5' (float 문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
 
     # float 입력: "120.0" → int 변환 불가 → 제외 + 경고
     valid, w = v.validate([t("120.0")])
-    assert check("listenDuration='120.0' (float 문자열) → 제외 + 경고",
-                 len(valid) == 0 and any("listenDuration" in x for x in w))
+    r.append(check("listenDuration='120.0' (float 문자열) → 제외 + 경고",
+                   len(valid) == 0 and any("listenDuration" in x for x in w)))
+
+    assert all(r)
 
 
 # ── Test 17: _validate_subject_uri 직접 검증 ─────────────────────────────────
 
 def test_validate_subject_uri() -> None:
     print("\n[Test 17] _validate_subject_uri (subject URI 형식 검증)")
+    r = []
 
     # 정례: 유효한 http:// URI → 빈 리스트
     result = _validate_subject_uri("http://7team.dev/ontology#user1")
-    assert check("유효한 http:// URI → 경고 없음",
-                 result == [], f"실제: {result}")
+    r.append(check("유효한 http:// URI → 경고 없음",
+                   result == [], f"실제: {result}"))
 
     # 정례: 유효한 https:// URI → 빈 리스트
     result = _validate_subject_uri("https://example.com/resource/1")
-    assert check("유효한 https:// URI → 경고 없음",
-                 result == [], f"실제: {result}")
+    r.append(check("유효한 https:// URI → 경고 없음",
+                   result == [], f"실제: {result}"))
 
     # 반례: 빈 문자열 → 경고 반환
     result = _validate_subject_uri("")
-    assert check("빈 문자열 → 경고 반환",
-                 len(result) >= 1 and any("비어있거나 공백" in w for w in result),
-                 f"실제: {result}")
+    r.append(check("빈 문자열 → 경고 반환",
+                   len(result) >= 1 and any("비어있거나 공백" in w for w in result),
+                   f"실제: {result}"))
 
     # 반례: 공백만 있는 문자열 → 경고 반환
     result = _validate_subject_uri("   ")
-    assert check("공백만 있는 문자열 → 경고 반환",
-                 len(result) >= 1 and any("비어있거나 공백" in w for w in result),
-                 f"실제: {result}")
+    r.append(check("공백만 있는 문자열 → 경고 반환",
+                   len(result) >= 1 and any("비어있거나 공백" in w for w in result),
+                   f"실제: {result}"))
 
     # 반례: URI에 공백 포함 → 경고 반환
     result = _validate_subject_uri("http://7team.dev/ontology#user 1")
-    assert check("URI에 공백 포함 → 공백/제어문자 경고 반환",
-                 len(result) >= 1 and any("공백/제어문자 포함" in w for w in result),
-                 f"실제: {result}")
+    r.append(check("URI에 공백 포함 → 공백/제어문자 경고 반환",
+                   len(result) >= 1 and any("공백/제어문자 포함" in w for w in result),
+                   f"실제: {result}"))
 
     # 반례: 상대 URI (http:// 없음) → 경고 반환
     result = _validate_subject_uri("user1")
-    assert check("상대 URI 'user1' → 절대 URI 아님 경고",
-                 len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
-                 f"실제: {result}")
+    r.append(check("상대 URI 'user1' → 절대 URI 아님 경고",
+                   len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
+                   f"실제: {result}"))
 
     # 반례: 상대 URI (prod: 접두사) → 경고 반환
     result = _validate_subject_uri("prod:user1")
-    assert check("상대 URI 'prod:user1' → 절대 URI 아님 경고",
-                 len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
-                 f"실제: {result}")
+    r.append(check("상대 URI 'prod:user1' → 절대 URI 아님 경고",
+                   len(result) >= 1 and any("절대 URI가 아님" in w for w in result),
+                   f"실제: {result}"))
 
     # 반례: 특수문자 포함 URI (공백 없음, http:// 있음) → 경고 없음
     # (특수문자 자체는 URI 스펙상 인코딩 가능, 공백만 명시적으로 검사)
     result = _validate_subject_uri("http://7team.dev/ontology#user-1_test")
-    assert check("http:// URI + 하이픈/언더스코어 → 경고 없음",
-                 result == [], f"실제: {result}")
+    r.append(check("http:// URI + 하이픈/언더스코어 → 경고 없음",
+                   result == [], f"실제: {result}"))
 
     # 반례: 공백 포함 상대 URI → 경고 2개 이상 (공백 포함 + 절대 URI 아님)
     result = _validate_subject_uri("user name")
-    assert len(result) >= 2, f"공백+상대URI는 경고 2개 이상: {result}"
+    r.append(check("공백+상대URI → 경고 2개 이상",
+                   len(result) >= 2, f"공백+상대URI는 경고 2개 이상: {result}"))
 
     # 반례: 탭 문자 포함 URI → 경고 반환
     result = _validate_subject_uri("http://foo.org/user\t1")
-    assert any("공백/제어문자 포함" in w for w in result), f"탭 포함 URI는 경고 반환: {result}"
+    r.append(check("탭 문자 포함 URI → 공백/제어문자 경고 반환",
+                   any("공백/제어문자 포함" in w for w in result),
+                   f"탭 포함 URI는 경고 반환: {result}"))
 
     # 반례: 개행 문자 포함 URI → 경고 반환
     result = _validate_subject_uri("http://foo.org/user\n1")
-    assert any("공백/제어문자 포함" in w for w in result), f"개행 포함 URI는 경고 반환: {result}"
+    r.append(check("개행 문자 포함 URI → 공백/제어문자 경고 반환",
+                   any("공백/제어문자 포함" in w for w in result),
+                   f"개행 포함 URI는 경고 반환: {result}"))
 
     # validate()와 연동: subject URI 문제 시 트리플 제외 + 경고 누적
     v = V()
 
     # 빈 subject → 트리플 제외 + 경고
     valid, warnings = v.validate([{"subject": "", "predicate": PROD + "uid", "object": "u1"}])
-    assert check("validate(): subject='' → 트리플 제외",
-                 len(valid) == 0, f"실제 valid: {len(valid)}")
-    assert check("validate(): subject='' → 경고 포함",
-                 any("비어있거나 공백" in w for w in warnings),
-                 f"실제 warnings: {warnings}")
+    r.append(check("validate(): subject='' → 트리플 제외",
+                   len(valid) == 0, f"실제 valid: {len(valid)}"))
+    r.append(check("validate(): subject='' → 경고 포함",
+                   any("비어있거나 공백" in w for w in warnings),
+                   f"실제 warnings: {warnings}"))
 
     # 상대 URI subject → 트리플 제외 + 경고
     valid, warnings = v.validate([{"subject": "relative_uri", "predicate": PROD + "uid",
                                    "object": "u1"}])
-    assert check("validate(): subject='relative_uri' → 트리플 제외",
-                 len(valid) == 0, f"실제 valid: {len(valid)}")
-    assert check("validate(): subject='relative_uri' → 절대 URI 경고",
-                 any("절대 URI가 아님" in w for w in warnings),
-                 f"실제 warnings: {warnings}")
+    r.append(check("validate(): subject='relative_uri' → 트리플 제외",
+                   len(valid) == 0, f"실제 valid: {len(valid)}"))
+    r.append(check("validate(): subject='relative_uri' → 절대 URI 경고",
+                   any("절대 URI가 아님" in w for w in warnings),
+                   f"실제 warnings: {warnings}"))
 
     # 공백 포함 subject → 트리플 제외 + 경고
     valid, warnings = v.validate([{"subject": "http://7team.dev/ontology#user 1",
                                    "predicate": PROD + "uid", "object": "u1"}])
-    assert check("validate(): subject에 공백 포함 → 트리플 제외",
-                 len(valid) == 0, f"실제 valid: {len(valid)}")
-    assert check("validate(): subject에 공백 포함 → 공백/제어문자 경고",
-                 any("공백/제어문자 포함" in w for w in warnings),
-                 f"실제 warnings: {warnings}")
+    r.append(check("validate(): subject에 공백 포함 → 트리플 제외",
+                   len(valid) == 0, f"실제 valid: {len(valid)}"))
+    r.append(check("validate(): subject에 공백 포함 → 공백/제어문자 경고",
+                   any("공백/제어문자 포함" in w for w in warnings),
+                   f"실제 warnings: {warnings}"))
 
     # 유효한 subject → 정상 통과
     valid, warnings = v.validate([{"subject": PROD + "user1", "predicate": PROD + "uid",
                                    "object": "u1"}])
     subj_warns = [w for w in warnings if "subject URI" in w]
-    assert check("validate(): 유효한 subject → subject URI 경고 없음",
-                 len(subj_warns) == 0, f"실제 subject URI 경고: {subj_warns}")
+    r.append(check("validate(): 유효한 subject → subject URI 경고 없음",
+                   len(subj_warns) == 0, f"실제 subject URI 경고: {subj_warns}"))
+
+    assert all(r)
 
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────
