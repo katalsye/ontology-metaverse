@@ -34,7 +34,7 @@ def V() -> TripleValidator:
 
 # ── Test 1: predicate 정규화 ──────────────────────────────────────────────────
 
-def test_predicate_normalization() -> bool:
+def test_predicate_normalization() -> None:
     print("\n[Test 1] predicate 정규화")
     v = make_v = V()
     r = []
@@ -81,12 +81,12 @@ def test_predicate_normalization() -> bool:
     r.append(check("미정의 full URI predicate → 제외",
                    len(valid) == 0 and len(warnings) >= 1))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 2: 스키마 검증 ───────────────────────────────────────────────────────
 
-def test_schema_validation() -> bool:
+def test_schema_validation() -> None:
     print("\n[Test 2] 스키마 검증 (미정의 predicate 제외)")
     v = V()
     r = []
@@ -110,12 +110,12 @@ def test_schema_validation() -> bool:
     r.append(check("모두 unknown → valid 0, 경고 2개",
                    len(valid) == 0 and len(warnings) >= 2))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 3: 범위 제약 검증 ────────────────────────────────────────────────────
 
-def test_range_validation() -> bool:
+def test_range_validation() -> None:
     print("\n[Test 3] 범위 제약 검증")
     v = V()
     r = []
@@ -176,12 +176,12 @@ def test_range_validation() -> bool:
     valid, _ = v.validate([t("w", "humidity", "0.0", "float")])
     r.append(check("humidity=0.0 → 통과", len(valid) == 1))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 4: 타입 자동 변환 ────────────────────────────────────────────────────
 
-def test_type_coercion() -> bool:
+def test_type_coercion() -> None:
     print("\n[Test 4] 타입 자동 변환")
     v = V()
     r = []
@@ -237,12 +237,12 @@ def test_type_coercion() -> bool:
     r.append(check("range 없는 '3.14' → xsd:float 자동 추론",
                    len(valid) == 1 and valid[0].get("datatype", "").endswith("float")))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 5: User 연결 감지 ────────────────────────────────────────────────────
 
-def test_user_connection() -> bool:
+def test_user_connection() -> None:
     print("\n[Test 5] User 연결 감지")
     v = V()
     r = []
@@ -292,12 +292,12 @@ def test_user_connection() -> bool:
     r.append(check("User 노드만 있으면 고립 경고 없음",
                    len(orphan_w) == 0))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 6: 빈 입력 및 엣지 케이스 ───────────────────────────────────────────
 
-def test_edge_cases() -> bool:
+def test_edge_cases() -> None:
     print("\n[Test 6] 빈 입력 및 엣지 케이스")
     v = V()
     r = []
@@ -318,12 +318,12 @@ def test_edge_cases() -> bool:
     r.append(check("동일 트리플 2개 입력 → 2개 모두 통과 (graph dedup은 엔진 역할)",
                    len(valid) == 2))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 7: 통합 시나리오 ─────────────────────────────────────────────────────
 
-def test_integration() -> bool:
+def test_integration() -> None:
     print("\n[Test 7] 통합 시나리오 (복합 입력)")
     v = V()
     r = []
@@ -369,12 +369,12 @@ def test_integration() -> bool:
     r.append(check("고립 경고 없음 (sc는 hasStepCount로 연결됨)",
                    not any("고립" in w for w in warnings)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 8: 시간대 검증 (timestamp, visitTime, date) ──────────────────────────
 
-def test_timestamp_validation() -> bool:
+def test_timestamp_validation() -> None:
     print("\n[Test 8] 시간대 검증 (ISO 8601 / YYYY-MM-DD)")
     v = V()
     r = []
@@ -485,12 +485,12 @@ def test_timestamp_validation() -> bool:
     r.append(check("timestamp=현재 시각 → 미래 경고 없음",
                    len(valid) == 1 and len(future_warnings) == 0))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 9: 수면 시간 특별 검증 (0.5~18.0) ─────────────────────────────────────
 
-def test_sleep_duration_special() -> bool:
+def test_sleep_duration_special() -> None:
     print("\n[Test 9] 수면 시간 특별 검증 (0.5~18.0 시간)")
     v = V()
     r = []
@@ -529,12 +529,12 @@ def test_sleep_duration_special() -> bool:
     r.append(check("duration=24.5 → 제외 (범위 위반 먼저)",
                    len(valid) == 0 and any("범위 위반" in x for x in w)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 10: 타임존 혼합 및 밀리초 엣지케이스 ────────────────────────────────
 
-def test_timezone_millisecond_edge_cases() -> bool:
+def test_timezone_millisecond_edge_cases() -> None:
     print("\n[Test 10] 타임존 혼합 및 밀리초 엣지케이스")
     v = V()
     r = []
@@ -595,12 +595,12 @@ def test_timezone_millisecond_edge_cases() -> bool:
                              "object": "2026-05-13T14:30:00.1Z"}])
     r.append(check("1자리 밀리초 + Z → 통과", len(valid) == 1))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 11: GPS 좌표 범위 검증 ───────────────────────────────────────────────
 
-def test_gps_coordinates() -> bool:
+def test_gps_coordinates() -> None:
     print("\n[Test 11] GPS 좌표 범위 검증 (latitude/longitude)")
     v = V()
     r = []
@@ -783,12 +783,12 @@ def test_gps_coordinates() -> bool:
     r.append(check("humidity='wet' (문자열) → 제외 + 경고",
                    len(valid) == 0 and any("humidity" in x for x in w)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 12: 확장 시간 속성 검증 (playedAt, recordedAt, startTime, endTime) ──
 
-def test_extended_datetime_props() -> bool:
+def test_extended_datetime_props() -> None:
     print("\n[Test 12] 확장 시간 속성 검증 (playedAt / recordedAt / startTime / endTime)")
     v = V()
     r = []
@@ -937,12 +937,12 @@ def test_extended_datetime_props() -> bool:
     r.append(check("startTime 유효 + endTime 무효 → 1개만 통과",
                    len(valid) == 1 and any("시간 형식" in x and "endTime" in x for x in w)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 13: updatedAt 시간 속성 검증 ────────────────────────────────────────
 
-def test_updatedAt_prop() -> bool:
+def test_updatedAt_prop() -> None:
     print("\n[Test 13] updatedAt 시간 속성 검증 (Persona 갱신 시각)")
     v = V()
     r = []
@@ -1000,13 +1000,13 @@ def test_updatedAt_prop() -> bool:
     r.append(check("updatedAt='1747123456' (Unix) → 제외 + 경고",
                    len(valid) == 0 and any("시간 형식" in x for x in w)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 14: 숫자 범위 검증 (count / duration / quality / deepSleepRatio /
 #             usageDuration / visitCount) ─────────────────────────────────────
 
-def test_numeric_ranges() -> bool:
+def test_numeric_ranges() -> None:
     print("\n[Test 14] 숫자 범위 검증 (NUMERIC_RANGES 전체)")
     v = V()
     r = []
@@ -1169,12 +1169,12 @@ def test_numeric_ranges() -> bool:
     r.append(check("duration='abc' (문자열) → 제외 + 경고",
                    len(valid) == 0 and any("duration" in x for x in w)))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 15: validate_required_properties (필수 속성 누락 감지) ──────────────
 
-def test_validate_required_properties() -> bool:
+def test_validate_required_properties() -> None:
     print("\n[Test 15] validate_required_properties (필수 속성 누락 감지)")
     from rdflib import Graph, RDF, URIRef, Literal
     from rdflib.namespace import XSD
@@ -1399,7 +1399,7 @@ def test_validate_required_properties() -> bool:
                    any("recordedAt 누락" in w and "weather_no_rec" in w for w in warnings19),
                    f"warnings: {warnings19}"))
 
-    return all(r)
+    assert all(r)
 
 
 # ── Test 16: listenDuration 범위 검증 (MusicListening.listenDuration: 1~1440) ──
