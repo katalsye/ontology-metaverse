@@ -78,8 +78,8 @@ MIN_CARDINALITY_1 = [
     ("MusicListening", "listenDuration"),
     # CalendarEvent
     ("CalendarEvent",  "startTime"),
-    # Location
-    ("Location",       "visitTime"),
+    # Location — visitTime 제거(Rule 4/6 WHERE절 미사용), placeName으로 교체
+    ("Location",       "placeName"),
     # Weather
     ("Weather",        "recordedAt"),
 ]
@@ -304,6 +304,24 @@ def main() -> None:
 
     total_fail += validate_rules(rules_text)
     total_fail += validate_sparql_syntax(g, rules_text)
+
+    # [9] MIN_CARDINALITY_1 ↔ REQUIRED_PROPERTY_MAP 동기화 확인
+    print("\n[9] MIN_CARDINALITY_1 ↔ REQUIRED_PROPERTY_MAP 동기화 확인")
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent if "__file__" in dir() else Path("Functions")))
+        from triple_validator import REQUIRED_PROPERTY_MAP
+        mc1_set = {(cls, prop) for cls, prop in MIN_CARDINALITY_1}
+        rpm_set = {(cls, prop) for cls, props in REQUIRED_PROPERTY_MAP.items()
+                   for prop in props}
+        if mc1_set == rpm_set:
+            check(True, "MIN_CARDINALITY_1 ↔ REQUIRED_PROPERTY_MAP 동기화")
+        else:
+            diff = mc1_set ^ rpm_set
+            check(False, f"MIN_CARDINALITY_1 ↔ REQUIRED_PROPERTY_MAP 불일치: {diff}")
+            total_fail += 1
+    except Exception as e:
+        print(f"  [SKIP] REQUIRED_PROPERTY_MAP 임포트 실패: {e}")
 
     # 결과
     print("\n" + "=" * 60)

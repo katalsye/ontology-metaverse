@@ -80,44 +80,44 @@
   "hotPaths": [
     {
       "path": "Functions\\test_rules.py",
-      "accessCount": 199,
-      "lastAccessed": 1778854205108,
+      "accessCount": 212,
+      "lastAccessed": 1778856103643,
       "type": "file"
     },
     {
       "path": "Functions\\test_triple_validator.py",
-      "accessCount": 94,
-      "lastAccessed": 1778823661619,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\ontology\\core.ttl",
-      "accessCount": 91,
-      "lastAccessed": 1778854035610,
+      "accessCount": 122,
+      "lastAccessed": 1778856103068,
       "type": "file"
     },
     {
       "path": "Functions\\triple_validator.py",
-      "accessCount": 82,
-      "lastAccessed": 1778854320859,
+      "accessCount": 111,
+      "lastAccessed": 1778856202285,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\core.ttl",
+      "accessCount": 99,
+      "lastAccessed": 1778856236791,
       "type": "file"
     },
     {
       "path": "Functions\\validate_ontology.py",
-      "accessCount": 68,
-      "lastAccessed": 1778823990181,
-      "type": "file"
-    },
-    {
-      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
-      "accessCount": 56,
-      "lastAccessed": 1778824726281,
+      "accessCount": 75,
+      "lastAccessed": 1778856243535,
       "type": "file"
     },
     {
       "path": "Functions\\ontology_engine.py",
-      "accessCount": 56,
-      "lastAccessed": 1778854321422,
+      "accessCount": 58,
+      "lastAccessed": 1778855878096,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
+      "accessCount": 58,
+      "lastAccessed": 1778856103988,
       "type": "file"
     },
     {

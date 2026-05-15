@@ -868,10 +868,10 @@ prod:CalendarEvent rdfs:subClassOf [
     owl:minCardinality "1"^^xsd:nonNegativeInteger
 ] .
 
-# Location은 반드시 visitTime을 가져야 함 (Rules 1, 5, 10, P6에서 사용)
+# Location은 반드시 placeName을 가져야 함 (Rule 4/6 place_habit, missing_companion에서 사용)
 prod:Location rdfs:subClassOf [
     a owl:Restriction ;
-    owl:onProperty prod:visitTime ;
+    owl:onProperty prod:placeName ;
     owl:minCardinality "1"^^xsd:nonNegativeInteger
 ] .
 

@@ -483,7 +483,7 @@ REQUIRED_PROPERTY_MAP: dict[str, list[str]] = {
     "AppUsage":       ["appName", "usageDuration"],
     "MusicListening": ["listenDuration"],
     "CalendarEvent":  ["startTime"],
-    "Location":       ["visitTime"],
+    "Location":       ["placeName"],
     "Weather":        ["recordedAt"],
 }
 
