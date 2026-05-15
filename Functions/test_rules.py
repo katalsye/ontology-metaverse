@@ -14,6 +14,41 @@ from pathlib import Path
 from rdflib import Graph, Namespace, RDF, Literal, URIRef
 from rdflib.namespace import XSD
 
+
+def _deduplicate_quests(graph: Graph) -> int:
+    """동일 사용자+questType+title 조합의 중복 Quest 트리플 제거. 제거된 수 반환.
+
+    ontology_engine._deduplicate_quests와 동일한 로직.
+    테스트 환경에서 firebase_admin 없이 사용하기 위해 인라인 정의.
+    Python 레벨 중복 탐지로 RDFLib 버전 호환성 보장.
+    """
+    all_quests_query = """
+    PREFIX prod: <http://7team.dev/ontology#>
+    SELECT ?user ?quest ?questType ?title
+    WHERE {
+        ?user prod:receivesQuest ?quest .
+        ?quest a prod:Quest ;
+               prod:questType ?questType ;
+               prod:title ?title .
+    }
+    """
+    rows = list(graph.query(all_quests_query))
+
+    seen: dict = {}
+    to_remove = []
+    for row in rows:
+        key = (str(row.user), str(row.questType), str(row.title))
+        if key not in seen:
+            seen[key] = row.quest
+        else:
+            to_remove.append(row.quest)
+
+    for quest in to_remove:
+        graph.remove((None, None, quest))
+        graph.remove((quest, None, None))
+
+    return len(to_remove)
+
 PROD = Namespace("http://7team.dev/ontology#")
 TTL_PATH   = Path("Functions/ontology/core.ttl")
 RULES_PATH = Path("Functions/ontology/rules/inference_rules.sparql")
@@ -670,23 +705,18 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
                          dup_count == 1, f"실제 {dup_count}개"))
 
     # 엣지 E1: quality 50, 55, 70인 수면 3개 → 60 미만 2개 조건 충족, 중복 방지로 1개만
-    # (규칙이 첫 번째 매칭만 트리플 생성하고 이후는 중복 방지 FILTER가 억제)
+    # _deduplicate_quests 후처리로 동일 title 중복 제거 → 정확히 1개
     g = load_base_graph()
     user = _add_user(g, "r6_edge_e1")
     for i, qual in enumerate([50, 55, 70]):
         _add_sleep(g, user, f"r6_edge_e1_{i}", 6.0, quality=qual)
     apply_rule(g, rules["missing_sleep_cause"])
+    _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
-    # 실제 동작: CONSTRUCT는 여러 매칭에 대해 각각 실행 시도하지만
-    # FILTER NOT EXISTS로 첫 실행 후 생성된 퀘스트가 이미 존재하므로
-    # 두 번째 수면 데이터에 대한 퀘스트는 억제됨
-    # 그러나 RDFLib는 CONSTRUCT 결과를 모두 모은 후 한 번에 add하므로
-    # 동시 매칭된 트리플들은 모두 생성됨 → 실제로는 2개 생성
-    results.append(check("여러 저품질 수면(50, 55) → 각 수면별 WHERE 매칭으로 중복 방지 한계",
-                         quest_count >= 1, f"실제 {quest_count}개 (RDFLib CONSTRUCT 동시 실행)"))
+    results.append(check("여러 저품질 수면(50, 55) → 중복 Quest 제거 후 정확히 1개",
+                         quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
 
-    # 엣지 E2: 여러 날짜 수면질 저하 시뮬레이션 → 각 수면별 매칭
-    # (중복 방지는 이미 존재하는 퀘스트를 확인하지만, CONSTRUCT가 동시 실행되면 모두 생성)
+    # 엣지 E2: 3일 연속 저품질 수면 → _deduplicate_quests 후처리로 1개 유지
     g = load_base_graph()
     user = _add_user(g, "r6_edge_e2")
     for day in range(3):
@@ -696,11 +726,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
         g.add((sleep, PROD.quality, Literal(45, datatype=XSD.integer)))
         g.add((user, PROD.hasSleepData, sleep))
     apply_rule(g, rules["missing_sleep_cause"])
+    _deduplicate_quests(g)   # 후처리: 중복 Quest 제거
     quest_count = sum(1 for t in quest_titles(g) if t == title)
-    # 실제 동작: 각 수면 노드가 WHERE절에 매칭되어 3개 트리플 생성 시도
-    # FILTER NOT EXISTS는 실행 시점에 그래프에 퀘스트가 없으므로 모두 통과
-    results.append(check("3일 연속 저품질 수면 → 각 수면별 매칭 (CONSTRUCT 동시 실행 이슈)",
-                         quest_count >= 1, f"실제 {quest_count}개 (중복 방지 한계)"))
+    results.append(check("3일 연속 저품질 수면 → 중복 Quest 제거 후 정확히 1개",
+                         quest_count == 1, f"실제 {quest_count}개 (_deduplicate_quests 적용)"))
 
     # 반례 E1: quality 60 (경계값) → 미생성
     g = load_base_graph()
