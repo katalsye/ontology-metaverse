@@ -1437,6 +1437,10 @@ def test_validate_subject_uri() -> None:
     assert check("http:// URI + 하이픈/언더스코어 → 경고 없음",
                  result == [], f"실제: {result}")
 
+    # 반례: 공백 포함 상대 URI → 경고 2개 이상 (공백 포함 + 절대 URI 아님)
+    result = _validate_subject_uri("user name")
+    assert len(result) >= 2, f"공백+상대URI는 경고 2개 이상: {result}"
+
     # validate()와 연동: subject URI 문제 시 트리플 제외 + 경고 누적
     v = V()
 
