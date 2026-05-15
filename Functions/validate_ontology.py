@@ -69,9 +69,10 @@ DISJOINT_PAIRS = [
 ]
 
 MIN_CARDINALITY_1 = [
-    ("User",      "uid"),
-    ("Quest",     "title"),
-    ("SleepData", "duration"),
+    ("User",           "uid"),
+    ("Quest",          "title"),
+    ("SleepData",      "duration"),
+    ("MusicListening", "listenDuration"),
 ]
 
 RANGE_CONSTRAINTS = [

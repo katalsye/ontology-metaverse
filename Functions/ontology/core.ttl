@@ -853,3 +853,10 @@ prod:AppUsage rdfs:subClassOf [
     owl:onProperty prod:usageDuration ;
     owl:minCardinality "1"^^xsd:nonNegativeInteger
 ] .
+
+# MusicListening은 반드시 listenDuration을 가져야 함
+prod:MusicListening rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:listenDuration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
