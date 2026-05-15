@@ -1942,6 +1942,10 @@ def main() -> None:
         ("schedule_overload", lambda: test_schedule_overload(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
         ("다중 규칙 중복 Quest 제거", lambda: testdeduplicate_quests_multi_rule(rules)),
+        # E63 함수들은 pytest로도 실행 가능 (python test_rules.py와 동일 커버리지)
+        ("e63_no_quest_type",   test_e63_1_no_quest_type_skipped),
+        ("e63_diff_users",      test_e63_2_different_users_same_quest),
+        ("e63_no_dup_zero",     test_e63_3_no_duplicates_returns_zero),
     ]
 
     passed = 0
@@ -1968,6 +1972,59 @@ def main() -> None:
         sys.exit(1)
     else:
         print("모든 테스트 통과")
+
+
+# ── E63 엣지케이스 테스트 ─────────────────────────────────────────────────────
+
+def test_e63_1_no_quest_type_skipped():
+    """questType 미선언 Quest는 SPARQL WHERE절 미매칭으로 중복 제거 대상에서 제외됨 (미탐지 케이스 — 설계상 허용)."""
+    g = Graph()
+    user = PROD.user1
+    q1 = PROD.quest_no_type_1
+    q2 = PROD.quest_no_type_2
+    for q in [q1, q2]:
+        g.add((user, PROD.receivesQuest, q))
+        g.add((q, RDF.type, PROD.Quest))
+        g.add((q, PROD.title, Literal("운동하기")))
+        # questType 의도적으로 누락
+    removed = deduplicate_quests(g)
+    assert removed == 0, f"questType 없는 Quest는 제거 대상 아님, removed={removed}"
+    remaining = list(g.subjects(RDF.type, PROD.Quest))
+    assert len(remaining) == 2, f"Quest 2개 유지되어야 함, 실제={len(remaining)}"
+
+
+def test_e63_2_different_users_same_quest():
+    """서로 다른 user의 동일 Quest — 각각 유지."""
+    g = Graph()
+    for i, user in enumerate([PROD.userA, PROD.userB]):
+        q = PROD[f"quest_user{i}"]
+        g.add((user, PROD.receivesQuest, q))
+        g.add((q, RDF.type, PROD.Quest))
+        g.add((q, PROD.questType, Literal("삶 개선형")))
+        g.add((q, PROD.title, Literal("30분 산책하기")))
+    removed = deduplicate_quests(g)
+    assert removed == 0, f"다른 user의 Quest는 중복 아님, removed={removed}"
+    remaining = list(g.subjects(RDF.type, PROD.Quest))
+    assert len(remaining) == 2, f"Quest 2개 유지되어야 함, 실제={len(remaining)}"
+
+
+def test_e63_3_no_duplicates_returns_zero():
+    """중복 Quest가 있을 때 제거, 없을 때 0 반환 — 2단계 검증."""
+    g = Graph()
+    user = PROD.user1
+    # 1단계: 동일 (user, questType, title) Quest 2개 → 1개 제거
+    for i in range(2):
+        q = PROD[f"quest_dup_{i}"]
+        g.add((user, PROD.receivesQuest, q))
+        g.add((q, RDF.type, PROD.Quest))
+        g.add((q, PROD.questType, Literal("삶 개선형")))
+        g.add((q, PROD.title, Literal("30분 산책하기")))
+    removed_first = deduplicate_quests(g)
+    assert removed_first == 1, f"1단계: 중복 1개 제거 기대, removed={removed_first}"
+
+    # 2단계: 이미 중복 제거된 그래프에서 재실행 → 0
+    removed_second = deduplicate_quests(g)
+    assert removed_second == 0, f"2단계: 중복 없을 때 반환값 0 기대, removed={removed_second}"
 
 
 if __name__ == "__main__":
