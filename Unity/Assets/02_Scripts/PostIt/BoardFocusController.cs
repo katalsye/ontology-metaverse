@@ -1,25 +1,17 @@
 using UnityEngine;
 
-// ── 전체 포커스 상태 관리 ─────────────────────────────────────────────────
-// 유니티 Inspector 설정:
-// 1. 빈 GameObject 만들고 BoardFocusController 이름, 이 스크립트 붙이기
-// 2. playerMovement → 씬의 PlayerMovementController 연결
-// 3. boardViewPoint  → 보드 앞에 Empty GameObject 배치 (카메라가 이동할 위치)
-//                      보드를 바라보는 방향으로 회전 맞춰두기
-// 4. postItViewDist  → 포스트잇 줌인 시 카메라와 포스트잇 사이 거리 (기본 0.3)
-// 5. moveSpeed       → 카메라 이동 부드러움
-
 public class BoardFocusController : MonoBehaviour
 {
-    // ── 싱글턴 ────────────────────────────────────────────────────────────
     public static BoardFocusController Instance { get; private set; }
 
-    // ── Inspector ──────────────────────────────────────────────────────────
     [Header("연결")]
     public PlayerMovementController playerMovement;
+    public Transform board;
+    [Tooltip("줌인 시 숨길 조이스틱 UI (비워두면 JoystickController에서 자동 검색)")]
+    public GameObject joystickObject;
 
-    [Header("보드 뷰포인트 (보드 앞 Empty GameObject)")]
-    public Transform boardViewPoint;
+    [Header("보드에서 카메라까지 거리")]
+    public float boardViewDist = 12f;
 
     [Header("포스트잇 줌인 거리")]
     public float postItViewDist = 0.25f;
@@ -27,160 +19,133 @@ public class BoardFocusController : MonoBehaviour
     [Header("카메라 이동 속도")]
     public float moveSpeed = 5f;
 
-    // ── 상태 ──────────────────────────────────────────────────────────────
-    public enum FocusState { Free, Board, PostIt }
-    public FocusState State { get; private set; } = FocusState.Free;
+    public enum FocusState { Free, Board, PostIt, Returning }
+    public FocusState State       { get; private set; } = FocusState.Free;
+    public PostItNote FocusedNote => _focusedNote;
 
-    // ── 내부 ──────────────────────────────────────────────────────────────
     private Camera     _cam;
-    private Vector3    _camPosOrigin;
-    private Quaternion _camRotOrigin;
-
     private Vector3    _camPosTarget;
     private Quaternion _camRotTarget;
 
+    // 줌인 직전 카메라 위치/회전 저장
+    private Vector3    _camPosBefore;
+    private Quaternion _camRotBefore;
+
     private PostItNote _focusedNote;
 
-    // ── 레이어/태그 ───────────────────────────────────────────────────────
-    // board 오브젝트에 "Board" 태그, postit에 "PostIt" 태그 설정 필요
-    const string TAG_BOARD  = "Board";
-    const string TAG_POSTIT = "PostIt";
-
-    // ─────────────────────────────────────────────────────────────────────
     void Awake()
     {
         Instance = this;
         _cam = Camera.main;
-    }
 
-    void Start()
-    {
-        SaveOriginCamera();
+        // 조이스틱 자동 검색 (Inspector에서 지정 안 했을 때)
+        if (joystickObject == null)
+        {
+            var jc = FindObjectOfType<JoystickController>();
+            if (jc != null && jc.joystickArea != null)
+                joystickObject = jc.joystickArea.gameObject;
+        }
     }
 
     void Update()
     {
-        // 카메라 부드럽게 이동
-        if (State != FocusState.Free)
-        {
-            _cam.transform.position = Vector3.Lerp(
-                _cam.transform.position, _camPosTarget, moveSpeed * Time.deltaTime);
-            _cam.transform.rotation = Quaternion.Slerp(
-                _cam.transform.rotation, _camRotTarget, moveSpeed * Time.deltaTime);
-        }
+        if (State == FocusState.Free) return;
 
-        // 마우스 클릭 → 밖 클릭 감지
-        if (Input.GetMouseButtonDown(0))
-            HandleClick();
+        // 줌인/줌아웃 공통 lerp
+        _cam.transform.position = Vector3.Lerp(
+            _cam.transform.position, _camPosTarget, moveSpeed * Time.deltaTime);
+        _cam.transform.rotation = Quaternion.Slerp(
+            _cam.transform.rotation, _camRotTarget, moveSpeed * Time.deltaTime);
+
+        // Returning 상태: 목표 위치에 충분히 가까워지면 Free로 전환
+        if (State == FocusState.Returning)
+        {
+            float dist = Vector3.Distance(_cam.transform.position, _camPosTarget);
+            if (dist < 0.05f)
+            {
+                _cam.transform.position = _camPosTarget;
+                _cam.transform.rotation = _camRotTarget;
+                State = FocusState.Free;
+                LockPlayer(false);
+            }
+        }
     }
 
-    // ── Public API ────────────────────────────────────────────────────────
-
-    /// <summary>BoardInteraction에서 호출 — 보드 포커스</summary>
     public void FocusBoard()
     {
         if (State != FocusState.Free) return;
 
+        // 줌인 직전 카메라 상태 저장
+        _camPosBefore = _cam.transform.position;
+        _camRotBefore = _cam.transform.rotation;
+
         State = FocusState.Board;
         LockPlayer(true);
-
-        if (boardViewPoint != null)
-        {
-            _camPosTarget = boardViewPoint.position;
-            _camRotTarget = boardViewPoint.rotation;
-        }
+        CalcBoardViewPoint(out _camPosTarget, out _camRotTarget);
     }
 
-    /// <summary>PostItNote에서 호출 — 포스트잇 포커스</summary>
     public void FocusPostIt(PostItNote note)
     {
-        if (State != FocusState.Board) return;
-
+        if (State != FocusState.Board && State != FocusState.PostIt) return;
         State        = FocusState.PostIt;
         _focusedNote = note;
 
-        // 포스트잇 앞으로 카메라 이동
-        Vector3 dir = (note.transform.position - _cam.transform.position).normalized;
-        _camPosTarget = note.transform.position - dir * postItViewDist;
+        // 포스트잇의 실제 시각적 중심 사용 — model.dae pivot이 (-62,151,-2.8)로
+        // 어긋나 있어 transform.position을 쓰면 엉뚱한 곳으로 줌인됨.
+        Vector3 noteCenter = note.GetVisualCenter();
+        Vector3 dir = (noteCenter - _cam.transform.position).normalized;
+        _camPosTarget = noteCenter - dir * postItViewDist;
         _camRotTarget = Quaternion.LookRotation(dir);
 
-        // TODO: 댓글 UI 패널 열기
-        // CommentPanel.Instance.Open(note.Username, note.Comment);
-        Debug.Log($"[Board] 포스트잇 열람 — {note.Username}: {note.Comment}");
+        Debug.Log($"[Board] 포스트잇 열람 — {note.Username}: {note.Comment} / center={noteCenter}");
     }
 
-    // ── 내부 ──────────────────────────────────────────────────────────────
-
-    void HandleClick()
-    {
-        Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            string tag = hit.collider.tag;
-
-            // Board 클릭 → FocusBoard (BoardInteraction에서 처리됨)
-            if (tag == TAG_BOARD  && State == FocusState.Free)  return;
-
-            // PostIt 클릭 → FocusPostIt (PostItNote에서 처리됨)
-            if (tag == TAG_POSTIT && State == FocusState.Board) return;
-
-            // 포스트잇 포커스 중 → 포스트잇 밖 클릭 → 보드로 복귀
-            if (State == FocusState.PostIt && tag != TAG_POSTIT)
-            {
-                BackToBoard();
-                return;
-            }
-
-            // 보드 포커스 중 → 보드/포스트잇 외 클릭 → Free로 복귀
-            if (State == FocusState.Board && tag != TAG_BOARD && tag != TAG_POSTIT)
-            {
-                BackToFree();
-                return;
-            }
-        }
-        else
-        {
-            // 아무것도 안 맞았을 때 (빈 공간 클릭)
-            if (State == FocusState.PostIt) { BackToBoard(); return; }
-            if (State == FocusState.Board)  { BackToFree();  return; }
-        }
-    }
-
-    void BackToBoard()
+    public void BackToBoard()
     {
         State        = FocusState.Board;
         _focusedNote = null;
-
-        // TODO: 댓글 UI 패널 닫기
-        // CommentPanel.Instance.Close();
-
-        if (boardViewPoint != null)
-        {
-            _camPosTarget = boardViewPoint.position;
-            _camRotTarget = boardViewPoint.rotation;
-        }
+        CalcBoardViewPoint(out _camPosTarget, out _camRotTarget);
     }
 
-    void BackToFree()
+    public void BackToFree()
     {
-        State = FocusState.Free;
+        _focusedNote  = null;
+        State         = FocusState.Returning;
+
+        // 저장해둔 줌인 직전 위치/회전으로 lerp
+        _camPosTarget = _camPosBefore;
+        _camRotTarget = _camRotBefore;
+
+        // 플레이어는 즉시 해제
         LockPlayer(false);
-        _focusedNote = null;
-
-        _camPosTarget = _camPosOrigin;
-        _camRotTarget = _camRotOrigin;
     }
 
-    void SaveOriginCamera()
+    void CalcBoardViewPoint(out Vector3 pos, out Quaternion rot)
     {
-        _camPosOrigin = _camPosTarget = _cam.transform.position;
-        _camRotOrigin = _camRotTarget = _cam.transform.rotation;
+        if (board == null)
+        {
+            pos = _cam.transform.position;
+            rot = _cam.transform.rotation;
+            Debug.LogWarning("[BoardFocusController] board 미연결");
+            return;
+        }
+
+        Vector3 boardFaceNormal = board.forward;
+        Vector3 center = board.position;
+        var ren = board.GetComponentInChildren<Renderer>();
+        if (ren != null) center = ren.bounds.center;
+
+        pos = center + boardFaceNormal * boardViewDist;
+        rot = Quaternion.LookRotation(center - pos);
     }
 
     void LockPlayer(bool locked)
     {
-        if (playerMovement == null) return;
-        playerMovement.enabled = !locked;
+        if (playerMovement != null)
+            playerMovement.enabled = !locked;
+
+        // 줌인(locked) 시 조이스틱 숨김 → 시야 정리 + 포스트잇 클릭 가로채기 방지
+        if (joystickObject != null)
+            joystickObject.SetActive(!locked);
     }
 }

@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Board
+  - PostIt
+  - AddCommentButton
   layers:
   - Default
   - TransparentFX
@@ -11,8 +14,8 @@ TagManager:
   - Obstacle
   - Water
   - UI
-  - 
-  - 
+  - Board
+  - PostIt
   - 
   - 
   - 
@@ -50,4 +53,3 @@ TagManager:
   - Light Layer 5
   - Light Layer 6
   - Light Layer 7
-  m_MigratedRenderPipelines: []

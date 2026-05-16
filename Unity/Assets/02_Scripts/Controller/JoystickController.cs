@@ -121,6 +121,8 @@ public class JoystickController : MonoBehaviour
     // 터치가 joystickArea 안에 있는지 확인
     bool IsOnJoystickArea(Vector2 screenPos)
     {
+        // 조이스틱이 숨겨져 있으면(줌인 상태) 입력 처리 안 함
+        if (joystickArea == null || !joystickArea.gameObject.activeInHierarchy) return false;
         return RectTransformUtility.RectangleContainsScreenPoint(joystickArea, screenPos);
     }
 }

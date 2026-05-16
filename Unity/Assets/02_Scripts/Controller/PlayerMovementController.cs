@@ -49,6 +49,14 @@ public class PlayerMovementController : MonoBehaviour
 
     public void SetJoystickInput(Vector2 input)
     {
+        // 스크립트가 비활성화(잠금)됐을 때 입력 무시 + 애니메이션 정지
+        if (!enabled)
+        {
+            _moveDir = Vector3.zero;
+            animator?.SetBool("isWalking", false);
+            return;
+        }
+
         if (input.magnitude < 0.01f)
         {
             _moveDir = Vector3.zero;
