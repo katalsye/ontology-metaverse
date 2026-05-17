@@ -77,9 +77,11 @@ public class CameraController : MonoBehaviour
         // 클릭 감지는 항상 처리 (Board/PostIt 상태에서 나가기 위해)
         HandleRotationInput();
 
-        // 카메라 이동은 Free 상태일 때만 (Board/PostIt/Returning은 BoardFocusController가 제어)
-        var bfc = BoardFocusController.Instance;
-        if (bfc != null && bfc.State != BoardFocusController.FocusState.Free) return;
+        // 카메라 이동은 Free 상태일 때만
+        var bfc  = BoardFocusController.Instance;
+        var ltfc = LaunchTableFocusController.Instance;
+        if (bfc  != null && bfc.State  != BoardFocusController.FocusState.Free)  return;
+        if (ltfc != null && ltfc.State != LaunchTableFocusController.FocusState.Free) return;
 
         ApplyPositionAndRotation(snap: false);
     }
@@ -124,7 +126,7 @@ public class CameraController : MonoBehaviour
                 if (touch.phase == TouchPhase.Began)
                 {
                     if (IsTouchOnJoystick(touch.screenPosition)) continue;
-                    if (EventSystem.current.IsPointerOverGameObject(touch.finger.index)) continue;
+                    if (IsPointerOverUI(touch.screenPosition)) continue;
 
                     _dragFingerId = touch.finger.index;
                     _lastDragPos  = touch.screenPosition;
@@ -151,11 +153,16 @@ public class CameraController : MonoBehaviour
 
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                if (!IsTouchOnJoystick(mousePos))
+                if (!IsTouchOnJoystick(mousePos) && !IsPointerOverUI(mousePos))
                 {
                     _lastDragPos     = mousePos;
                     _mouseDragActive = true;
                     CheckBoardClick(mousePos);
+                }
+                else
+                {
+                    _lastDragPos     = mousePos;
+                    _mouseDragActive = true;
                 }
             }
             else if (Mouse.current.leftButton.isPressed && _mouseDragActive)
@@ -195,9 +202,8 @@ public class CameraController : MonoBehaviour
 
         Debug.Log($"[CAM] Click — hits={hits.Length} state={bfc.State}");
 
-        // 우선순위: CommentButton > PostIt > Board
-        // Board 감지: CompareTag("Board") 대신 BoardInteraction 컴포넌트로 — 태그 미설정 문제 방지
-        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null;
+        // 우선순위: CommentButton > PostIt > Board > Table
+        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hTable = null;
         foreach (var h in hits)
         {
             bool hasMarker = h.collider.GetComponent<CommentButtonMarker>() != null
@@ -205,12 +211,15 @@ public class CameraController : MonoBehaviour
             bool hasNote   = h.collider.GetComponent<PostItNote>() != null
                           || h.collider.GetComponentInParent<PostItNote>() != null;
             bool hasBoard  = h.collider.GetComponent<BoardInteraction>() != null;
+            bool hasTable  = h.collider.GetComponent<LaunchTableInteraction>() != null
+                          || h.collider.GetComponentInParent<LaunchTableInteraction>() != null;
 
-            Debug.Log($"[CAM]   hit '{h.collider.gameObject.name}' marker={hasMarker} note={hasNote} board={hasBoard}");
+            Debug.Log($"[CAM]   hit '{h.collider.gameObject.name}' marker={hasMarker} note={hasNote} board={hasBoard} table={hasTable}");
 
             if      (hCommentBtn == null && hasMarker) hCommentBtn = h;
             else if (hPostIt     == null && hasNote)   hPostIt     = h;
             else if (hBoard      == null && hasBoard)  hBoard      = h;
+            else if (hTable      == null && hasTable)  hTable      = h;
         }
 
         // ── 댓글 버튼 클릭 (Board 상태에서만) ────────────────────────────────
@@ -249,12 +258,87 @@ public class CameraController : MonoBehaviour
             return;
         }
 
+        // ── Table 클릭 (모두 Free 상태일 때만) ─────────────────────────────
+        var ltfc2 = LaunchTableFocusController.Instance;
+        if (hTable.HasValue && bfc.State == BoardFocusController.FocusState.Free
+            && ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Free)
+        {
+            Debug.Log("[CAM] → FocusTable");
+            SaveState();
+            ltfc2.FocusTable();
+            return;
+        }
+
+        // ── Table 상태 — 오브젝트 클릭 ──────────────────────────────────────
+        if (ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Table)
+        {
+            var dui = DiaryWindowUI.Instance;
+
+            // 패널 열린 상태에서 3D 공간 클릭 → 닫기
+            if (dui != null && dui.IsAnyPanelOpen)
+            {
+                dui.CloseAll();
+                return;
+            }
+
+            if (hits.Length > 0 && dui != null)
+            {
+                // 1순위: 히트 중 BookOpen_01 또는 그 자식이 있으면 → 보기
+                foreach (var h in hits)
+                {
+                    if (IsAncestorNamed(h.collider.transform, "BookOpen_01"))
+                    { Debug.Log("[CAM] → OpenViewDiary"); dui.OpenViewDiary(); return; }
+                }
+
+                // 2순위: 책상 또는 책상 자식 히트 → 쓰기
+                Transform tableRoot = ltfc2.table;
+                foreach (var h in hits)
+                {
+                    if (tableRoot != null &&
+                        (h.collider.transform == tableRoot || h.collider.transform.IsChildOf(tableRoot)))
+                    { Debug.Log("[CAM] → OpenWriteDiary"); dui.OpenWriteDiary(); return; }
+                }
+            }
+
+            // 책상 밖 빈 공간 클릭 → 줌아웃
+            if (!hTable.HasValue)
+            { Debug.Log("[CAM] → BackToFree from Table"); ltfc2.BackToFree(); }
+            return;
+        }
+
         // ── 빈 공간 클릭 → 상태별 뒤로가기 ─────────────────────────────────
         if (bfc.State == BoardFocusController.FocusState.PostIt && !hPostIt.HasValue)
         { Debug.Log("[CAM] → BackToBoard (빈 공간)"); bfc.BackToBoard(); }
         else if (bfc.State == BoardFocusController.FocusState.Board
                  && !hBoard.HasValue && !hPostIt.HasValue && !hCommentBtn.HasValue)
         { Debug.Log("[CAM] → BackToFree (빈 공간)"); bfc.BackToFree(); }
+    }
+
+    // t 또는 그 부모 중에 targetName인 게 있는지 확인
+    static bool IsAncestorNamed(Transform t, string targetName)
+    {
+        while (t != null)
+        {
+            if (t.name == targetName) return true;
+            t = t.parent;
+        }
+        return false;
+    }
+
+    static bool IsWriteTrigger(string objName) =>
+        objName == "LaunchTable"         ||
+        objName == "Pencil yellow"       ||
+        objName == "Pencil black"        ||
+        objName == "Eraser"              ||
+        objName == "Highlighter pen yellow";
+
+    // 새 Input System 환경에서 신뢰할 수 있는 UI 히트 체크
+    static bool IsPointerOverUI(Vector2 screenPos)
+    {
+        var ped = new UnityEngine.EventSystems.PointerEventData(EventSystem.current) { position = screenPos };
+        var results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+        EventSystem.current.RaycastAll(ped, results);
+        return results.Count > 0;
     }
 
     bool IsTouchOnJoystick(Vector2 screenPos)

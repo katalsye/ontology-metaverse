@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f754c6c1b40cef34c888e5f3ba12a664
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322280
+  packageName: Native mobile date picker
+  packageVersion: 1.0.0
+  assetPath: Assets/NativeMobileDatePicker/Runtime/AndroidDatePicker.cs
+  uploadId: 766331

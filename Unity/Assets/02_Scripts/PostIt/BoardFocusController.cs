@@ -7,11 +7,15 @@ public class BoardFocusController : MonoBehaviour
     [Header("연결")]
     public PlayerMovementController playerMovement;
     public Transform board;
+    public Transform table;
     [Tooltip("줌인 시 숨길 조이스틱 UI (비워두면 JoystickController에서 자동 검색)")]
     public GameObject joystickObject;
 
     [Header("보드에서 카메라까지 거리")]
     public float boardViewDist = 12f;
+
+    [Header("테이블 줌인 높이")]
+    public float tableViewDist = 3f;
 
     [Header("포스트잇 줌인 거리")]
     public float postItViewDist = 0.25f;
@@ -19,7 +23,7 @@ public class BoardFocusController : MonoBehaviour
     [Header("카메라 이동 속도")]
     public float moveSpeed = 5f;
 
-    public enum FocusState { Free, Board, PostIt, Returning }
+    public enum FocusState { Free, Board, PostIt, Table, Returning }
     public FocusState State       { get; private set; } = FocusState.Free;
     public PostItNote FocusedNote => _focusedNote;
 
@@ -38,12 +42,25 @@ public class BoardFocusController : MonoBehaviour
         Instance = this;
         _cam = Camera.main;
 
-        // 조이스틱 자동 검색 (Inspector에서 지정 안 했을 때)
         if (joystickObject == null)
         {
             var jc = FindObjectOfType<JoystickController>();
             if (jc != null && jc.joystickArea != null)
                 joystickObject = jc.joystickArea.gameObject;
+        }
+
+        if (table == null)
+        {
+            var go = GameObject.Find("(Prb)LaunchTable");
+            if (go != null) table = go.transform;
+        }
+
+        if (table != null)
+        {
+            if (table.GetComponent<Collider>() == null)
+                table.gameObject.AddComponent<BoxCollider>();
+            if (table.GetComponent<TableInteraction>() == null)
+                table.gameObject.AddComponent<TableInteraction>();
         }
     }
 
@@ -75,13 +92,30 @@ public class BoardFocusController : MonoBehaviour
     {
         if (State != FocusState.Free) return;
 
-        // 줌인 직전 카메라 상태 저장
         _camPosBefore = _cam.transform.position;
         _camRotBefore = _cam.transform.rotation;
 
         State = FocusState.Board;
         LockPlayer(true);
         CalcBoardViewPoint(out _camPosTarget, out _camRotTarget);
+    }
+
+    public void FocusTable()
+    {
+        if (State != FocusState.Free) return;
+
+        _camPosBefore = _cam.transform.position;
+        _camRotBefore = _cam.transform.rotation;
+
+        State = FocusState.Table;
+        LockPlayer(true);
+
+        if (table == null) { Debug.LogWarning("[BoardFocusController] table 미연결"); return; }
+        Vector3 center = table.position;
+        var ren = table.GetComponentInChildren<Renderer>();
+        if (ren != null) center = ren.bounds.center;
+        _camPosTarget = center + Vector3.up * tableViewDist;
+        _camRotTarget = Quaternion.LookRotation(center - _camPosTarget, table.forward);
     }
 
     public void FocusPostIt(PostItNote note)
