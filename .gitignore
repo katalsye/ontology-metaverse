@@ -114,3 +114,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# OMC 세션 기록
+.omc/
