@@ -5084,6 +5084,64 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1265673085}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1271280144
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1271280146}
+  - component: {fileID: 1271280145}
+  m_Layer: 0
+  m_Name: FurnitureFocusController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1271280145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1271280144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f49a7e862c6a491438a2e9b6d66a086c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureFocusController
+  playerMovement: {fileID: 1639255167}
+  joystickObject: {fileID: 1227914831}
+  viewDist: 3
+  moveSpeed: 2
+  zoomHoldTime: 5
+  furnitureEntries:
+  - objectName: SingleBed
+    sceneName: SampleScene
+  - objectName: KitchenIsland
+    sceneName: SampleScene
+  - objectName: Drawer1
+    sceneName: SampleScene
+  - objectName: Door
+    sceneName: SampleScene
+--- !u!4 &1271280146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1271280144}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -35.20324, y: 3.91692, z: 55.72465}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1312420080
 GameObject:
   m_ObjectHideFlags: 0
@@ -6672,6 +6730,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 688e696228cf34c40a4406cacc3a29ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CalendarUI
+  dotPanel: {fileID: 0}
+  dotMonthLabel: {fileID: 0}
+  dotGrid: {fileID: 0}
+  colorHasDiary: {r: 0, g: 0, b: 0, a: 1}
+  colorNoDiary: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+  colorToday: {r: 0.2, g: 0.6, b: 1, a: 1}
 --- !u!4 &1747156030
 Transform:
   m_ObjectHideFlags: 0
@@ -8215,3 +8279,4 @@ SceneRoots:
   - {fileID: 958390093}
   - {fileID: 1097873456}
   - {fileID: 1747156030}
+  - {fileID: 1271280146}
