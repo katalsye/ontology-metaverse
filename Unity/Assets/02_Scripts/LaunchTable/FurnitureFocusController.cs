@@ -147,9 +147,18 @@ public class FurnitureFocusController : MonoBehaviour
     void CalcViewPoint(GameObject target, out Vector3 pos, out Quaternion rot)
     {
         var ren = target.GetComponentInChildren<Renderer>();
-        Vector3 center = ren != null ? ren.bounds.center : target.transform.position;
-        Vector3 dir    = (_cam.transform.position - center).normalized;
-        pos = center + dir * viewDist;
+        Vector3 center  = ren != null ? ren.bounds.center : target.transform.position;
+        Vector3 dir     = (_cam.transform.position - center).normalized;
+        Vector3 desired = center + dir * viewDist;
+
+        var cc = CameraController.Instance;
+        float radius = cc != null ? cc.collisionRadius : 0.3f;
+        LayerMask mask = cc != null ? cc.obstacleLayer : Physics.DefaultRaycastLayers;
+        if (Physics.SphereCast(center, radius, dir, out RaycastHit hit,
+                Vector3.Distance(center, desired), mask))
+            desired = hit.point - dir * radius;
+
+        pos = desired;
         rot = Quaternion.LookRotation(center - pos);
     }
 

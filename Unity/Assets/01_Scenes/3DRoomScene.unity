@@ -5115,9 +5115,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FurnitureFocusController
   playerMovement: {fileID: 1639255167}
   joystickObject: {fileID: 1227914831}
-  viewDist: 3
-  moveSpeed: 2
-  zoomHoldTime: 5
+  viewDist: 7
+  moveSpeed: 3
+  zoomHoldTime: 0
   furnitureEntries:
   - objectName: SingleBed
     sceneName: SampleScene

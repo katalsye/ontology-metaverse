@@ -32,6 +32,10 @@ public class CameraController : MonoBehaviour
     [Header("조이스틱 영역 (드래그 제외)")]
     public RectTransform joystickArea;
 
+    [Header("클릭 판정")]
+    [Tooltip("이 픽셀 이상 드래그하면 클릭으로 인정 안 함")]
+    public float clickMaxDragPx = 15f;
+
     public static CameraController Instance { get; private set; }
 
     private float _yaw = 0f;
@@ -40,6 +44,8 @@ public class CameraController : MonoBehaviour
     private float _savedPitch;
     private int   _dragFingerId = -1;
     private Vector2 _lastDragPos;
+    private Vector2 _touchClickStartPos;
+    private Vector2 _mouseClickStartPos;
     private bool  _mouseDragActive = false;
 
     void Awake() { Instance = this; }
@@ -107,9 +113,9 @@ public class CameraController : MonoBehaviour
                 {
                     if (IsTouchOnJoystick(touch.screenPosition)) continue;
                     if (IsPointerOverUI(touch.screenPosition)) continue;
-                    _dragFingerId = touch.finger.index;
-                    _lastDragPos  = touch.screenPosition;
-                    CheckBoardClick(touch.screenPosition);
+                    _dragFingerId       = touch.finger.index;
+                    _lastDragPos        = touch.screenPosition;
+                    _touchClickStartPos = touch.screenPosition;
                 }
                 else if (touch.phase == TouchPhase.Moved && touch.finger.index == _dragFingerId)
                 {
@@ -119,6 +125,8 @@ public class CameraController : MonoBehaviour
                 else if ((touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
                          && touch.finger.index == _dragFingerId)
                 {
+                    if (Vector2.Distance(touch.screenPosition, _touchClickStartPos) < clickMaxDragPx)
+                        CheckBoardClick(touch.screenPosition);
                     _dragFingerId = -1;
                 }
             }
@@ -128,10 +136,9 @@ public class CameraController : MonoBehaviour
             Vector2 mousePos = Mouse.current.position.ReadValue();
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                _lastDragPos     = mousePos;
-                _mouseDragActive = true;
-                if (!IsTouchOnJoystick(mousePos) && !IsPointerOverUI(mousePos))
-                    CheckBoardClick(mousePos);
+                _lastDragPos        = mousePos;
+                _mouseClickStartPos = mousePos;
+                _mouseDragActive    = true;
             }
             else if (Mouse.current.leftButton.isPressed && _mouseDragActive)
             {
@@ -140,6 +147,9 @@ public class CameraController : MonoBehaviour
             }
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
+                if (!IsTouchOnJoystick(mousePos) && !IsPointerOverUI(mousePos)
+                    && Vector2.Distance(mousePos, _mouseClickStartPos) < clickMaxDragPx)
+                    CheckBoardClick(mousePos);
                 _mouseDragActive = false;
             }
         }
