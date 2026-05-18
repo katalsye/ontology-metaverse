@@ -100,8 +100,13 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
 #if UNITY_ANDROID && !UNITY_EDITOR
             return llmInference.GenerateResponse(prompt);
 #else
-            // 에디터에서는 가짜 트리플 응답
-            return "{\"subject\":\"user\", \"predicate\":\"tested\", \"object\":\"gemma\"}";
+            // 에디터에서는 명세서 규격 가짜 트리플 응답
+            // 실제 Gemma처럼 명세서(Docs/triple-json-spec.md) 포맷의 JSON 반환
+            return @"{""triples"": [
+              {""s"": ""prod:user_001"", ""p"": ""prod:visited"", ""o"": ""prod:loc_001_test"", ""datatype"": null},
+              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeName"", ""o"": ""Mock Place"", ""datatype"": ""xsd:string""},
+              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
+]}";
 #endif
         }
 
