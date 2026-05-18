@@ -18,22 +18,13 @@ public class FurnitureFocusController : MonoBehaviour
     [Header("씬 전환")]
     public float zoomHoldTime = 1f;
 
-    [Header("가구 → 씬 매핑")]
-    [Tooltip("가구 오브젝트 이름 / 목적지 씬 이름 쌍. 씬 준비되면 SampleScene → 실제 씬 이름으로 교체")]
-    public FurnitureEntry[] furnitureEntries = new FurnitureEntry[]
+    private static readonly (string obj, string scene)[] FurnitureEntries =
     {
-        new FurnitureEntry { objectName = "SingleBed",     sceneName = "SampleScene" },
-        new FurnitureEntry { objectName = "KitchenIsland", sceneName = "SampleScene" },
-        new FurnitureEntry { objectName = "Drawer1",       sceneName = "SampleScene" },
-        new FurnitureEntry { objectName = "Door",          sceneName = "SampleScene" },
+        ("SingleBed",     "SampleScene"),
+        ("KitchenIsland", "SampleScene"),
+        ("Drawer1",       "Closet"),
+        ("Door",          "SampleScene"),
     };
-
-    [System.Serializable]
-    public class FurnitureEntry
-    {
-        public string objectName;
-        public string sceneName;
-    }
 
     public enum State { Free, ZoomingIn, Returning }
     public State CurrentState { get; private set; } = State.Free;
@@ -61,12 +52,12 @@ public class FurnitureFocusController : MonoBehaviour
 
     void Start()
     {
-        foreach (var entry in furnitureEntries)
+        foreach (var (objName, sceneName) in FurnitureEntries)
         {
-            var obj = GameObject.Find(entry.objectName) ?? FindIgnoreCase(entry.objectName);
+            var obj = GameObject.Find(objName) ?? FindIgnoreCase(objName);
             if (obj == null)
             {
-                Debug.LogWarning($"[Furniture] '{entry.objectName}' 오브젝트를 찾지 못함");
+                Debug.LogWarning($"[Furniture] '{objName}' 오브젝트를 찾지 못함");
                 continue;
             }
 
@@ -78,8 +69,8 @@ public class FurnitureFocusController : MonoBehaviour
 
             var fi = obj.GetComponent<FurnitureInteraction>();
             if (fi == null) fi = obj.AddComponent<FurnitureInteraction>();
-            fi.sceneName = entry.sceneName;
-            Debug.Log($"[Furniture] '{entry.objectName}' 등록 완료 → {entry.sceneName}");
+            fi.sceneName = sceneName;
+            Debug.Log($"[Furniture] '{objName}' 등록 완료 → {sceneName}");
         }
     }
 
