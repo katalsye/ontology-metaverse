@@ -55,14 +55,17 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             int savedCount = 0;
             foreach (var t in triples)
             {
-                if (IsValidTriple(t))
+                // 새 TripleValidator로 검증 (실패 사유까지 받음)
+                ValidationResult result = TripleValidator.Validate(t);
+    
+                if (result.IsValid)
                 {
                     SaveToSQLite(t, sourceText: userInput);
                     savedCount++;
                 }
                 else
                 {
-                    Debug.LogWarning($"[TextTripleExtractor] 잘못된 형식 트리플 무시: {t}");
+                    Debug.LogWarning($"[TextTripleExtractor] 검증 실패 (사유: {result.ErrorReason}): {t}");
                 }
             }
 
@@ -144,25 +147,6 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             }
         }
 
-        /// <summary>
-        /// 명세서 규격 검증
-        /// </summary>
-        private bool IsValidTriple(TripleJson t)
-        {
-            // 필수 필드 체크
-            if (string.IsNullOrEmpty(t.s) || string.IsNullOrEmpty(t.p) || string.IsNullOrEmpty(t.o))
-            {
-                return false;
-            }
-
-            // Subject, Predicate는 prod: prefix 필수 (Object는 리터럴 값일 수 있어서 제외)
-            if (!t.s.StartsWith("prod:") || !t.p.StartsWith("prod:"))
-            {
-                return false;
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// 트리플 1개를 SQLite triples 테이블에 저장

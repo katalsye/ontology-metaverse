@@ -97,8 +97,12 @@ Unity/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 # Gemma 3n model files (too large for git)
 Unity/[Aa]ssets/StreamingAssets/*.bin
 Unity/[Aa]ssets/StreamingAssets/*.gguf
-Unity/[Aa]ssets/StreamingAssets/*.task     
-Unity/[Aa]ssets/StreamingAssets/*.tflite   
+Unity/[Aa]ssets/StreamingAssets/*.task
+Unity/[Aa]ssets/StreamingAssets/*.tflite
+Unity/[Aa]ssets/StreamingAssets/*.bin.meta
+Unity/[Aa]ssets/StreamingAssets/*.gguf.meta
+Unity/[Aa]ssets/StreamingAssets/*.task.meta
+Unity/[Aa]ssets/StreamingAssets/*.tflite.meta
 
 # Python / Cloud Functions
 __pycache__/
