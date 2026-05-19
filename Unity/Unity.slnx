@@ -2,4 +2,5 @@
   <Project Path="DynamicWeatherSystem.Runtime.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="DynamicWeatherSystem.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

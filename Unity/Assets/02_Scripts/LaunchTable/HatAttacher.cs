@@ -2,18 +2,26 @@ using UnityEngine;
 
 public class HatAttacher : MonoBehaviour
 {
-    [Tooltip("chibi SkinnedMeshRenderer가 있는 오브젝트")]
+    public static HatAttacher Instance { get; private set; }
+
     public SkinnedMeshRenderer characterRenderer;
 
-    [Tooltip("붙일 모자 오브젝트")]
-    public GameObject hat;
+    [System.Serializable]
+    public class AccessoryEntry
+    {
+        public GameObject accessory;
+        public string     boneName        = "head";
+        public Vector3    positionOffset  = Vector3.zero;
+        public Vector3    rotationOffset  = Vector3.zero;
+        public Vector3    scaleMultiplier = Vector3.one;
+    }
 
-    [Tooltip("찾을 본 이름 (일부만 입력해도 됨, 대소문자 무시)")]
-    public string boneName = "head";
+    public AccessoryEntry[] accessories;
+    public int activeIndex = -1;
 
-    public Vector3 positionOffset = Vector3.zero;
-    public Vector3 rotationOffset = Vector3.zero;
-    public Vector3 scaleMultiplier = Vector3.one;
+    Transform[] _bones;
+
+    void Awake() => Instance = this;
 
     void Start()
     {
@@ -21,26 +29,39 @@ public class HatAttacher : MonoBehaviour
             characterRenderer = GetComponentInChildren<SkinnedMeshRenderer>(true);
         if (characterRenderer == null)
             characterRenderer = FindFirstObjectByType<SkinnedMeshRenderer>();
+        if (characterRenderer == null) return;
 
-        if (hat == null || characterRenderer == null) return;
+        _bones = new Transform[accessories.Length];
+        for (int i = 0; i < accessories.Length; i++)
+            _bones[i] = FindBone(accessories[i].boneName);
 
-        Transform headBone = FindBone(boneName);
-        if (headBone == null)
-        {
-            Debug.LogWarning($"[HatAttacher] '{boneName}' 본을 찾지 못했습니다.");
-            return;
-        }
+        Equip(activeIndex);
+    }
 
-        hat.transform.SetParent(headBone, false);
-        hat.transform.localPosition    = positionOffset;
-        hat.transform.localEulerAngles = rotationOffset;
+    void LateUpdate()
+    {
+        if (_bones == null || activeIndex < 0 || activeIndex >= accessories.Length) return;
 
-        // 부모 bone의 world scale을 상쇄해서 실제 크기가 scaleMultiplier가 되도록 보정
-        Vector3 ps = headBone.lossyScale;
-        hat.transform.localScale = new Vector3(
-            scaleMultiplier.x / ps.x,
-            scaleMultiplier.y / ps.y,
-            scaleMultiplier.z / ps.z);
+        var e    = accessories[activeIndex];
+        var bone = _bones[activeIndex];
+        if (e.accessory == null || bone == null) return;
+
+        var t = e.accessory.transform;
+        t.position = bone.position + bone.TransformDirection(e.positionOffset);
+        t.rotation = bone.rotation * Quaternion.Euler(e.rotationOffset);
+        Vector3 ps = bone.lossyScale;
+        t.localScale = new Vector3(
+            e.scaleMultiplier.x / ps.x,
+            e.scaleMultiplier.y / ps.y,
+            e.scaleMultiplier.z / ps.z);
+    }
+
+    public void Equip(int index)
+    {
+        activeIndex = index;
+        for (int i = 0; i < accessories.Length; i++)
+            if (accessories[i].accessory != null)
+                accessories[i].accessory.SetActive(i == index);
     }
 
     Transform FindBone(string name)
