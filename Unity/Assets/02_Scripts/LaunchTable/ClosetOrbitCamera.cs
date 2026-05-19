@@ -1,6 +1,9 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.UI;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
@@ -44,6 +47,7 @@ public class ClosetOrbitCamera : MonoBehaviour
             {
                 if (touch.phase == TouchPhase.Began)
                 {
+                    if (IsOverUI(touch.screenPosition)) continue;
                     _dragFingerId = touch.finger.index;
                     _lastDragPos  = touch.screenPosition;
                 }
@@ -64,6 +68,7 @@ public class ClosetOrbitCamera : MonoBehaviour
             var pos = Mouse.current.position.ReadValue();
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
+                if (IsOverUI(pos)) return;
                 _lastDragPos     = pos;
                 _mouseDragActive = true;
             }
@@ -97,5 +102,16 @@ public class ClosetOrbitCamera : MonoBehaviour
     {
         var ren = target.GetComponentInChildren<Renderer>();
         return ren != null ? ren.bounds.center : target.position;
+    }
+
+    static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
+
+    static bool IsOverUI(Vector2 screenPos)
+    {
+        if (EventSystem.current == null) return false;
+        var ped = new PointerEventData(EventSystem.current) { position = screenPos };
+        _raycastResults.Clear();
+        EventSystem.current.RaycastAll(ped, _raycastResults);
+        return _raycastResults.Count > 0;
     }
 }

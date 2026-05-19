@@ -29,6 +29,15 @@ public class ClosetUI : MonoBehaviour
         characterButton?.onClick.AddListener(() => SelectTab(true));
         furnitureButton?.onClick.AddListener(() => SelectTab(false));
         moveButton?.onClick.AddListener(() => SceneManager.LoadScene(roomSceneName));
+
+        // CharacterColorController가 characterRoot에 없으면 자동 연결
+        if (characterRoot != null)
+        {
+            var cc = CharacterColorController.Instance;
+            if (cc != null && cc.characterRenderer == null)
+                cc.characterRenderer = characterRoot.GetComponentInChildren<SkinnedMeshRenderer>();
+        }
+
         SelectTab(true);
     }
 
