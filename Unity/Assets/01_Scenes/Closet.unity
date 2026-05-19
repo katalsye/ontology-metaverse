@@ -950,7 +950,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &662215680
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1075,6 +1075,10 @@ MonoBehaviour:
   characterButton: {fileID: 1461625577}
   furnitureButton: {fileID: 1235785944}
   moveButton: {fileID: 1506369964}
+  colorButton: {fileID: 1700758919}
+  hatButton: {fileID: 1910018389}
+  colorWindow: {fileID: 2045515504}
+  hatWindow: {fileID: 388486286}
   characterPanel: {fileID: 2034969463}
   furniturePanel: {fileID: 51070140}
   characterRoot: {fileID: 1376574997}

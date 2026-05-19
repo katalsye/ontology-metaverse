@@ -11,6 +11,12 @@ public class ClosetUI : MonoBehaviour
     public Button furnitureButton;
     public Button moveButton;
 
+    [Header("커스텀 버튼 & 윈도우")]
+    public Button     colorButton;
+    public Button     hatButton;
+    public GameObject colorWindow;
+    public GameObject hatWindow;
+
     [Header("패널")]
     public GameObject characterPanel;
     public GameObject furniturePanel;
@@ -30,6 +36,10 @@ public class ClosetUI : MonoBehaviour
         furnitureButton?.onClick.AddListener(() => SelectTab(false));
         moveButton?.onClick.AddListener(() => SceneManager.LoadScene(roomSceneName));
 
+        colorButton?.onClick.AddListener(() => SwitchCustomWindow(true));
+        hatButton?.onClick.AddListener(() => SwitchCustomWindow(false));
+        SwitchCustomWindow(true);
+
         // CharacterColorController가 characterRoot에 없으면 자동 연결
         if (characterRoot != null)
         {
@@ -39,6 +49,15 @@ public class ClosetUI : MonoBehaviour
         }
 
         SelectTab(true);
+    }
+
+    // isColor=true: 색상창 표시 + hat버튼 보이기 / isColor=false: 모자창 표시 + color버튼 보이기
+    void SwitchCustomWindow(bool isColor)
+    {
+        colorWindow?.SetActive(isColor);
+        hatWindow?.SetActive(!isColor);
+        colorButton?.gameObject.SetActive(!isColor);
+        hatButton?.gameObject.SetActive(isColor);
     }
 
     void SelectTab(bool isCharacter)
