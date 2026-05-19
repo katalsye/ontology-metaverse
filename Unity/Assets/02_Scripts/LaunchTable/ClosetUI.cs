@@ -73,6 +73,7 @@ public class ClosetUI : MonoBehaviour
 
         var cam = ClosetOrbitCamera.Instance;
         if (cam == null) return;
+        cam.ResetView();
         cam.target = isCharacter
             ? (characterRoot != null ? characterRoot.transform : null)
             : (furnitureRoot  != null ? furnitureRoot.transform  : null);

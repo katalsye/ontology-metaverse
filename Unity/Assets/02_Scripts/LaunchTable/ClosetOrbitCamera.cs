@@ -84,6 +84,12 @@ public class ClosetOrbitCamera : MonoBehaviour
         }
     }
 
+    public void ResetView()
+    {
+        _yaw   = 0f;
+        pitch  = 15f;
+    }
+
     void ApplyDelta(Vector2 delta)
     {
         _yaw  += delta.x * rotateSpeed;
