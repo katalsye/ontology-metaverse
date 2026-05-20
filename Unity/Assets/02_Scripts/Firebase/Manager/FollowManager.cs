@@ -209,4 +209,142 @@ public class FollowManager : MonoBehaviour
                 onSuccess?.Invoke(requests);
             });
     }
+
+    // ───────────────────────────────────────
+    // 팔로워/팔로잉 수 조회 (프로필 표시용)
+    // ───────────────────────────────────────
+    public void GetFollowCounts(string targetUid, System.Action<int, int> onSuccess, System.Action<string> onFailure = null)
+    {
+        var followerTask = db.Collection("follows")
+            .WhereEqualTo("ToUid", targetUid)
+            .WhereEqualTo("Status", "accepted")
+            .GetSnapshotAsync();
+
+        var followingTask = db.Collection("follows")
+            .WhereEqualTo("FromUid", targetUid)
+            .WhereEqualTo("Status", "accepted")
+            .GetSnapshotAsync();
+
+        followerTask.ContinueWithOnMainThread(fTask =>
+        {
+            if (fTask.IsFaulted)
+            {
+                Debug.LogError("팔로워 수 조회 실패: " + fTask.Exception);
+                onFailure?.Invoke(fTask.Exception.Message);
+                return;
+            }
+
+            int followerCount = fTask.Result.Count;
+
+            followingTask.ContinueWithOnMainThread(gTask =>
+            {
+                if (gTask.IsFaulted)
+                {
+                    Debug.LogError("팔로잉 수 조회 실패: " + gTask.Exception);
+                    onFailure?.Invoke(gTask.Exception.Message);
+                    return;
+                }
+
+                onSuccess?.Invoke(followerCount, gTask.Result.Count);
+            });
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 다른 유저 팔로워 목록 (공개 계정 여부 분기)
+    // ───────────────────────────────────────
+    public void GetOtherUserFollowers(string targetUid, System.Action<List<FollowRelation>> onSuccess, System.Action<string> onFailure = null)
+    {
+        CheckFollowAccess(targetUid,
+            onAllowed: () =>
+            {
+                db.Collection("follows")
+                    .WhereEqualTo("ToUid", targetUid)
+                    .WhereEqualTo("Status", "accepted")
+                    .GetSnapshotAsync()
+                    .ContinueWithOnMainThread(task =>
+                    {
+                        if (task.IsFaulted)
+                        {
+                            Debug.LogError("팔로워 목록 읽기 실패: " + task.Exception);
+                            onFailure?.Invoke(task.Exception.Message);
+                            return;
+                        }
+
+                        List<FollowRelation> followers = new List<FollowRelation>();
+                        foreach (DocumentSnapshot doc in task.Result.Documents)
+                            followers.Add(doc.ConvertTo<FollowRelation>());
+
+                        onSuccess?.Invoke(followers);
+                    });
+            },
+            onDenied: () => onFailure?.Invoke("비공개 계정")
+        );
+    }
+
+    // ───────────────────────────────────────
+    // 다른 유저 팔로잉 목록 (공개 계정 여부 분기)
+    // ───────────────────────────────────────
+    public void GetOtherUserFollowings(string targetUid, System.Action<List<FollowRelation>> onSuccess, System.Action<string> onFailure = null)
+    {
+        CheckFollowAccess(targetUid,
+            onAllowed: () =>
+            {
+                db.Collection("follows")
+                    .WhereEqualTo("FromUid", targetUid)
+                    .WhereEqualTo("Status", "accepted")
+                    .GetSnapshotAsync()
+                    .ContinueWithOnMainThread(task =>
+                    {
+                        if (task.IsFaulted)
+                        {
+                            Debug.LogError("팔로잉 목록 읽기 실패: " + task.Exception);
+                            onFailure?.Invoke(task.Exception.Message);
+                            return;
+                        }
+
+                        List<FollowRelation> followings = new List<FollowRelation>();
+                        foreach (DocumentSnapshot doc in task.Result.Documents)
+                            followings.Add(doc.ConvertTo<FollowRelation>());
+
+                        onSuccess?.Invoke(followings);
+                    });
+            },
+            onDenied: () => onFailure?.Invoke("비공개 계정")
+        );
+    }
+
+    // ───────────────────────────────────────
+    // 접근 권한 확인 (내부 헬퍼)
+    //   공개 계정 or 나 자신 → onAllowed
+    //   비공개 + 팔로우 accepted → onAllowed
+    //   그 외 → onDenied
+    // ───────────────────────────────────────
+    private void CheckFollowAccess(string targetUid, System.Action onAllowed, System.Action onDenied)
+    {
+        string myUid = auth.CurrentUser.UserId;
+
+        if (myUid == targetUid) { onAllowed?.Invoke(); return; }
+
+        db.Collection("users").Document(targetUid).GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) { onDenied?.Invoke(); return; }
+
+                bool isPublic = task.Result.GetValue<bool>("IsPublic");
+                if (isPublic) { onAllowed?.Invoke(); return; }
+
+                // 비공개 계정 → 내가 팔로우(accepted) 중인지 확인
+                string docId = myUid + "_" + targetUid;
+                db.Collection("follows").Document(docId).GetSnapshotAsync()
+                    .ContinueWithOnMainThread(followTask =>
+                    {
+                        if (followTask.IsFaulted || !followTask.Result.Exists) { onDenied?.Invoke(); return; }
+
+                        string status = followTask.Result.GetValue<string>("Status");
+                        if (status == "accepted") onAllowed?.Invoke();
+                        else onDenied?.Invoke();
+                    });
+            });
+    }
 }
