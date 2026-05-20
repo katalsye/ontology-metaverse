@@ -64,8 +64,38 @@ public class CalendarUI : MonoBehaviour
 
     void OnPicked(DateTime date)
     {
+        string dateStr = date.ToString("yyyy-MM-dd");
         if (dotPanel != null) dotPanel.SetActive(false);
-        OnDateSelected?.Invoke(date.ToString("yyyy-MM-dd"));
+        OnDateSelected?.Invoke(dateStr);
+        LoadPastRoom(dateStr);
+    }
+
+    void LoadPastRoom(string dateStr)
+    {
+        Debug.Log($"[CalendarUI] 날짜 선택: {dateStr} — 과거 방 정보 로드 시작");
+
+        // TODO: DB에서 해당 날짜의 방 스냅샷 불러오기
+        // Firestore 경로: /room_snapshots/{uid}/snapshots/{dateStr}
+        // 예시:
+        // RoomSnapshotManager.Instance.LoadSnapshot(dateStr, snapshot =>
+        // {
+        //     if (snapshot == null)
+        //     {
+        //         Debug.Log($"[CalendarUI] {dateStr} 스냅샷 없음");
+        //         return;
+        //     }
+        //     Debug.Log($"[CalendarUI] {dateStr} 스냅샷 로드 완료 — 가구 {snapshot.objects.Count}개");
+        //     // TODO: 방 오브젝트 상태 적용 (위치, 색상, 종류 등)
+        //     // RoomObjectManager.Instance.ApplySnapshot(snapshot);
+        // });
+
+        Debug.Log($"[CalendarUI] TODO: {dateStr} 과거 방 DB 연결 필요");
+    }
+
+    public void Close()
+    {
+        if (dotPanel != null) dotPanel.SetActive(false);
+        Debug.Log("[CalendarUI] 캘린더 닫힘");
     }
 
     void RefreshDots()

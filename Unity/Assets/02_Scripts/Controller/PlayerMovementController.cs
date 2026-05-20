@@ -64,12 +64,6 @@ public class PlayerMovementController : MonoBehaviour
             return;
         }
 
-        // 상하좌우 4방향 스냅
-        if (Mathf.Abs(input.x) >= Mathf.Abs(input.y))
-            input = new Vector2(Mathf.Sign(input.x), 0f);
-        else
-            input = new Vector2(0f, Mathf.Sign(input.y));
-
         // 카메라 기준 방향 계산
         Vector3 camForward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
         Vector3 camRight   = cameraTransform != null ? cameraTransform.right   : Vector3.right;

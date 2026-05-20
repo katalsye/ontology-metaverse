@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp *)",
+      "PowerShell(claude mcp list 2>&1)",
+      "PowerShell(Get-Content \"$env:USERPROFILE\\\\.claude.json\" 2>&1 | Select-String -Pattern \"github\" -CaseSensitive:$false)",
+      "mcp__reaper__get_project_summary",
+      "mcp__phantom__list_profiles",
+      "mcp__phantom__batch_diagnostic",
+      "mcp__phantom__full_diagnostic",
+      "mcp__reaper__get_track_items",
+      "mcp__reaper__get_item_info",
+      "Bash(ls /mnt/c/ | grep -iE \"vocal|inst|mix|music|stem|track|wav\")",
+      "Bash(ls /mnt/ 2>/dev/null || echo \"no /mnt\"; ls /proc/mounts 2>/dev/null | grep -i \"windows\\\\|ntfs\\\\|drvfs\" | head -5)",
+      "Bash(cat /proc/mounts 2>/dev/null | head -20; echo \"---\"; ls / 2>/dev/null)",
+      "Bash(ls /c/ | grep -iE \"vocal|inst|mix|music|stem|wav|track|2026|asdf\")",
+      "Bash(ls /c/ | head -30)",
+      "Read(//c//**)",
+      "Bash(find /c/ -maxdepth 4 -name \"asdfq3expr*.wav\" 2>/dev/null | head -5; find /c/ -maxdepth 4 -name \"_ - 0001*\" 2>/dev/null | head -3)",
+      "Bash(ls /c/Audio/ 2>/dev/null; find /c/ -maxdepth 2 -name \"*.wav\" 2>/dev/null | head -10)",
+      "Bash(wait)",
+      "Bash(wsl -u user0 pkill -f phantom-mcp)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(wsl -u user0 pgrep -a phantom-mcp)",
+      "Bash(wsl -u user0 ls -lh \"/mnt/c/Users/User/Desktop/성민/Music/2025/20250405/Mix/insts/_ - 0017 - Instrument - Snare.wav\")",
+      "mcp__reaper__create_submix",
+      "mcp__reaper__add_eq",
+      "mcp__reaper__add_compressor",
+      "mcp__reaper__get_track_fx_chunk",
+      "mcp__reaper__track_fx_get_num_params",
+      "mcp__reaper__track_fx_get_param_name",
+      "mcp__reaper__batch_set_fx_params"
+    ]
+  }
+}

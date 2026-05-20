@@ -27,7 +27,7 @@ public class CameraController : MonoBehaviour
 
     [Header("카메라 충돌")]
     public LayerMask obstacleLayer;
-    public float collisionRadius = 0.3f;
+    public float collisionRadius = 0.8f;
 
     [Header("조이스틱 영역 (드래그 제외)")]
     public RectTransform joystickArea;
@@ -172,9 +172,11 @@ public class CameraController : MonoBehaviour
         var bfc = BoardFocusController.Instance;
         if (bfc == null) return;
 
-        Debug.Log($"[CAM] Click — hits={hits.Length} state={bfc.State}");
+        Debug.Log($"[CAM] Click — hits={hits.Length} bfcState={bfc.State}");
+        foreach (var h in hits)
+            Debug.Log($"[CAM]   hit: {h.collider.gameObject.name} (parent: {h.collider.transform.parent?.name})");
 
-        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null;
+        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null;
         foreach (var h in hits)
         {
             bool hasMarker    = h.collider.GetComponent<CommentButtonMarker>() != null
@@ -186,13 +188,20 @@ public class CameraController : MonoBehaviour
                              || h.collider.GetComponentInParent<FurnitureInteraction>() != null;
             bool hasTable     = h.collider.GetComponent<LaunchTableInteraction>() != null
                              || h.collider.GetComponentInParent<LaunchTableInteraction>() != null;
+            bool hasCalendar  = h.collider.GetComponent<CalendarInteraction>() != null
+                             || h.collider.GetComponentInParent<CalendarInteraction>() != null;
+
+            Debug.Log($"[CAM]   → {h.collider.gameObject.name} | marker={hasMarker} note={hasNote} board={hasBoard} furniture={hasFurniture} table={hasTable} calendar={hasCalendar}");
 
             if      (hCommentBtn == null && hasMarker)    hCommentBtn = h;
             else if (hPostIt     == null && hasNote)      hPostIt     = h;
             else if (hBoard      == null && hasBoard)     hBoard      = h;
             else if (hFurniture  == null && hasFurniture) hFurniture  = h;
             else if (hTable      == null && hasTable)     hTable      = h;
+            else if (hCalendar   == null && hasCalendar)  hCalendar   = h;
         }
+
+        Debug.Log($"[CAM] 감지 결과 — calendar={hCalendar.HasValue} | cfc={CalendarFocusController.Instance?.State}");
 
         if (hCommentBtn.HasValue && bfc.State == BoardFocusController.FocusState.Board)
         {
@@ -216,6 +225,25 @@ public class CameraController : MonoBehaviour
 
         if (hBoard.HasValue && bfc.State == BoardFocusController.FocusState.Free)
         { bfc.FocusBoard(); return; }
+
+        // 캘린더 클릭 — 줌인 + CalendarUI 열기
+        var cfc = CalendarFocusController.Instance;
+        if (hCalendar.HasValue && bfc.State == BoardFocusController.FocusState.Free
+            && cfc != null && cfc.State == CalendarFocusController.FocusState.Free)
+        {
+            Debug.Log("[CAM] → 캘린더 클릭 — 줌인");
+            SaveState();
+            cfc.FocusCalendar();
+            return;
+        }
+
+        // 캘린더 줌인 상태에서 빈 곳 클릭 → 복귀
+        if (cfc != null && cfc.State == CalendarFocusController.FocusState.Calendar
+            && !hCalendar.HasValue)
+        {
+            cfc.BackToFree();
+            return;
+        }
 
         var ffc = FurnitureFocusController.Instance;
         if (hFurniture.HasValue && ffc != null && ffc.CurrentState == FurnitureFocusController.State.Free
