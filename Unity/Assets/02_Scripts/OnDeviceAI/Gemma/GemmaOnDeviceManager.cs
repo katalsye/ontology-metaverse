@@ -105,16 +105,17 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             return llmInference.GenerateResponse(prompt);
 #else
             // 에디터에서는 명세서 규격 가짜 트리플 응답 (텍스트용 - 위치)
+            // 무성님 명세 반영: full URI + prod:hasLocation
             return @"{""triples"": [
-              {""s"": ""prod:user_001"", ""p"": ""prod:visited"", ""o"": ""prod:loc_001_test"", ""datatype"": null},
-              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeName"", ""o"": ""Mock Place"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
+              {""s"": ""http://7team.dev/ontology#user_001"", ""p"": ""prod:hasLocation"", ""o"": ""http://7team.dev/ontology#loc_001_test"", ""datatype"": null},
+              {""s"": ""http://7team.dev/ontology#loc_001_test"", ""p"": ""prod:placeName"", ""o"": ""Mock Place"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#loc_001_test"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
             ]}";
 #endif
         }
 
         // ─────────────────────────────────────────────────────
-        // 이미지 + 텍스트 입력 → 응답 (새로 추가)
+        // 이미지 + 텍스트 입력 → 응답 (멀티모달)
         // ─────────────────────────────────────────────────────
 
         // AI한테 이미지+질문 같이 던지고 대답 받기 (멀티모달)
@@ -142,11 +143,12 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             return llmInference.GenerateResponse(prompt);
 #else
             // 에디터에서는 명세서 규격 가짜 트리플 응답 (이미지용 - 음식 사진 가정)
+            // 무성님 명세 반영: full URI + prod:hasGalleryPhoto
             return @"{""triples"": [
-              {""s"": ""prod:user_001"", ""p"": ""prod:photographed"", ""o"": ""prod:photo_001_test"", ""datatype"": null},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
+              {""s"": ""http://7team.dev/ontology#user_001"", ""p"": ""prod:hasGalleryPhoto"", ""o"": ""http://7team.dev/ontology#photo_001_test"", ""datatype"": null},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
             ]}";
 #endif
         }

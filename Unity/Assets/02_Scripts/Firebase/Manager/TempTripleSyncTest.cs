@@ -5,12 +5,17 @@ using OntologyMetaverse.DataCollection.SQLite;
 /// <summary>
 /// TempTripleManager 동작 테스트
 /// 1. 테스트용 트리플을 SQLite에 INSERT (synced=0)
-/// 2. SyncPendingTriples 호출 → mock 업로드
+/// 2. SyncPendingTriples 호출 → Firestore 실제 업로드
 /// 3. SQLite에서 synced=1로 바뀌었는지 확인
+/// 
+/// 무성님 명세 반영: full URI 형식 + prod:hasLocation 사용
 /// </summary>
 public class TempTripleSyncTest : MonoBehaviour
 {
     private TempTripleManager _syncManager;
+
+    // 온톨로지 base URI (무성님 명세)
+    private const string OntologyBaseUri = "http://7team.dev/ontology#";
 
     IEnumerator Start()
     {
@@ -28,7 +33,7 @@ public class TempTripleSyncTest : MonoBehaviour
         // 3. 동기화 전 SQLite 상태 출력
         PrintSyncStatus("동기화 전");
 
-        // 4. SyncPendingTriples 호출 (mock 업로드)
+        // 4. SyncPendingTriples 호출 (실제 Firestore 업로드)
         Debug.Log("[TempTripleSyncTest] SyncPendingTriples 호출");
         _syncManager.SyncPendingTriples(
             onSuccess: count =>
@@ -41,8 +46,8 @@ public class TempTripleSyncTest : MonoBehaviour
             }
         );
 
-        // 5. 비동기 처리 대기
-        yield return new WaitForSeconds(1.0f);
+        // 5. 비동기 처리 대기 (Anonymous Auth + Firestore 업로드 시간 고려)
+        yield return new WaitForSeconds(3.0f);
 
         // 6. 동기화 후 SQLite 상태 출력
         PrintSyncStatus("동기화 후");
@@ -51,20 +56,24 @@ public class TempTripleSyncTest : MonoBehaviour
     }
 
     /// <summary>
-    /// 테스트용 트리플 3건을 SQLite에 INSERT
+    /// 테스트용 트리플 3건을 SQLite에 INSERT (무성님 명세 형식)
     /// </summary>
     private void InsertTestTriples()
     {
         var manager = SQLiteManager.Instance;
         string now = System.DateTime.UtcNow.ToString("o");
 
+        // 무성님 명세 형식: full URI + prod:hasLocation
+        string userUri = OntologyBaseUri + "user_001";
+        string locUri = OntologyBaseUri + "loc_001_sync_test";
+
         var testTriples = new[]
         {
             new Triple
             {
-                Subject = "prod:user_001",
-                Predicate = "prod:visited",
-                Object = "prod:loc_001_sync_test",
+                Subject = userUri,
+                Predicate = "prod:hasLocation",   // 무성님 정의 predicate
+                Object = locUri,
                 Datatype = null,
                 Source = "sync_test:case1",
                 Timestamp = now,
@@ -72,7 +81,7 @@ public class TempTripleSyncTest : MonoBehaviour
             },
             new Triple
             {
-                Subject = "prod:loc_001_sync_test",
+                Subject = locUri,
                 Predicate = "prod:placeName",
                 Object = "Sync Test Cafe",
                 Datatype = "xsd:string",
@@ -82,7 +91,7 @@ public class TempTripleSyncTest : MonoBehaviour
             },
             new Triple
             {
-                Subject = "prod:loc_001_sync_test",
+                Subject = locUri,
                 Predicate = "prod:placeType",
                 Object = "cafe",
                 Datatype = "xsd:string",

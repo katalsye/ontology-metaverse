@@ -12,6 +12,10 @@ using OntologyMetaverse.DataCollection.SQLite;
 /// 
 /// 업로드 경로: temp_triples/{uid}/items/{auto_id}
 /// 명세서: Docs/triple-json-spec.md 규격 준수
+/// 
+/// 인증:
+/// - Editor: Anonymous Auth (이서윤님 가이드)
+/// - 실기기: GoogleFirebaseLogin 모듈 활용
 /// </summary>
 public class TempTripleManager : MonoBehaviour
 {
@@ -28,24 +32,53 @@ public class TempTripleManager : MonoBehaviour
     /// SQLite에서 미전송 트리플(synced=0)을 가져와 Firestore에 업로드
     /// 업로드 성공 시 SQLite synced=1로 업데이트
     /// </summary>
-    /// <param name="onSuccess">성공 콜백 (업로드된 건수 전달)</param>
-    /// <param name="onFailure">실패 콜백 (에러 메시지 전달)</param>
     public void SyncPendingTriples(
         Action<int> onSuccess = null,
         Action<string> onFailure = null)
     {
-        // 1. 로그인 상태 확인
+        // 1. 로그인 상태 확인 (없으면 Editor는 Anonymous Auth로 자동 로그인)
         if (auth?.CurrentUser == null)
         {
-            Debug.LogWarning("[TempTripleManager] 로그인 상태 아님");
+#if UNITY_EDITOR
+            // Editor: Anonymous Auth 자동 로그인 시도
+            Debug.Log("[TempTripleManager] 로그인 없음 → Anonymous Auth 시도");
+            auth.SignInAnonymouslyAsync().ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError($"[TempTripleManager] Anonymous 로그인 실패: {task.Exception}");
+                    onFailure?.Invoke("Anonymous 로그인 실패");
+                    return;
+                }
+
+                string uid = task.Result.User.UserId;
+                Debug.Log($"[TempTripleManager] Anonymous 로그인 성공: uid={uid}");
+
+                // 로그인 후 실제 sync 진행
+                StartSync(uid, onSuccess, onFailure);
+            });
+            return;
+#else
+            // 실기기: GoogleFirebaseLogin이 먼저 호출되어야 함
+            Debug.LogWarning("[TempTripleManager] 로그인 안 됨 - GoogleFirebaseLogin 필요");
             onFailure?.Invoke("로그인 필요");
             return;
+#endif
         }
 
-        string uid = auth.CurrentUser.UserId;
+        // 이미 로그인 되어 있으면 바로 sync 진행
+        string currentUid = auth.CurrentUser.UserId;
+        StartSync(currentUid, onSuccess, onFailure);
+    }
+
+    /// <summary>
+    /// 로그인 확인 후 실제 sync 흐름 시작
+    /// </summary>
+    private void StartSync(string uid, Action<int> onSuccess, Action<string> onFailure)
+    {
         Debug.Log($"[TempTripleManager] Sync 시작 (uid: {uid})");
 
-        // 2. SQLite에서 미전송 트리플 조회
+        // SQLite에서 미전송 트리플 조회
         List<Triple> pendingTriples = GetPendingTriplesFromSQLite();
 
         if (pendingTriples.Count == 0)
@@ -57,7 +90,7 @@ public class TempTripleManager : MonoBehaviour
 
         Debug.Log($"[TempTripleManager] 미전송 트리플 {pendingTriples.Count}개 발견");
 
-        // 3. 각 트리플을 Firestore에 업로드
+        // Firestore에 업로드
         UploadTriples(uid, pendingTriples, onSuccess, onFailure);
     }
 
@@ -80,6 +113,9 @@ public class TempTripleManager : MonoBehaviour
     /// <summary>
     /// 트리플 리스트를 Firestore에 업로드
     /// 각 업로드 성공 시 해당 트리플의 SQLite synced 플래그를 1로 업데이트
+    /// 
+    /// CreatedAt은 FieldValue.ServerTimestamp로 서버 시간 자동 설정
+    /// (Timestamp 기본값이 1970년이라 별도 처리 필요)
     /// </summary>
     private void UploadTriples(
         string uid,
@@ -87,42 +123,12 @@ public class TempTripleManager : MonoBehaviour
         Action<int> onSuccess,
         Action<string> onFailure)
     {
-#if UNITY_EDITOR
-        // Editor에서는 Mock 모드: 실제 Firestore 호출 없이 SQLite synced=1만 업데이트
-        Debug.Log("[TempTripleManager] Editor mock 모드: 실제 Firestore 업로드 생략");
-
-        int mockSuccessCount = 0;
-        var manager = SQLiteManager.Instance;
-        foreach (var triple in triples)
-        {
-            // Mock: 업로드 성공으로 가정하고 synced 플래그 업데이트
-            triple.Synced = 1;
-            manager.Connection.Update(triple);
-            mockSuccessCount++;
-            Debug.Log($"[TempTripleManager] Mock 업로드: Id={triple.Id}, " +
-                      $"({triple.Subject}, {triple.Predicate}, {triple.Object})");
-        }
-
-        Debug.Log($"[TempTripleManager] Mock 업로드 완료: {mockSuccessCount}건");
-        onSuccess?.Invoke(mockSuccessCount);
-#else
-        // 실기기에서는 진짜 Firestore 업로드
         int successCount = 0;
         int failureCount = 0;
         int total = triples.Count;
 
         foreach (var triple in triples)
         {
-            // SQLite Triple → Firestore TempTriple 변환
-            TempTriple tempTriple = new TempTriple
-            {
-                s = triple.Subject,
-                p = triple.Predicate,
-                o = triple.Object,
-                datatype = triple.Datatype
-                // CreatedAt은 SetAsync에서 ServerTimestamp로 자동 처리됨
-            };
-
             // Firestore temp_triples/{uid}/items/ 에 추가 (auto_id)
             DocumentReference docRef = db.Collection("temp_triples")
                 .Document(uid)
@@ -131,7 +137,18 @@ public class TempTripleManager : MonoBehaviour
 
             int currentId = triple.Id;  // 클로저용 저장
 
-            docRef.SetAsync(tempTriple).ContinueWithOnMainThread(task =>
+            // Dictionary로 데이터 구성 (ServerTimestamp 사용을 위해)
+            // 명세서: Docs/triple-json-spec.md 규격
+            Dictionary<string, object> data = new Dictionary<string, object>
+            {
+                { "s", triple.Subject },
+                { "p", triple.Predicate },
+                { "o", triple.Object },
+                { "datatype", triple.Datatype },
+                { "CreatedAt", FieldValue.ServerTimestamp }  // 서버 시간 자동 설정
+            };
+
+            docRef.SetAsync(data).ContinueWithOnMainThread(task =>
             {
                 if (task.IsFaulted)
                 {
@@ -161,7 +178,6 @@ public class TempTripleManager : MonoBehaviour
                 }
             });
         }
-#endif
     }
 
     /// <summary>
@@ -176,5 +192,22 @@ public class TempTripleManager : MonoBehaviour
             triple.Synced = 1;
             manager.Connection.Update(triple);
         }
+    }
+
+    /// <summary>
+    /// 앱 종료 시 Anonymous Auth 세션 정리 (이서윤님 가이드 옵션 B)
+    /// Editor에서 Play 정지 시 호출됨
+    /// 같은 세션 내에서는 uid 유지하다가 종료 시 정리
+    /// </summary>
+    void OnDestroy()
+    {
+#if UNITY_EDITOR
+        // Editor: Anonymous Auth 세션 정리
+        if (auth != null && auth.CurrentUser != null)
+        {
+            Debug.Log("[TempTripleManager] OnDestroy: Anonymous Auth 세션 정리 (SignOut)");
+            auth.SignOut();
+        }
+#endif
     }
 }

@@ -7,7 +7,8 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 {
     /// <summary>
     /// 이미지 입력을 Gemma 3n 멀티모달로 분석하여 트리플(S, P, O)로 변환하는 추출기
-    /// Docs/triple-json-spec.md 규격을 따름
+    /// 명세서: Docs/triple-json-spec.md 규격 준수
+    /// 무성님 명세 반영: full URI, prod:hasGalleryPhoto predicate 사용
     /// TextTripleExtractor와 동일한 패턴, 입력만 텍스트→이미지로 다름
     /// </summary>
     public class ImageTripleExtractor : MonoBehaviour
@@ -16,7 +17,10 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
         [Tooltip("Inspector에서 GemmaOnDeviceManager가 붙은 GameObject 드래그")]
         public GemmaOnDeviceManager gemmaManager;
 
-        // 테스트용 임시 user_uid (나중에 Firebase Auth로 대체)
+        // 온톨로지 base URI (무성님 명세)
+        private const string OntologyBaseUri = "http://7team.dev/ontology#";
+
+        // 테스트용 임시 user_uid (나중에 Firebase Auth uid로 대체)
         private string testUserUid = "user_001";
 
         /// <summary>
@@ -83,39 +87,39 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 
         /// <summary>
         /// 이미지 분석용 프롬프트 생성 (Few-shot 예시 포함)
+        /// 무성님 명세: full URI 형식 + prod:hasGalleryPhoto 사용
         /// </summary>
         private string BuildPrompt()
         {
-            // 이미지 분석 결과를 트리플로 변환하도록 Gemma에게 지시
-            // 음식, 장소, 활동 등 다양한 컨텍스트를 추출하도록 가이드
+            string baseUri = OntologyBaseUri;
             string prompt = @"이미지를 분석하여 음식, 장소, 활동 정보를 RDF 트리플(Subject, Predicate, Object)로 변환하세요.
 
 규칙:
 1. 응답은 반드시 다음 JSON 형식만 포함하세요: {""triples"": [...]}
-2. 노드 ID는 ""prod:photo_" + testUserUid + @"_{ts}"" 형식을 사용하세요.
-3. 문자열은 datatype을 ""xsd:string"", 숫자는 ""xsd:float"" 또는 ""xsd:integer""로 표시하세요.
-4. 관계만 표현하는 트리플은 datatype을 null로 두세요.
+2. Subject와 Object의 URI는 ""http://7team.dev/ontology#"" 로 시작하는 full URI 형식을 사용하세요.
+3. Predicate는 ""prod:"" 약식을 사용하세요. (예: prod:hasGalleryPhoto)
+4. 문자열은 datatype을 ""xsd:string"", 숫자는 ""xsd:float"" 또는 ""xsd:integer""로 표시하세요.
+5. 관계만 표현하는 트리플은 datatype을 null로 두세요.
 
-추출할 정보:
-- foodType: 음식 종류 (예: pasta, ramen, salad)
-- placeType: 장소 유형 (예: restaurant, cafe, park, home)
-- activity: 활동 유형 (예: dining, exercise, travel)
-- analyzedBy: 분석 도구명 (항상 ""Gemma-3n"")
+사용할 수 있는 Predicate (무성님 온톨로지 명세):
+- prod:hasGalleryPhoto: 사용자가 찍은 사진
+- prod:foodType: 음식 종류 (pasta, ramen, salad 등)
+- prod:placeType: 장소 유형 (restaurant, cafe, park, home 등)
+- prod:analyzedBy: 분석 도구명 (항상 ""Gemma-3n"")
 
 예시 1) 파스타 사진 (레스토랑에서 촬영):
 {""triples"": [
-  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:photographed"", ""o"": ""prod:photo_" + testUserUid + @"_001"", ""datatype"": null},
-  {""s"": ""prod:photo_" + testUserUid + @"_001"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
-  {""s"": ""prod:photo_" + testUserUid + @"_001"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
-  {""s"": ""prod:photo_" + testUserUid + @"_001"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
+  {""s"": """ + baseUri + @"user_" + testUserUid + @""", ""p"": ""prod:hasGalleryPhoto"", ""o"": """ + baseUri + @"photo_001"", ""datatype"": null},
+  {""s"": """ + baseUri + @"photo_001"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
+  {""s"": """ + baseUri + @"photo_001"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
+  {""s"": """ + baseUri + @"photo_001"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
 ]}
 
 예시 2) 공원 풍경 사진:
 {""triples"": [
-  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:photographed"", ""o"": ""prod:photo_" + testUserUid + @"_002"", ""datatype"": null},
-  {""s"": ""prod:photo_" + testUserUid + @"_002"", ""p"": ""prod:placeType"", ""o"": ""park"", ""datatype"": ""xsd:string""},
-  {""s"": ""prod:photo_" + testUserUid + @"_002"", ""p"": ""prod:activity"", ""o"": ""leisure"", ""datatype"": ""xsd:string""},
-  {""s"": ""prod:photo_" + testUserUid + @"_002"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
+  {""s"": """ + baseUri + @"user_" + testUserUid + @""", ""p"": ""prod:hasGalleryPhoto"", ""o"": """ + baseUri + @"photo_002"", ""datatype"": null},
+  {""s"": """ + baseUri + @"photo_002"", ""p"": ""prod:placeType"", ""o"": ""park"", ""datatype"": ""xsd:string""},
+  {""s"": """ + baseUri + @"photo_002"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
 ]}
 
 이제 입력된 이미지를 분석하여 트리플을 출력하세요.
@@ -126,7 +130,6 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 
         /// <summary>
         /// Gemma 응답 문자열에서 JSON 부분을 찾아 TripleJson 배열로 파싱
-        /// (TextTripleExtractor와 동일한 패턴 - 코드 재사용 가능하나 학부생 수준 유지를 위해 인라인)
         /// </summary>
         private TripleJson[] ParseTriples(string response)
         {
@@ -171,7 +174,7 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
                 Predicate = t.p,
                 Object = t.o,
                 Datatype = t.datatype,
-                Source = $"image_input:{sourceImagePath}",  // 이미지 출처 명시
+                Source = $"image_input:{sourceImagePath}",
                 Timestamp = DateTime.UtcNow.ToString("o"),
                 Synced = 0
             };

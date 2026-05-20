@@ -6,8 +6,9 @@ using OntologyMetaverse.DataCollection.SQLite;
 namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 {
     /// <summary>
-    /// 사용자 자연어 입력을 Gemma 3n으로 트리플(S, P, O)로 변환하는 추출기
-    /// Docs/triple-json-spec.md 규격을 따름
+    /// 사용자 텍스트 입력을 Gemma 3n으로 분석하여 트리플(S, P, O)로 변환하는 추출기
+    /// 명세서: Docs/triple-json-spec.md 규격 준수
+    /// 무성님 명세 반영: full URI, prod:hasLocation predicate 사용
     /// </summary>
     public class TextTripleExtractor : MonoBehaviour
     {
@@ -15,14 +16,17 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
         [Tooltip("Inspector에서 GemmaOnDeviceManager가 붙은 GameObject 드래그")]
         public GemmaOnDeviceManager gemmaManager;
 
-        // 테스트용 임시 user_uid (나중에 Firebase Auth로 대체)
+        // 온톨로지 base URI (무성님 명세)
+        private const string OntologyBaseUri = "http://7team.dev/ontology#";
+
+        // 테스트용 임시 user_uid (나중에 Firebase Auth uid로 대체)
         private string testUserUid = "user_001";
 
         /// <summary>
-        /// 자연어 텍스트 → 트리플 추출 → SQLite 저장
+        /// 텍스트 입력 → 트리플 추출 → SQLite 저장
         /// </summary>
-        /// <param name="userInput">사용자 입력 텍스트 (예: "오늘 강남 카페 갔다")</param>
-        /// <returns>추출되어 SQLite에 저장된 트리플 개수</returns>
+        /// <param name="userInput">사용자가 입력한 자연어 (예: "오늘 강남 카페 갔다")</param>
+        /// <returns>저장된 트리플 개수</returns>
         public int ExtractAndSaveTriples(string userInput)
         {
             // 1. Gemma 준비 상태 확인
@@ -32,16 +36,23 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
                 return 0;
             }
 
-            Debug.Log($"[TextTripleExtractor] 입력 텍스트: \"{userInput}\"");
+            // 2. 입력 확인
+            if (string.IsNullOrWhiteSpace(userInput))
+            {
+                Debug.LogWarning("[TextTripleExtractor] 입력 텍스트 비어있음");
+                return 0;
+            }
 
-            // 2. 프롬프트 생성 (Few-shot 예시 포함)
+            Debug.Log($"[TextTripleExtractor] 입력: {userInput}");
+
+            // 3. 프롬프트 생성
             string prompt = BuildPrompt(userInput);
 
-            // 3. Gemma 호출
+            // 4. Gemma 호출
             string response = gemmaManager.GenerateResponse(prompt);
             Debug.Log($"[TextTripleExtractor] Gemma 응답:\n{response}");
 
-            // 4. JSON 파싱
+            // 5. JSON 파싱
             TripleJson[] triples = ParseTriples(response);
             if (triples == null || triples.Length == 0)
             {
@@ -51,16 +62,15 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 
             Debug.Log($"[TextTripleExtractor] {triples.Length}개 트리플 추출 성공");
 
-            // 5. 명세서 규격 검증 + SQLite 저장
+            // 6. 검증 + SQLite 저장 (TripleValidator 재사용)
             int savedCount = 0;
             foreach (var t in triples)
             {
-                // 새 TripleValidator로 검증 (실패 사유까지 받음)
                 ValidationResult result = TripleValidator.Validate(t);
-    
+
                 if (result.IsValid)
                 {
-                    SaveToSQLite(t, sourceText: userInput);
+                    SaveToSQLite(t, sourceInput: userInput);
                     savedCount++;
                 }
                 else
@@ -74,37 +84,43 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
         }
 
         /// <summary>
-        /// Gemma에 보낼 프롬프트 생성 (Few-shot 예시 + 사용자 입력)
+        /// 텍스트 분석용 프롬프트 생성 (Few-shot 예시 포함)
+        /// 무성님 명세: full URI 형식 + prod:hasLocation 사용
         /// </summary>
         private string BuildPrompt(string userInput)
         {
-            // 명세서 규칙을 Gemma에게 알려주는 프롬프트
-            // Few-shot으로 3개 예시를 보여줘서 출력 형식 학습시킴
-            string prompt = @"당신은 자연어 입력을 RDF 트리플(Subject, Predicate, Object)로 변환하는 AI입니다.
+            string baseUri = OntologyBaseUri;
+            string prompt = @"다음 사용자 입력을 RDF 트리플(Subject, Predicate, Object)로 변환하세요.
 
 규칙:
 1. 응답은 반드시 다음 JSON 형식만 포함하세요: {""triples"": [...]}
-2. 노드 ID는 ""prod:{타입}_{uid}_{ts}"" 형식을 사용하세요.
-3. 문자열은 datatype을 ""xsd:string"", 숫자는 ""xsd:float"" 또는 ""xsd:integer"", 날짜는 ""xsd:date""로 표시하세요.
-4. 관계만 표현하는 트리플은 datatype을 null로 두세요.
+2. Subject와 Object의 URI는 ""http://7team.dev/ontology#"" 로 시작하는 full URI 형식을 사용하세요.
+3. Predicate는 ""prod:"" 약식을 사용하세요. (예: prod:hasLocation)
+4. 문자열은 datatype을 ""xsd:string"", 숫자는 ""xsd:float"" 또는 ""xsd:integer""로 표시하세요.
+5. 관계만 표현하는 트리플은 datatype을 null로 두세요.
 
-예시 1) 입력: ""오늘 스타벅스 강남점 갔다""
-출력:
+사용할 수 있는 Predicate (무성님 온톨로지 명세):
+- prod:hasLocation: 사용자가 방문한 장소
+- prod:placeName: 장소 이름 (문자열)
+- prod:placeType: 장소 유형 (cafe, restaurant, park 등)
+- prod:visitTime: 방문 시각 (ISO 8601 datetime)
+
+예시 1) ""오늘 강남 카페 갔다""
 {""triples"": [
-  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:visited"", ""o"": ""prod:loc_" + testUserUid + @"_001"", ""datatype"": null},
-  {""s"": ""prod:loc_" + testUserUid + @"_001"", ""p"": ""prod:placeName"", ""o"": ""스타벅스 강남점"", ""datatype"": ""xsd:string""},
-  {""s"": ""prod:loc_" + testUserUid + @"_001"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
+  {""s"": """ + baseUri + @"user_" + testUserUid + @""", ""p"": ""prod:hasLocation"", ""o"": """ + baseUri + @"loc_001"", ""datatype"": null},
+  {""s"": """ + baseUri + @"loc_001"", ""p"": ""prod:placeName"", ""o"": ""강남 카페"", ""datatype"": ""xsd:string""},
+  {""s"": """ + baseUri + @"loc_001"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
 ]}
 
-예시 2) 입력: ""저녁에 파스타 먹었어""
-출력:
+예시 2) ""홍대 공원에서 산책했다""
 {""triples"": [
-  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:ate"", ""o"": ""prod:food_" + testUserUid + @"_002"", ""datatype"": null},
-  {""s"": ""prod:food_" + testUserUid + @"_002"", ""p"": ""prod:foodName"", ""o"": ""pasta"", ""datatype"": ""xsd:string""}
+  {""s"": """ + baseUri + @"user_" + testUserUid + @""", ""p"": ""prod:hasLocation"", ""o"": """ + baseUri + @"loc_002"", ""datatype"": null},
+  {""s"": """ + baseUri + @"loc_002"", ""p"": ""prod:placeName"", ""o"": ""홍대 공원"", ""datatype"": ""xsd:string""},
+  {""s"": """ + baseUri + @"loc_002"", ""p"": ""prod:placeType"", ""o"": ""park"", ""datatype"": ""xsd:string""}
 ]}
 
-이제 다음 입력을 변환하세요:
-입력: """ + userInput + @"""
+이제 다음 입력을 변환하세요.
+입력: " + userInput + @"
 출력:";
 
             return prompt;
@@ -121,7 +137,6 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             }
 
             // 응답 안에서 "{" 부터 "}"까지 JSON 부분만 추출
-            // (Gemma가 가끔 앞뒤에 설명을 붙이기 때문)
             int startIdx = response.IndexOf('{');
             int endIdx = response.LastIndexOf('}');
 
@@ -135,7 +150,6 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 
             try
             {
-                // JsonUtility로 파싱 (래퍼 클래스 사용)
                 TripleJsonResponse parsed = JsonUtility.FromJson<TripleJsonResponse>(jsonStr);
                 return parsed.triples;
             }
@@ -147,21 +161,20 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             }
         }
 
-
         /// <summary>
         /// 트리플 1개를 SQLite triples 테이블에 저장
         /// </summary>
-        private void SaveToSQLite(TripleJson t, string sourceText)
+        private void SaveToSQLite(TripleJson t, string sourceInput)
         {
             var triple = new Triple
             {
                 Subject = t.s,
                 Predicate = t.p,
                 Object = t.o,
-                Datatype = t.datatype,           // null 가능
-                Source = $"text_input:{sourceText}",
+                Datatype = t.datatype,
+                Source = $"text_input:{sourceInput}",
                 Timestamp = DateTime.UtcNow.ToString("o"),
-                Synced = 0                       // 아직 Firestore 미전송
+                Synced = 0
             };
 
             SQLiteManager.Instance.Connection.Insert(triple);
