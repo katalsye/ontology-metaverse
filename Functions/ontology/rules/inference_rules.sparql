@@ -25,9 +25,7 @@ CONSTRUCT {
         prod:objectType "tired_pillow" ;
         prod:inferredFrom "FatigueRisk" ;
         prod:inferredFromConcept prod:FatigueRisk ;
-        prod:positionX "0.8"^^xsd:float ;
-        prod:positionY "0.1"^^xsd:float ;
-        prod:positionZ "0.9"^^xsd:float .
+        prod:placementZone "shelf" .
     ?user prod:hasRoomObject _:obj_fatigue .
 }
 WHERE {
@@ -125,9 +123,7 @@ CONSTRUCT {
         prod:objectType "running_shoes" ;
         prod:inferredFrom "SedentaryPattern" ;
         prod:inferredFromConcept prod:SedentaryPattern ;
-        prod:positionX "0.9"^^xsd:float ;
-        prod:positionY "0.0"^^xsd:float ;
-        prod:positionZ "0.2"^^xsd:float .
+        prod:placementZone "floor" .
     ?user prod:hasRoomObject _:obj_sedentary .
 }
 WHERE {
@@ -152,9 +148,7 @@ CONSTRUCT {
           prod:objectType ?objType ;
           prod:inferredFrom ?inferredLabel ;
           prod:inferredFromConcept prod:PlaceHabit ;
-          prod:positionX 0.0 ;
-          prod:positionY 0.0 ;
-          prod:positionZ 0.0 .
+          prod:placementZone ?zone .
     ?user prod:hasRoomObject _:obj .
 }
 WHERE {
@@ -178,6 +172,13 @@ WHERE {
         "generic_marker")))) AS ?objType
     )
     BIND(CONCAT("PlaceHabit:", STR(?pt)) AS ?inferredLabel)
+    BIND(
+        IF(?pt = "cafe",    "desk",
+        IF(?pt = "gym",     "floor",
+        IF(?pt = "library", "wall",
+        IF(?pt = "park",    "floor",
+        "floor")))) AS ?zone
+    )
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -402,9 +403,7 @@ CONSTRUCT {
         prod:objectType "window_rain" ;
         prod:inferredFrom "IndoorDayPattern" ;
         prod:inferredFromConcept prod:IndoorDayPattern ;
-        prod:positionX "0.5"^^xsd:float ;
-        prod:positionY "0.7"^^xsd:float ;
-        prod:positionZ "1.0"^^xsd:float .
+        prod:placementZone "window" .
     ?user prod:hasRoomObject _:obj_indoor .
 }
 WHERE {
@@ -479,9 +478,7 @@ CONSTRUCT {
         prod:objectType "alarm_clock" ;
         prod:inferredFrom "Routine" ;
         prod:inferredFromConcept prod:Routine ;
-        prod:positionX "0.3"^^xsd:float ;
-        prod:positionY "0.5"^^xsd:float ;
-        prod:positionZ "0.9"^^xsd:float .
+        prod:placementZone "desk" .
     ?user prod:hasRoomObject _:obj_routine .
 }
 WHERE {
@@ -514,9 +511,7 @@ CONSTRUCT {
         prod:objectType "music_speaker" ;
         prod:inferredFrom "MusicMood" ;
         prod:inferredFromConcept prod:MusicMood ;
-        prod:positionX "0.7"^^xsd:float ;
-        prod:positionY "0.3"^^xsd:float ;
-        prod:positionZ "0.5"^^xsd:float .
+        prod:placementZone "shelf" .
     ?user prod:hasRoomObject _:obj_music .
 }
 WHERE {
@@ -661,9 +656,7 @@ CONSTRUCT {
         prod:objectType "sports_trophy" ;
         prod:inferredFrom "Persona:active" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.15"^^xsd:float ;
-        prod:positionY "0.6"^^xsd:float ;
-        prod:positionZ "0.1"^^xsd:float .
+        prod:placementZone "shelf" .
     ?user prod:hasRoomObject _:obj_persona_active .
 }
 WHERE {
@@ -694,9 +687,7 @@ CONSTRUCT {
         prod:objectType "cozy_blanket" ;
         prod:inferredFrom "Persona:indoor" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.7"^^xsd:float ;
-        prod:positionY "0.15"^^xsd:float ;
-        prod:positionZ "0.8"^^xsd:float .
+        prod:placementZone "floor" .
     ?user prod:hasRoomObject _:obj_persona_indoor .
 }
 WHERE {
@@ -717,9 +708,7 @@ CONSTRUCT {
         prod:objectType "photo_frame_friends" ;
         prod:inferredFrom "Persona:social" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.5"^^xsd:float ;
-        prod:positionY "0.7"^^xsd:float ;
-        prod:positionZ "1.0"^^xsd:float .
+        prod:placementZone "wall" .
     ?user prod:hasRoomObject _:obj_persona_social .
 }
 WHERE {
@@ -750,9 +739,7 @@ CONSTRUCT {
         prod:objectType "single_chair" ;
         prod:inferredFrom "Persona:solitary" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.3"^^xsd:float ;
-        prod:positionY "0.0"^^xsd:float ;
-        prod:positionZ "0.5"^^xsd:float .
+        prod:placementZone "floor" .
     ?user prod:hasRoomObject _:obj_persona_solitary .
 }
 WHERE {
@@ -789,9 +776,7 @@ CONSTRUCT {
         prod:objectType "organized_shelf" ;
         prod:inferredFrom "Persona:routine" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.1"^^xsd:float ;
-        prod:positionY "0.5"^^xsd:float ;
-        prod:positionZ "0.3"^^xsd:float .
+        prod:placementZone "wall" .
     ?user prod:hasRoomObject _:obj_persona_routine .
 }
 WHERE {
@@ -821,9 +806,7 @@ CONSTRUCT {
         prod:objectType "moon_lamp" ;
         prod:inferredFrom "Persona:night_owl" ;
         prod:inferredFromConcept prod:Persona ;
-        prod:positionX "0.8"^^xsd:float ;
-        prod:positionY "0.8"^^xsd:float ;
-        prod:positionZ "0.9"^^xsd:float .
+        prod:placementZone "ceiling" .
     ?user prod:hasRoomObject _:obj_persona_night_owl .
 }
 WHERE {
@@ -857,9 +840,7 @@ CONSTRUCT {
           prod:objectType "desk_light_bright" ;
           prod:inferredFrom "FocusMode" ;
           prod:inferredFromConcept prod:FocusMode ;
-          prod:positionX "1.5"^^xsd:float ;
-          prod:positionY "0.8"^^xsd:float ;
-          prod:positionZ "0.0"^^xsd:float .
+          prod:placementZone "desk" .
     ?user prod:hasRoomObject _:obj .
 }
 WHERE {
@@ -899,9 +880,7 @@ CONSTRUCT {
         prod:objectType "stress_ball" ;
         prod:inferredFrom "StressIndicator" ;
         prod:inferredFromConcept prod:StressIndicator ;
-        prod:positionX "0.5"^^xsd:float ;
-        prod:positionY "0.2"^^xsd:float ;
-        prod:positionZ "0.5"^^xsd:float .
+        prod:placementZone "desk" .
     ?user prod:hasRoomObject _:obj_stress .
 }
 WHERE {
@@ -942,9 +921,7 @@ CONSTRUCT {
           prod:objectType "party_light" ;
           prod:inferredFrom "SocialActivity" ;
           prod:inferredFromConcept prod:SocialActivity ;
-          prod:positionX "-1.5"^^xsd:float ;
-          prod:positionY "1.2"^^xsd:float ;
-          prod:positionZ "0.0"^^xsd:float .
+          prod:placementZone "ceiling" .
     ?user prod:hasRoomObject _:obj .
 }
 WHERE {
@@ -1006,9 +983,7 @@ CONSTRUCT {
         prod:objectType "calendar_wall" ;
         prod:inferredFrom "ScheduleOverload" ;
         prod:inferredFromConcept prod:ScheduleOverload ;
-        prod:positionX "0.5"^^xsd:float ;
-        prod:positionY "0.8"^^xsd:float ;
-        prod:positionZ "1.0"^^xsd:float .
+        prod:placementZone "wall" .
     ?user prod:hasRoomObject _:obj_calendar .
 }
 WHERE {

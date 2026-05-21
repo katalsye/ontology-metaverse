@@ -56,6 +56,8 @@ REQUIRED_PROPERTIES = [
     "hasConsecutiveLowStepDays",
     # Location 장소 유형
     "placeType",
+    # RoomObject 배치 영역 (positionX/Y/Z deprecated)
+    "placementZone",
 ]
 
 DISJOINT_PAIRS = [

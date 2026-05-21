@@ -639,6 +639,18 @@ class TestOntologyPipeline(unittest.TestCase):
                           f"RoomObject objectType '{ot}' 생성 실패 (발동된 규칙 기반)\n"
                           f"실제 objectTypes: {obj_types}")
 
+        # placementZone 존재 확인 + positionX/Y/Z 없음 확인
+        for obj in room_objects:
+            if g.value(obj, PROD.objectType):
+                self.assertIsNotNone(
+                    g.value(obj, PROD.placementZone),
+                    f"RoomObject missing placementZone: {g.value(obj, PROD.objectType)}"
+                )
+                self.assertIsNone(
+                    g.value(obj, PROD.positionX),
+                    f"positionX should not exist: {g.value(obj, PROD.objectType)}"
+                )
+
         print(f"  [{PASS}] 전체 파이프라인 {len(fired_rules)}개 규칙 발동 성공")
         print(f"    발동된 규칙: {', '.join(fired_rules)}")
         print(f"    생성된 RoomObject objectTypes: {sorted(obj_types)}")

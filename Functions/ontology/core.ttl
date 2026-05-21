@@ -390,21 +390,27 @@ prod:objectType a owl:DatatypeProperty ;
 
 prod:positionX a owl:DatatypeProperty ;
     rdfs:label   "positionX" ;
-    rdfs:comment "오브젝트 X축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 X축 위치. Unity 월드 좌표계. 단위: float." ;
     rdfs:domain prod:RoomObject ;
     rdfs:range  xsd:float .
 
 prod:positionY a owl:DatatypeProperty ;
     rdfs:label   "positionY" ;
-    rdfs:comment "오브젝트 Y축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 Y축 위치. Unity 월드 좌표계. 단위: float." ;
     rdfs:domain prod:RoomObject ;
     rdfs:range  xsd:float .
 
 prod:positionZ a owl:DatatypeProperty ;
     rdfs:label   "positionZ" ;
-    rdfs:comment "오브젝트 Z축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 Z축 위치. Unity 월드 좌표계. 단위: float." ;
     rdfs:domain prod:RoomObject ;
     rdfs:range  xsd:float .
+
+prod:placementZone a owl:DatatypeProperty ;
+    rdfs:label   "placementZone" ;
+    rdfs:comment "RoomObject 배치 영역. 유니티팀이 실제 좌표로 변환. 허용값: desk, floor, wall, ceiling, window, shelf" ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .
 
 prod:inferredFrom a owl:DatatypeProperty ;
     rdfs:label   "inferredFrom" ;

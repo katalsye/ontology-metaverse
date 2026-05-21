@@ -3,7 +3,8 @@
 > 유니티팀(노성민, 이서윤) 합의 미팅용 — 추론 엔진이 생성하는 3D 에셋 목록
 >
 > 출처: `Functions/ontology/rules/inference_rules.sparql`  
-> 최종 갱신: 2026-05-21 (페르소나 기반 RoomObject 6종 추가, 합계 20종)
+> 최종 갱신: 2026-05-21 (페르소나 기반 RoomObject 6종 추가, 합계 20종)  
+> v0.2 (2026-05-21): positionX/Y/Z → placementZone 변경 (유니티팀 요청 반영)
 
 ---
 
@@ -23,7 +24,7 @@
 | **생성 조건** | `placeType = "cafe"` 인 Location을 주 3회 이상 방문 |
 | **인퍼런스 소스** | `prod:PlaceHabit` |
 | **inferredFrom** | `"PlaceHabit:cafe"` |
-| **위치 좌표** | X=0.0, Y=0.0, Z=0.0 |
+| **배치 영역** | `"desk"` |
 | **설명** | 카페를 자주 방문하는 습관을 상징하는 커피컵 오브젝트 |
 
 ---
@@ -37,7 +38,7 @@
 | **생성 조건** | `placeType = "gym"` 인 Location을 주 3회 이상 방문 |
 | **인퍼런스 소스** | `prod:PlaceHabit` |
 | **inferredFrom** | `"PlaceHabit:gym"` |
-| **위치 좌표** | X=0.0, Y=0.0, Z=0.0 |
+| **배치 영역** | `"floor"` |
 | **설명** | 헬스장·운동시설을 자주 방문하는 습관을 상징하는 덤벨 오브젝트 |
 
 ---
@@ -51,7 +52,7 @@
 | **생성 조건** | `placeType = "library"` 인 Location을 주 3회 이상 방문 |
 | **인퍼런스 소스** | `prod:PlaceHabit` |
 | **inferredFrom** | `"PlaceHabit:library"` |
-| **위치 좌표** | X=0.0, Y=0.0, Z=0.0 |
+| **배치 영역** | `"wall"` |
 | **설명** | 도서관·서점을 자주 방문하는 습관을 상징하는 책장 오브젝트 |
 
 ---
@@ -65,7 +66,7 @@
 | **생성 조건** | `placeType = "park"` 인 Location을 주 3회 이상 방문 |
 | **인퍼런스 소스** | `prod:PlaceHabit` |
 | **inferredFrom** | `"PlaceHabit:park"` |
-| **위치 좌표** | X=0.0, Y=0.0, Z=0.0 |
+| **배치 영역** | `"floor"` |
 | **설명** | 공원·야외 공간을 자주 방문하는 습관을 상징하는 화분 오브젝트 |
 
 ---
@@ -79,7 +80,7 @@
 | **생성 조건** | cafe/gym/library/park 이외의 `placeType` 값을 가진 Location을 주 3회 이상 방문 |
 | **인퍼런스 소스** | `prod:PlaceHabit` |
 | **inferredFrom** | `"PlaceHabit:{placeType값}"` (예: `"PlaceHabit:hospital"`) |
-| **위치 좌표** | X=0.0, Y=0.0, Z=0.0 |
+| **배치 영역** | `"floor"` |
 | **설명** | 매핑 테이블에 없는 장소 카테고리에 대한 폴백 오브젝트 |
 
 > **Unity팀 참고:** `inferredFrom` 트리플에서 콜론 뒤 값으로 실제 placeType을 추출 가능.  
@@ -96,7 +97,7 @@
 | **생성 조건** | 클래식·Lo-fi 장르 음악을 하루 합산 180분(3시간) 이상 청취 |
 | **인퍼런스 소스** | `prod:FocusMode` |
 | **inferredFrom** | `"FocusMode"` |
-| **위치 좌표** | X=1.5, Y=0.8, Z=0.0 |
+| **배치 영역** | `"desk"` |
 | **설명** | 집중 음악 청취 패턴 감지 시 책상에 배치되는 밝은 조명 오브젝트 |
 
 ---
@@ -110,7 +111,7 @@
 | **생성 조건** | 댄스·팝 장르 청취 + 외출 위치(집 외) 방문이 동일 날짜·3시간 이내 동시 발생 |
 | **인퍼런스 소스** | `prod:SocialActivity` |
 | **inferredFrom** | `"SocialActivity"` |
-| **위치 좌표** | X=-1.5, Y=1.2, Z=0.0 |
+| **배치 영역** | `"ceiling"` |
 | **설명** | 사교적 외출과 흥겨운 음악이 겹칠 때 방에 배치되는 파티 조명 오브젝트 |
 
 ---
@@ -131,7 +132,7 @@
 | **생성 조건** | 수면 6시간 미만 + 카페인 조건(주간 3회 초과 / 야간 1회 초과 / 주말 점수 4.5 이상) |
 | **인퍼런스 소스** | `prod:FatigueRisk` |
 | **inferredFrom** | `"FatigueRisk"` |
-| **위치 좌표** | X=0.8, Y=0.1, Z=0.9 |
+| **배치 영역** | `"shelf"` |
 | **설명** | 피로 위험 상태 감지 시 방 구석에 배치되는 베개 오브젝트 |
 
 ---
@@ -145,7 +146,7 @@
 | **생성 조건** | DuckDB 전처리 기준 걸음수 3,000보 미만 3일 연속 |
 | **인퍼런스 소스** | `prod:SedentaryPattern` |
 | **inferredFrom** | `"SedentaryPattern"` |
-| **위치 좌표** | X=0.9, Y=0.0, Z=0.2 |
+| **배치 영역** | `"floor"` |
 | **설명** | 운동 부족 패턴 감지 시 현관 쪽에 배치되는 운동화 오브젝트 |
 
 ---
@@ -159,7 +160,7 @@
 | **생성 조건** | 비(rain) 또는 겨울(12·1·2월) + 외출 장소 2곳 미만 |
 | **인퍼런스 소스** | `prod:IndoorDayPattern` |
 | **inferredFrom** | `"IndoorDayPattern"` |
-| **위치 좌표** | X=0.5, Y=0.7, Z=1.0 |
+| **배치 영역** | `"window"` |
 | **설명** | 실내형 하루 패턴 감지 시 창문에 배치되는 비 이펙트 오브젝트 |
 
 ---
@@ -173,7 +174,7 @@
 | **생성 조건** | 같은 시간대(hour) CalendarEvent 주 3회 이상 |
 | **인퍼런스 소스** | `prod:Routine` |
 | **inferredFrom** | `"Routine"` |
-| **위치 좌표** | X=0.3, Y=0.5, Z=0.9 |
+| **배치 영역** | `"desk"` |
 | **설명** | 루틴 패턴 감지 시 배치되는 알람 시계 오브젝트 |
 
 > **Unity팀 참고:** Rule 8은 `prod:Routine` 타입 노드(P5 페르소나 참조용)와 별도로  
@@ -190,7 +191,7 @@
 | **생성 조건** | 특정 장르 하루 총 청취 120분(2시간) 이상 |
 | **인퍼런스 소스** | `prod:MusicMood` |
 | **inferredFrom** | `"MusicMood"` |
-| **위치 좌표** | X=0.7, Y=0.3, Z=0.5 |
+| **배치 영역** | `"shelf"` |
 | **설명** | 음악 청취 집중 패턴 감지 시 배치되는 스피커 오브젝트 |
 
 > **Unity팀 참고:** 장르별로 조건을 충족하면 장르 수만큼 노드 생성 가능.
@@ -206,7 +207,7 @@
 | **생성 조건** | 헤비메탈·록 장르를 야간(22시 이후) 청취 |
 | **인퍼런스 소스** | `prod:StressIndicator` |
 | **inferredFrom** | `"StressIndicator"` |
-| **위치 좌표** | X=0.5, Y=0.2, Z=0.5 |
+| **배치 영역** | `"desk"` |
 | **설명** | 스트레스 지표 감지 시 배치되는 스트레스볼 오브젝트 |
 
 ---
@@ -220,7 +221,7 @@
 | **생성 조건** | 같은 날짜에 CalendarEvent 5개 이상 |
 | **인퍼런스 소스** | `prod:ScheduleOverload` |
 | **inferredFrom** | `"ScheduleOverload"` |
-| **위치 좌표** | X=0.5, Y=0.8, Z=1.0 |
+| **배치 영역** | `"wall"` |
 | **설명** | 일정 과부하 감지 시 벽면에 배치되는 캘린더 오브젝트 |
 
 ---
@@ -241,7 +242,7 @@
 | **생성 조건** | 7,000보 이상인 날이 4일 이상 (활동적 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (energyType=active) |
 | **inferredFrom** | `"Persona:active"` |
-| **위치 좌표** | X=0.15, Y=0.6, Z=0.1 |
+| **배치 영역** | `"shelf"` |
 | **설명** | 활동적인 사용자 페르소나 감지 시 배치되는 트로피 오브젝트 |
 
 ---
@@ -255,7 +256,7 @@
 | **생성 조건** | `prod:IndoorDayPattern` 상태 주 3회 이상 (집순이 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (lifePattern=indoor) |
 | **inferredFrom** | `"Persona:indoor"` |
-| **위치 좌표** | X=0.7, Y=0.15, Z=0.8 |
+| **배치 영역** | `"floor"` |
 | **설명** | 실내형 생활 패턴 페르소나 감지 시 소파에 배치되는 담요 오브젝트 |
 
 ---
@@ -269,7 +270,7 @@
 | **생성 조건** | companion 있는 방문 장소 3회 이상 (사교적 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (socialPreference=social) |
 | **inferredFrom** | `"Persona:social"` |
-| **위치 좌표** | X=0.5, Y=0.7, Z=1.0 |
+| **배치 영역** | `"wall"` |
 | **설명** | 사교적 페르소나 감지 시 벽면에 배치되는 친구 사진 액자 오브젝트 |
 
 ---
@@ -283,7 +284,7 @@
 | **생성 조건** | companion 없는 방문이 전체의 70% 이상 (혼자 활동 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (socialPreference=solitary) |
 | **inferredFrom** | `"Persona:solitary"` |
-| **위치 좌표** | X=0.3, Y=0.0, Z=0.5 |
+| **배치 영역** | `"floor"` |
 | **설명** | 독립적 생활 패턴 페르소나 감지 시 배치되는 1인용 의자 오브젝트 |
 
 ---
@@ -297,7 +298,7 @@
 | **생성 조건** | `prod:Routine` 노드가 3개 이상 (루틴형 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (lifePattern=routine) |
 | **inferredFrom** | `"Persona:routine"` |
-| **위치 좌표** | X=0.1, Y=0.5, Z=0.3 |
+| **배치 영역** | `"wall"` |
 | **설명** | 규칙적인 생활 패턴 페르소나 감지 시 배치되는 정리된 선반 오브젝트 |
 
 > **Unity팀 참고:** Rule P5의 WHERE절은 `prod:Routine` 타입 노드를 참조함.  
@@ -314,42 +315,42 @@
 | **생성 조건** | 자정(00:00) 이후 Activity가 4회 이상 (야행성 페르소나) |
 | **인퍼런스 소스** | `prod:Persona` (lifePattern=night_owl) |
 | **inferredFrom** | `"Persona:night_owl"` |
-| **위치 좌표** | X=0.8, Y=0.8, Z=0.9 |
+| **배치 영역** | `"ceiling"` |
 | **설명** | 야행성 생활 패턴 페르소나 감지 시 천장 근처에 배치되는 달 모양 조명 오브젝트 |
 
 ---
 
 ## placeType → objectType 매핑 요약 (Rule 4)
 
-| placeType | objectType | inferredFrom |
-|-----------|-----------|--------------|
-| `cafe` | `coffee_cup` | `PlaceHabit:cafe` |
-| `gym` | `dumbbell` | `PlaceHabit:gym` |
-| `library` | `bookshelf` | `PlaceHabit:library` |
-| `park` | `tree_pot` | `PlaceHabit:park` |
-| 그 외 모두 | `generic_marker` | `PlaceHabit:{값}` |
+| placeType | objectType | inferredFrom | placementZone |
+|-----------|-----------|--------------|--------------|
+| `cafe` | `coffee_cup` | `PlaceHabit:cafe` | `"desk"` |
+| `gym` | `dumbbell` | `PlaceHabit:gym` | `"floor"` |
+| `library` | `bookshelf` | `PlaceHabit:library` | `"wall"` |
+| `park` | `tree_pot` | `PlaceHabit:park` | `"floor"` |
+| 그 외 모두 | `generic_marker` | `PlaceHabit:{값}` | `"floor"` |
 
 ---
 
 ## 추론 상태 → objectType 매핑 요약
 
-| 추론 상태 | objectType | 규칙 ID | 좌표 (X, Y, Z) |
-|-----------|-----------|---------|----------------|
-| `FatigueRisk` | `tired_pillow` | Rule 1 | (0.8, 0.1, 0.9) |
-| `SedentaryPattern` | `running_shoes` | Rule 3 | (0.9, 0.0, 0.2) |
-| `IndoorDayPattern` | `window_rain` | Rule 7 | (0.5, 0.7, 1.0) |
-| `Routine` | `alarm_clock` | Rule 8 | (0.3, 0.5, 0.9) |
-| `MusicMood` | `music_speaker` | Rule 9 | (0.7, 0.3, 0.5) |
-| `FocusMode` | `desk_light_bright` | Rule 26 | (1.5, 0.8, 0.0) |
-| `StressIndicator` | `stress_ball` | Rule 27 | (0.5, 0.2, 0.5) |
-| `SocialActivity` | `party_light` | Rule 28 | (-1.5, 1.2, 0.0) |
-| `ScheduleOverload` | `calendar_wall` | Rule 29 | (0.5, 0.8, 1.0) |
-| `Persona` (energyType=active) | `sports_trophy` | Rule P1 | (0.15, 0.6, 0.1) |
-| `Persona` (lifePattern=indoor) | `cozy_blanket` | Rule P2 | (0.7, 0.15, 0.8) |
-| `Persona` (socialPreference=social) | `photo_frame_friends` | Rule P3 | (0.5, 0.7, 1.0) |
-| `Persona` (socialPreference=solitary) | `single_chair` | Rule P4 | (0.3, 0.0, 0.5) |
-| `Persona` (lifePattern=routine) | `organized_shelf` | Rule P5 | (0.1, 0.5, 0.3) |
-| `Persona` (lifePattern=night_owl) | `moon_lamp` | Rule P6 | (0.8, 0.8, 0.9) |
+| 추론 상태 | objectType | 규칙 ID | placementZone |
+|-----------|-----------|---------|--------------|
+| `FatigueRisk` | `tired_pillow` | Rule 1 | `"shelf"` |
+| `SedentaryPattern` | `running_shoes` | Rule 3 | `"floor"` |
+| `IndoorDayPattern` | `window_rain` | Rule 7 | `"window"` |
+| `Routine` | `alarm_clock` | Rule 8 | `"desk"` |
+| `MusicMood` | `music_speaker` | Rule 9 | `"shelf"` |
+| `FocusMode` | `desk_light_bright` | Rule 26 | `"desk"` |
+| `StressIndicator` | `stress_ball` | Rule 27 | `"desk"` |
+| `SocialActivity` | `party_light` | Rule 28 | `"ceiling"` |
+| `ScheduleOverload` | `calendar_wall` | Rule 29 | `"wall"` |
+| `Persona` (energyType=active) | `sports_trophy` | Rule P1 | `"shelf"` |
+| `Persona` (lifePattern=indoor) | `cozy_blanket` | Rule P2 | `"floor"` |
+| `Persona` (socialPreference=social) | `photo_frame_friends` | Rule P3 | `"wall"` |
+| `Persona` (socialPreference=solitary) | `single_chair` | Rule P4 | `"floor"` |
+| `Persona` (lifePattern=routine) | `organized_shelf` | Rule P5 | `"wall"` |
+| `Persona` (lifePattern=night_owl) | `moon_lamp` | Rule P6 | `"ceiling"` |
 
 ---
 
@@ -411,6 +412,7 @@ Unity팀은 복수 오브젝트 동시 배치 상황을 처리해야 한다.
 | **총 objectType 유형** | **20종 (전부 고정 문자열)** |
 | RoomObject를 생성하는 규칙 수 | **16개** (Rule 1, 3, 4, 7, 8, 9, 26, 27, 28, 29, P1~P6) |
 | 동적 objectType | **없음** |
+| placementZone 종류 | **6종** (`desk`, `floor`, `wall`, `ceiling`, `window`, `shelf`) |
 
 ---
 
@@ -419,3 +421,4 @@ Unity팀은 복수 오브젝트 동시 배치 상황을 처리해야 한다.
 - 추론 규칙 원본: [`Functions/ontology/rules/inference_rules.sparql`](../../Functions/ontology/rules/inference_rules.sparql)
 - 추론 엔진: [`Functions/ontology_engine.py`](../../Functions/ontology_engine.py)
 - 온톨로지 정의: [`Functions/ontology/core.ttl`](../../Functions/ontology/core.ttl)
+- Firestore 스키마: [`Docs/contracts/firestore_schema.md`](./firestore_schema.md)
