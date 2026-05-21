@@ -176,7 +176,7 @@ public class CameraController : MonoBehaviour
         foreach (var h in hits)
             Debug.Log($"[CAM]   hit: {h.collider.gameObject.name} (parent: {h.collider.transform.parent?.name})");
 
-        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null;
+        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null, hHost = null, hSelf = null;
         foreach (var h in hits)
         {
             bool hasMarker    = h.collider.GetComponent<CommentButtonMarker>() != null
@@ -190,18 +190,24 @@ public class CameraController : MonoBehaviour
                              || h.collider.GetComponentInParent<LaunchTableInteraction>() != null;
             bool hasCalendar  = h.collider.GetComponent<CalendarInteraction>() != null
                              || h.collider.GetComponentInParent<CalendarInteraction>() != null;
+            bool hasHost      = h.collider.GetComponent<HostInteraction>() != null
+                             || h.collider.GetComponentInParent<HostInteraction>() != null;
+            bool hasSelf      = h.collider.GetComponent<PlayerSelfInteraction>() != null
+                             || h.collider.GetComponentInParent<PlayerSelfInteraction>() != null;
 
-            Debug.Log($"[CAM]   → {h.collider.gameObject.name} | marker={hasMarker} note={hasNote} board={hasBoard} furniture={hasFurniture} table={hasTable} calendar={hasCalendar}");
+            Debug.Log($"[CAM]   → {h.collider.gameObject.name} | marker={hasMarker} note={hasNote} board={hasBoard} furniture={hasFurniture} table={hasTable} calendar={hasCalendar} host={hasHost} self={hasSelf}");
 
             if      (hCommentBtn == null && hasMarker)    hCommentBtn = h;
             else if (hPostIt     == null && hasNote)      hPostIt     = h;
             else if (hBoard      == null && hasBoard)     hBoard      = h;
+            else if (hHost       == null && hasHost)      hHost       = h;
+            else if (hSelf       == null && hasSelf)      hSelf       = h;
             else if (hFurniture  == null && hasFurniture) hFurniture  = h;
             else if (hTable      == null && hasTable)     hTable      = h;
             else if (hCalendar   == null && hasCalendar)  hCalendar   = h;
         }
 
-        Debug.Log($"[CAM] 감지 결과 — calendar={hCalendar.HasValue} | cfc={CalendarFocusController.Instance?.State}");
+        Debug.Log($"[CAM] 감지 결과 — calendar={hCalendar.HasValue} | host={hHost.HasValue} | self={hSelf.HasValue} | cfc={CalendarFocusController.Instance?.State}");
 
         if (hCommentBtn.HasValue && bfc.State == BoardFocusController.FocusState.Board)
         {
@@ -225,6 +231,45 @@ public class CameraController : MonoBehaviour
 
         if (hBoard.HasValue && bfc.State == BoardFocusController.FocusState.Free)
         { bfc.FocusBoard(); return; }
+
+        // host 클릭 — 줌인/줌아웃 토글
+        var hfc = HostFocusController.Instance;
+        if (hHost.HasValue && hfc != null)
+        {
+            if (hfc.State == HostFocusController.FocusState.Free
+                && bfc.State == BoardFocusController.FocusState.Free)
+            {
+                Debug.Log("[CAM] → Host 클릭 — 줌인");
+                SaveState();
+                hfc.FocusHost();
+            }
+            else if (hfc.State == HostFocusController.FocusState.Host)
+            {
+                Debug.Log("[CAM] → Host 재클릭 — 줌아웃");
+                hfc.BackToFree();
+            }
+            return;
+        }
+
+        if (hfc != null && hfc.State == HostFocusController.FocusState.Host && !hHost.HasValue)
+        {
+            hfc.BackToFree();
+            return;
+        }
+
+        // 플레이어 자신 클릭 — UI 토글
+        var psc = PlayerSelfController.Instance;
+        if (hSelf.HasValue && psc != null && bfc.State == BoardFocusController.FocusState.Free)
+        {
+            if (!psc.IsOpen) { Debug.Log("[CAM] → 플레이어 자신 클릭 — 줌인 + UI 오픈"); SaveState(); psc.Open(); }
+            else             { Debug.Log("[CAM] → 플레이어 자신 재클릭 — UI 닫기"); psc.Close(); }
+            return;
+        }
+        if (psc != null && psc.IsOpen && !hSelf.HasValue)
+        {
+            psc.Close();
+            return;
+        }
 
         // 캘린더 클릭 — 줌인 + CalendarUI 열기
         var cfc = CalendarFocusController.Instance;

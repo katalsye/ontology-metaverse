@@ -29,7 +29,20 @@
       "mcp__reaper__get_track_fx_chunk",
       "mcp__reaper__track_fx_get_num_params",
       "mcp__reaper__track_fx_get_param_name",
-      "mcp__reaper__batch_set_fx_params"
+      "mcp__reaper__batch_set_fx_params",
+      "mcp__reaper__set_track_pan",
+      "mcp__reaper__set_track_volume",
+      "mcp__reaper__save_project",
+      "mcp__reaper__get_track_peak",
+      "mcp__reaper__play",
+      "mcp__reaper__set_cursor_position",
+      "mcp__reaper__get_play_position",
+      "mcp__reaper__stop",
+      "mcp__reaper__add_limiter",
+      "mcp__reaper__add_envelope_point",
+      "mcp__reaper__arm_track_envelope",
+      "mcp__reaper__get_all_tracks",
+      "mcp__reaper__set_track_solo"
     ]
   }
 }
