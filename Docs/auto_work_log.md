@@ -215,3 +215,18 @@
 - 트리플: 683 → 683 (변경 없음)
 - 문제점: 3개 (높음1, 중간1, 낮음1) → 높음1 수정 완료
 ---
+## 사이클 완료: 2026년 05월 15일 금 23:45:47
+- 이슈: #66 CalendarEvent/Location/Weather 필수 속성 minCardinality 및 REQUIRED_PROPERTY_MAP 동기화
+- 트리플: 683 → 695 (+12, Location.visitTime→placeName 교체)
+- 문제점: 3개 (높음2, 중간1) → 높음2 수정 완료
+---
+## 사이클 완료: 2026년 05월 15일 금 23:57:14
+- 이슈: #67 validate_required_properties 테스트 커버리지 확대 (4개 클래스)
+- 트리플: 695 → 695 (변경 없음)
+- 문제점: 3개 (중간2, 낮음1) → 중간2 수정 완료
+---
+## 사이클 완료: 2026년 05월 16일 토 00:06:40
+- 이슈: #68 test_triple_validator.py return bool → assert 패턴 교체
+- 트리플: 695 → 695 (변경 없음)
+- 문제점: 2개 (CRITICAL1, MEDIUM1) → 모두 수정 완료
+---

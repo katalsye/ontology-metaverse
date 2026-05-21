@@ -156,6 +156,9 @@ def test_fatigue_risk(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["fatigue_risk"])
     results.append(check("주간 카페 3회 → FatigueRisk",
                          (user, PROD.hasState, PROD.FatigueRisk) in g))
+    results.append(check("→ RoomObject(tired_pillow) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "tired_pillow"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
 
     # 정례 B: 수면 5.5h + 야간 카페 2회 (>1) → FatigueRisk
     g = load_base_graph()
@@ -296,6 +299,9 @@ def test_sedentary_pattern(rules: dict[str, str]) -> bool:
     results.append(check("→ 퀘스트가 User에 연결됨",
                          any((q, PROD.title, Literal("30분 산책하기")) in g
                              for q in g.objects(user, PROD.receivesQuest))))
+    results.append(check("→ RoomObject(running_shoes) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "running_shoes"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
 
     # 정례 B: 5일 연속 → 역시 발동
     g = load_base_graph()
@@ -329,30 +335,87 @@ def test_place_habit(rules: dict[str, str]) -> bool:
     print("\n[Test 4] place_habit")
     results = []
 
-    # 정례: 같은 장소 3회 방문 → PlaceHabit + RoomObject
+    # 정례 A: placeType=cafe 3회 → PlaceHabit + RoomObject(objectType=coffee_cup)
     g = load_base_graph()
     user = _add_user(g, "r4a")
     for i in range(3):
         loc = PROD[f"loc_r4a_{i}"]
         g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeType, Literal("cafe")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["place_habit"])
+    results.append(check("placeType=cafe 3회 → PlaceHabit",
+                         (user, PROD.hasState, PROD.PlaceHabit) in g))
+    obj_types = [str(g.value(obj, PROD.objectType))
+                 for obj in g.objects(user, PROD.hasRoomObject)]
+    results.append(check("→ RoomObject objectType=coffee_cup",
+                         "coffee_cup" in obj_types, f"실제: {obj_types}"))
+
+    # 정례 B: placeType=gym 3회 → objectType=dumbbell
+    g = load_base_graph()
+    user = _add_user(g, "r4b")
+    for i in range(3):
+        loc = PROD[f"loc_r4b_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeType, Literal("gym")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["place_habit"])
+    obj_types = [str(g.value(obj, PROD.objectType))
+                 for obj in g.objects(user, PROD.hasRoomObject)]
+    results.append(check("placeType=gym 3회 → objectType=dumbbell",
+                         "dumbbell" in obj_types, f"실제: {obj_types}"))
+
+    # 정례 C: placeType=unknown_type 3회 → objectType=generic_marker (폴백)
+    g = load_base_graph()
+    user = _add_user(g, "r4c")
+    for i in range(3):
+        loc = PROD[f"loc_r4c_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeType, Literal("unknown_type")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["place_habit"])
+    obj_types = [str(g.value(obj, PROD.objectType))
+                 for obj in g.objects(user, PROD.hasRoomObject)]
+    results.append(check("placeType=unknown_type 3회 → objectType=generic_marker",
+                         "generic_marker" in obj_types, f"실제: {obj_types}"))
+
+    # 정례 D: inferredFrom = "PlaceHabit:library" 형태 확인
+    g = load_base_graph()
+    user = _add_user(g, "r4d")
+    for i in range(3):
+        loc = PROD[f"loc_r4d_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeType, Literal("library")))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["place_habit"])
+    inferred_from_vals = [str(g.value(obj, PROD.inferredFrom))
+                          for obj in g.objects(user, PROD.hasRoomObject)]
+    results.append(check("inferredFrom = 'PlaceHabit:library'",
+                         "PlaceHabit:library" in inferred_from_vals,
+                         f"실제: {inferred_from_vals}"))
+
+    # 반례 A: 다른 placeType 각 1회씩 (총 3회) → PlaceHabit 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r4e")
+    for pt in ["cafe", "gym", "library"]:
+        loc = PROD[f"loc_r4e_{pt}"]
+        g.add((loc, RDF.type, PROD.Location))
+        g.add((loc, PROD.placeType, Literal(pt)))
+        g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["place_habit"])
+    results.append(check("각기 다른 placeType 1회씩 → PlaceHabit 미생성 (반례 A)",
+                         (user, PROD.hasState, PROD.PlaceHabit) not in g))
+
+    # 반례 B: placeType 없는 Location 3회 → PlaceHabit 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r4f")
+    for i in range(3):
+        loc = PROD[f"loc_r4f_{i}"]
+        g.add((loc, RDF.type, PROD.Location))
         g.add((loc, PROD.placeName, Literal("헬스장")))
         g.add((user, PROD.hasLocation, loc))
     apply_rule(g, rules["place_habit"])
-    results.append(check("같은 장소 3회 → PlaceHabit",
-                         (user, PROD.hasState, PROD.PlaceHabit) in g))
-    results.append(check("→ RoomObject 생성",
-                         any(True for _ in g.objects(user, PROD.hasRoomObject))))
-
-    # 반례: 다른 장소 각 1회 (총 3회이지만 같은 장소 아님)
-    g = load_base_graph()
-    user = _add_user(g, "r4b")
-    for place in ["헬스장", "카페", "도서관"]:
-        loc = PROD[f"loc_r4b_{place}"]
-        g.add((loc, RDF.type, PROD.Location))
-        g.add((loc, PROD.placeName, Literal(place)))
-        g.add((user, PROD.hasLocation, loc))
-    apply_rule(g, rules["place_habit"])
-    results.append(check("각기 다른 장소 1회씩 → PlaceHabit 미생성 (반례)",
+    results.append(check("placeType 없는 Location 3회 → PlaceHabit 미생성 (반례 B)",
                          (user, PROD.hasState, PROD.PlaceHabit) not in g))
 
     assert all(results)
@@ -836,6 +899,9 @@ def test_indoor_day_pattern(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["indoor_day_pattern"])
     results.append(check("비 날씨 + 외출 1곳 → IndoorDayPattern",
                          (user, PROD.hasState, PROD.IndoorDayPattern) in g))
+    results.append(check("→ RoomObject(window_rain) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "window_rain"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
 
     # 정례 B: 겨울(1월) + 외출 0곳 → IndoorDayPattern
     g = load_base_graph()
@@ -909,6 +975,9 @@ def test_routine_and_music_mood(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["routine_detection"])
     results.append(check("같은 시간대(9시) 일정 3회 → Routine",
                          (user, PROD.hasState, PROD.Routine) in g))
+    results.append(check("→ RoomObject(alarm_clock) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "alarm_clock"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 각기 다른 시간대
     g = load_base_graph()
     user = _add_user(g, "r8b")
@@ -934,6 +1003,9 @@ def test_routine_and_music_mood(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["music_mood"])
     results.append(check("재즈 130분 청취 → MusicMood",
                          (user, PROD.hasState, PROD.MusicMood) in g))
+    results.append(check("→ RoomObject(music_speaker) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "music_speaker"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 60분만
     g = load_base_graph()
     user = _add_user(g, "r9b")
@@ -1047,6 +1119,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "active"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.energyType))))
+    results.append(check("P1: → RoomObject(sports_trophy) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "sports_trophy"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 3일만
     g = load_base_graph()
     user = _add_user(g, "pp1b")
@@ -1068,6 +1143,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "indoor"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.energyType))))
+    results.append(check("P2: → RoomObject(cozy_blanket) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "cozy_blanket"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 상태 없음
     g = load_base_graph()
     user = _add_user(g, "pp2b")
@@ -1088,6 +1166,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "social"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.socialPreference))))
+    results.append(check("P3: → RoomObject(photo_frame_friends) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "photo_frame_friends"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 2회
     g = load_base_graph()
     user = _add_user(g, "pp3b")
@@ -1118,6 +1199,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "solitary"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.socialPreference))))
+    results.append(check("P4: → RoomObject(single_chair) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "single_chair"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 동반 방문이 더 많음 (2/5 = 40% < 70%)
     g = load_base_graph()
     user = _add_user(g, "pp4b")
@@ -1148,6 +1232,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "routine"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.lifePattern))))
+    results.append(check("P5: → RoomObject(organized_shelf) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "organized_shelf"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: Routine 1개
     g = load_base_graph()
     user = _add_user(g, "pp5b")
@@ -1172,6 +1259,9 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
                          any(str(v) == "night_owl"
                              for p in g.objects(user, PROD.hasPersona)
                              for v in g.objects(p, PROD.lifePattern))))
+    results.append(check("P6: → RoomObject(moon_lamp) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "moon_lamp"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
     # 반례: 오전 방문만
     g = load_base_graph()
     user = _add_user(g, "pp6b")
@@ -1288,6 +1378,10 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         "P4-E2: 혼자 방문 69% (69/100) → Persona 미발동 (경계값 미만, 반례)",
         not any(True for _ in g.objects(user, PROD.hasPersona))
     ))
+    results.append(check(
+        "P4-E2: → RoomObject 미생성 (Persona 미발동 시)",
+        not any(True for _ in g.objects(user, PROD.hasRoomObject))
+    ))
 
     # P4-E3: 방문 기록 없음 → 미발동 (0으로 나누기 방지)
     # 조건: totalVisits > 0 이 False → 전체 FILTER 실패 → 발동 안 됨
@@ -1317,6 +1411,11 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         any(str(v) == "night_owl"
             for p in g.objects(user, PROD.hasPersona)
             for v in g.objects(p, PROD.lifePattern))
+    ))
+    results.append(check(
+        "P6-E1: → RoomObject(moon_lamp) 생성",
+        any(str(g.value(obj, PROD.objectType)) == "moon_lamp"
+            for obj in g.objects(user, PROD.hasRoomObject))
     ))
 
     # P6-E2: 22:59 방문 3회 → 미발동 (h=22, 조건 불충족)
@@ -1463,6 +1562,32 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         f"indoor={has_indoor}, solitary={has_solitary}"
     ))
 
+    # Composite-3: P1(active) + P2(indoor) 상충 페르소나 동시 발동
+    # → sports_trophy + cozy_blanket 두 RoomObject 모두 생성 (의도된 동작)
+    g = load_base_graph()
+    user = _add_user(g, "pe_comp3")
+    for i in range(4):
+        sc = PROD[f"sc_pe_comp3_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(8000, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+    g.add((user, PROD.hasState, PROD.IndoorDayPattern))
+    apply_rule(g, rules["persona_active"])
+    apply_rule(g, rules["persona_indoor"])
+    obj_types_comp3 = {str(g.value(obj, PROD.objectType))
+                       for obj in g.objects(user, PROD.hasRoomObject)
+                       if g.value(obj, PROD.objectType)}
+    results.append(check(
+        "Composite-3: P1+P2 동시 발동 → sports_trophy 생성",
+        "sports_trophy" in obj_types_comp3,
+        f"실제: {obj_types_comp3}"
+    ))
+    results.append(check(
+        "Composite-3: P1+P2 동시 발동 → cozy_blanket 생성",
+        "cozy_blanket" in obj_types_comp3,
+        f"실제: {obj_types_comp3}"
+    ))
+
     print(f"  총 {len(results)}개 테스트 실행")
     assert all(results)
 
@@ -1554,6 +1679,9 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.StressIndicator) in g))
     results.append(check("→ '오늘 힘든 일 있었어?' 퀘스트 생성",
                          "오늘 힘든 일 있었어?" in quest_titles(g)))
+    results.append(check("→ RoomObject(stress_ball) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "stress_ball"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
 
     # 정례 B: 록 22시 → 역시 발동
     g = load_base_graph()
@@ -1799,6 +1927,9 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.ScheduleOverload) in g))
     results.append(check("→ 휴식 권장 퀘스트 생성",
                          any("오늘 일정이 빡빡해 보여요" in t for t in quest_titles(g))))
+    results.append(check("→ RoomObject(calendar_wall) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "calendar_wall"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
 
     # 정례 B: 같은 날 CalendarEvent 7개 (5개 초과도 발동)
     g = load_base_graph()

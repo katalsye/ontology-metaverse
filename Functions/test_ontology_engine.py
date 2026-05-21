@@ -187,12 +187,14 @@ class TestOntologyPipeline(unittest.TestCase):
             g.add((sc, PROD.date, Literal(f"2026-04-{17+i}", datatype=XSD.date)))
             g.add((user, PROD.hasStepCount, sc))
 
-    def _add_location(self, g: Graph, user: URIRef, place_name: str, n: int = 1):
+    def _add_location(self, g: Graph, user: URIRef, place_name: str, n: int = 1, place_type: str = ""):
         """같은 장소 n회 방문 추가"""
         for i in range(n):
             loc = PROD[f"loc_{user.split('#')[-1]}_{place_name}_{i}"]
             g.add((loc, RDF.type, PROD.Location))
             g.add((loc, PROD.placeName, Literal(place_name)))
+            if place_type:
+                g.add((loc, PROD.placeType, Literal(place_type)))
             g.add((user, PROD.hasLocation, loc))
 
     def _quest_titles(self, g: Graph) -> list[str]:
@@ -281,8 +283,8 @@ class TestOntologyPipeline(unittest.TestCase):
         g = self._load_base_graph()
         user = self._add_user(g, "s3")
 
-        # 헬스장 4회 방문
-        self._add_location(g, user, "헬스장", n=4)
+        # placeType=gym 으로 헬스장 4회 방문
+        self._add_location(g, user, "헬스장", n=4, place_type="gym")
 
         # Rule 4 추론
         self._apply_rules_in_order(g, ["place_habit"])
@@ -293,11 +295,11 @@ class TestOntologyPipeline(unittest.TestCase):
         room_objects = list(g.objects(user, PROD.hasRoomObject))
         self.assertGreater(len(room_objects), 0, "Rule 4: RoomObject 생성 실패")
 
-        # RoomObject 속성 검증
+        # RoomObject 속성 검증 (placeType=gym → objectType=dumbbell)
         obj = room_objects[0]
         obj_type = str(g.value(obj, PROD.objectType))
-        self.assertEqual(obj_type, "헬스장", "RoomObject.objectType 오류")
-        print(f"  [{PASS}] PlaceHabit → RoomObject 생성 성공 (objectType=헬스장)")
+        self.assertEqual(obj_type, "dumbbell", "RoomObject.objectType 오류")
+        print(f"  [{PASS}] PlaceHabit → RoomObject 생성 성공 (objectType=dumbbell)")
 
     def test_scenario_4_late_caffeine_sleep_quality(self):
         """시나리오 4: 카페인-수면 인과관계 (Rule 5)"""
@@ -373,6 +375,15 @@ class TestOntologyPipeline(unittest.TestCase):
 
         self.assertIn("active", energy_values, "Rule P1: energyType=active 생성 실패")
         self.assertIn("social", social_values, "Rule P3: socialPreference=social 생성 실패")
+
+        # RoomObject 검증: P1 → sports_trophy, P3 → photo_frame_friends
+        room_objects_s6 = list(g.objects(user, PROD.hasRoomObject))
+        obj_types_s6 = {str(g.value(obj, PROD.objectType)) for obj in room_objects_s6
+                        if g.value(obj, PROD.objectType)}
+        self.assertIn("sports_trophy", obj_types_s6,
+                      f"Rule P1: sports_trophy RoomObject 생성 실패 (실제: {obj_types_s6})")
+        self.assertIn("photo_frame_friends", obj_types_s6,
+                      f"Rule P3: photo_frame_friends RoomObject 생성 실패 (실제: {obj_types_s6})")
 
         print(f"  [{PASS}] 복수 페르소나 규칙 병합 성공 (active + social)")
 
@@ -532,8 +543,8 @@ class TestOntologyPipeline(unittest.TestCase):
         # 3. SedentaryPattern (Rule 3) — DuckDB
         self._add_step_counts(g, user, [2000, 2100, 2200])
 
-        # 4. PlaceHabit (Rule 4)
-        self._add_location(g, user, "도서관", n=3)
+        # 4. PlaceHabit (Rule 4) — placeType=library 추가
+        self._add_location(g, user, "도서관", n=3, place_type="library")
 
         # 5. late_caffeine (Rule 5) — 수면질 저하 필요
         sleep2 = PROD["sleep2_s11"]
@@ -617,8 +628,20 @@ class TestOntologyPipeline(unittest.TestCase):
                                 f"발동된 규칙 수 부족: {len(fired_rules)}개 (최소 10개 필요)\n"
                                 f"발동된 규칙: {fired_rules}")
 
+        # RoomObject 생성 검증 (추론 상태 기반 신규 5종 포함)
+        room_objects = list(g.objects(user, PROD.hasRoomObject))
+        obj_types = {str(g.value(obj, PROD.objectType)) for obj in room_objects
+                     if g.value(obj, PROD.objectType)}
+        expected_obj_types = {"tired_pillow", "running_shoes", "bookshelf",
+                               "alarm_clock", "music_speaker", "sports_trophy"}
+        for ot in expected_obj_types:
+            self.assertIn(ot, obj_types,
+                          f"RoomObject objectType '{ot}' 생성 실패 (발동된 규칙 기반)\n"
+                          f"실제 objectTypes: {obj_types}")
+
         print(f"  [{PASS}] 전체 파이프라인 {len(fired_rules)}개 규칙 발동 성공")
         print(f"    발동된 규칙: {', '.join(fired_rules)}")
+        print(f"    생성된 RoomObject objectTypes: {sorted(obj_types)}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

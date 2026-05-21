@@ -1,3 +1,4 @@
+
 # inference_rules.sparql
 # SPARQL CONSTRUCT 기반 추론 규칙
 # 실행 순서: ontology_engine.py 에서 순서대로 apply_rule() 호출
@@ -20,6 +21,14 @@ PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 # RULE_ID: fatigue_risk
 CONSTRUCT {
     ?user prod:hasState prod:FatigueRisk .
+    _:obj_fatigue a prod:RoomObject ;
+        prod:objectType "tired_pillow" ;
+        prod:inferredFrom "FatigueRisk" ;
+        prod:inferredFromConcept prod:FatigueRisk ;
+        prod:positionX "0.8"^^xsd:float ;
+        prod:positionY "0.1"^^xsd:float ;
+        prod:positionZ "0.9"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_fatigue .
 }
 WHERE {
     ?user a prod:User .
@@ -112,6 +121,14 @@ CONSTRUCT {
           prod:questType "삶 개선형" ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
+    _:obj_sedentary a prod:RoomObject ;
+        prod:objectType "running_shoes" ;
+        prod:inferredFrom "SedentaryPattern" ;
+        prod:inferredFromConcept prod:SedentaryPattern ;
+        prod:positionX "0.9"^^xsd:float ;
+        prod:positionY "0.0"^^xsd:float ;
+        prod:positionZ "0.2"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_sedentary .
 }
 WHERE {
     ?user a prod:User .
@@ -121,15 +138,19 @@ WHERE {
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Rule 4 — PlaceHabit + RoomObject 추가
-# 같은 장소 주 3회 이상 방문
-# → prod:PlaceHabit, room_objects에 해당 장소 관련 오브젝트 추가
+# 같은 placeType 카테고리 주 3회 이상 방문
+# placeType → objectType 매핑:
+#   cafe → coffee_cup | gym → dumbbell | library → bookshelf
+#   park → tree_pot   | 그 외 → generic_marker
+# placeType 없는 Location은 이 규칙에서 제외 (필수 조건)
+# → prod:PlaceHabit, room_objects에 카테고리별 고정 오브젝트 추가
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: place_habit
 CONSTRUCT {
     ?user prod:hasState prod:PlaceHabit .
     _:obj a prod:RoomObject ;
-          prod:objectType ?place ;
-          prod:inferredFrom "PlaceHabit" ;
+          prod:objectType ?objType ;
+          prod:inferredFrom ?inferredLabel ;
           prod:inferredFromConcept prod:PlaceHabit ;
           prod:positionX 0.0 ;
           prod:positionY 0.0 ;
@@ -140,14 +161,23 @@ WHERE {
     ?user a prod:User .
 
     {
-        SELECT ?user ?place (COUNT(?loc) AS ?visitCnt)
+        SELECT ?user ?pt (COUNT(?loc) AS ?visitCnt)
         WHERE {
             ?user prod:hasLocation ?loc .
-            ?loc  prod:placeName   ?place .
+            ?loc  prod:placeType   ?pt .
         }
-        GROUP BY ?user ?place
+        GROUP BY ?user ?pt
     }
     FILTER (?visitCnt >= 3)
+
+    BIND(
+        IF(?pt = "cafe",    "coffee_cup",
+        IF(?pt = "gym",     "dumbbell",
+        IF(?pt = "library", "bookshelf",
+        IF(?pt = "park",    "tree_pot",
+        "generic_marker")))) AS ?objType
+    )
+    BIND(CONCAT("PlaceHabit:", STR(?pt)) AS ?inferredLabel)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -368,6 +398,14 @@ WHERE {
 # RULE_ID: indoor_day_pattern
 CONSTRUCT {
     ?user prod:hasState prod:IndoorDayPattern .
+    _:obj_indoor a prod:RoomObject ;
+        prod:objectType "window_rain" ;
+        prod:inferredFrom "IndoorDayPattern" ;
+        prod:inferredFromConcept prod:IndoorDayPattern ;
+        prod:positionX "0.5"^^xsd:float ;
+        prod:positionY "0.7"^^xsd:float ;
+        prod:positionZ "1.0"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_indoor .
 }
 WHERE {
     ?user a prod:User .
@@ -437,6 +475,14 @@ CONSTRUCT {
     _:r   a prod:Routine ;
           prod:routineHour ?hour .
     ?user prod:hasRoomObject _:r .
+    _:obj_routine a prod:RoomObject ;
+        prod:objectType "alarm_clock" ;
+        prod:inferredFrom "Routine" ;
+        prod:inferredFromConcept prod:Routine ;
+        prod:positionX "0.3"^^xsd:float ;
+        prod:positionY "0.5"^^xsd:float ;
+        prod:positionZ "0.9"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_routine .
 }
 WHERE {
     ?user a prod:User .
@@ -464,6 +510,14 @@ CONSTRUCT {
     ?user prod:hasState prod:MusicMood .
     _:mm  a prod:MusicMood ;
           prod:moodGenre ?genre .
+    _:obj_music a prod:RoomObject ;
+        prod:objectType "music_speaker" ;
+        prod:inferredFrom "MusicMood" ;
+        prod:inferredFromConcept prod:MusicMood ;
+        prod:positionX "0.7"^^xsd:float ;
+        prod:positionY "0.3"^^xsd:float ;
+        prod:positionZ "0.5"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_music .
 }
 WHERE {
     ?user a prod:User .
@@ -603,6 +657,14 @@ CONSTRUCT {
         prod:energyType "active" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_active a prod:RoomObject ;
+        prod:objectType "sports_trophy" ;
+        prod:inferredFrom "Persona:active" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.15"^^xsd:float ;
+        prod:positionY "0.6"^^xsd:float ;
+        prod:positionZ "0.1"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_active .
 }
 WHERE {
     ?user a prod:User .
@@ -628,6 +690,14 @@ CONSTRUCT {
         prod:energyType "indoor" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_indoor a prod:RoomObject ;
+        prod:objectType "cozy_blanket" ;
+        prod:inferredFrom "Persona:indoor" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.7"^^xsd:float ;
+        prod:positionY "0.15"^^xsd:float ;
+        prod:positionZ "0.8"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_indoor .
 }
 WHERE {
     ?user prod:hasState prod:IndoorDayPattern .
@@ -643,6 +713,14 @@ CONSTRUCT {
         prod:socialPreference "social" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_social a prod:RoomObject ;
+        prod:objectType "photo_frame_friends" ;
+        prod:inferredFrom "Persona:social" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.5"^^xsd:float ;
+        prod:positionY "0.7"^^xsd:float ;
+        prod:positionZ "1.0"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_social .
 }
 WHERE {
     ?user a prod:User .
@@ -668,6 +746,14 @@ CONSTRUCT {
         prod:socialPreference "solitary" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_solitary a prod:RoomObject ;
+        prod:objectType "single_chair" ;
+        prod:inferredFrom "Persona:solitary" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.3"^^xsd:float ;
+        prod:positionY "0.0"^^xsd:float ;
+        prod:positionZ "0.5"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_solitary .
 }
 WHERE {
     ?user a prod:User .
@@ -699,6 +785,14 @@ CONSTRUCT {
         prod:lifePattern "routine" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_routine a prod:RoomObject ;
+        prod:objectType "organized_shelf" ;
+        prod:inferredFrom "Persona:routine" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.1"^^xsd:float ;
+        prod:positionY "0.5"^^xsd:float ;
+        prod:positionZ "0.3"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_routine .
 }
 WHERE {
     ?user a prod:User .
@@ -723,6 +817,14 @@ CONSTRUCT {
         prod:lifePattern "night_owl" ;
         prod:updatedAt ?now .
     ?user prod:hasPersona _:p .
+    _:obj_persona_night_owl a prod:RoomObject ;
+        prod:objectType "moon_lamp" ;
+        prod:inferredFrom "Persona:night_owl" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:positionX "0.8"^^xsd:float ;
+        prod:positionY "0.8"^^xsd:float ;
+        prod:positionZ "0.9"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_persona_night_owl .
 }
 WHERE {
     ?user a prod:User .
@@ -793,6 +895,14 @@ CONSTRUCT {
           prod:questType "데이터 보완형" ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
+    _:obj_stress a prod:RoomObject ;
+        prod:objectType "stress_ball" ;
+        prod:inferredFrom "StressIndicator" ;
+        prod:inferredFromConcept prod:StressIndicator ;
+        prod:positionX "0.5"^^xsd:float ;
+        prod:positionY "0.2"^^xsd:float ;
+        prod:positionZ "0.5"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_stress .
 }
 WHERE {
     ?user a prod:User .
@@ -892,6 +1002,14 @@ CONSTRUCT {
           prod:questType "삶 개선형" ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
+    _:obj_calendar a prod:RoomObject ;
+        prod:objectType "calendar_wall" ;
+        prod:inferredFrom "ScheduleOverload" ;
+        prod:inferredFromConcept prod:ScheduleOverload ;
+        prod:positionX "0.5"^^xsd:float ;
+        prod:positionY "0.8"^^xsd:float ;
+        prod:positionZ "1.0"^^xsd:float .
+    ?user prod:hasRoomObject _:obj_calendar .
 }
 WHERE {
     ?user a prod:User .
