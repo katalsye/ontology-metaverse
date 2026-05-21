@@ -159,6 +159,10 @@ def test_fatigue_risk(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(tired_pillow) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "tired_pillow"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ tired_pillow placementZone='shelf'",
+                         any(str(g.value(obj, PROD.placementZone)) == "shelf"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "tired_pillow")))
 
     # 정례 B: 수면 5.5h + 야간 카페 2회 (>1) → FatigueRisk
     g = load_base_graph()
@@ -302,6 +306,10 @@ def test_sedentary_pattern(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(running_shoes) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "running_shoes"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ running_shoes placementZone='floor'",
+                         any(str(g.value(obj, PROD.placementZone)) == "floor"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "running_shoes")))
 
     # 정례 B: 5일 연속 → 역시 발동
     g = load_base_graph()
@@ -350,6 +358,10 @@ def test_place_habit(rules: dict[str, str]) -> bool:
                  for obj in g.objects(user, PROD.hasRoomObject)]
     results.append(check("→ RoomObject objectType=coffee_cup",
                          "coffee_cup" in obj_types, f"실제: {obj_types}"))
+    results.append(check("→ coffee_cup placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "coffee_cup")))
 
     # 정례 B: placeType=gym 3회 → objectType=dumbbell
     g = load_base_graph()
@@ -902,6 +914,10 @@ def test_indoor_day_pattern(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(window_rain) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "window_rain"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ window_rain placementZone='window'",
+                         any(str(g.value(obj, PROD.placementZone)) == "window"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "window_rain")))
 
     # 정례 B: 겨울(1월) + 외출 0곳 → IndoorDayPattern
     g = load_base_graph()
@@ -978,6 +994,10 @@ def test_routine_and_music_mood(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(alarm_clock) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "alarm_clock"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ alarm_clock placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "alarm_clock")))
     # 반례: 각기 다른 시간대
     g = load_base_graph()
     user = _add_user(g, "r8b")
@@ -1006,6 +1026,10 @@ def test_routine_and_music_mood(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(music_speaker) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "music_speaker"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ music_speaker placementZone='shelf'",
+                         any(str(g.value(obj, PROD.placementZone)) == "shelf"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "music_speaker")))
     # 반례: 60분만
     g = load_base_graph()
     user = _add_user(g, "r9b")
@@ -1122,6 +1146,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P1: → RoomObject(sports_trophy) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "sports_trophy"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P1: → sports_trophy placementZone='shelf'",
+                         any(str(g.value(obj, PROD.placementZone)) == "shelf"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "sports_trophy")))
     # 반례: 3일만
     g = load_base_graph()
     user = _add_user(g, "pp1b")
@@ -1146,6 +1174,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P2: → RoomObject(cozy_blanket) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "cozy_blanket"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P2: → cozy_blanket placementZone='floor'",
+                         any(str(g.value(obj, PROD.placementZone)) == "floor"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "cozy_blanket")))
     # 반례: 상태 없음
     g = load_base_graph()
     user = _add_user(g, "pp2b")
@@ -1169,6 +1201,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P3: → RoomObject(photo_frame_friends) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "photo_frame_friends"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P3: → photo_frame_friends placementZone='wall'",
+                         any(str(g.value(obj, PROD.placementZone)) == "wall"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "photo_frame_friends")))
     # 반례: 2회
     g = load_base_graph()
     user = _add_user(g, "pp3b")
@@ -1202,6 +1238,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P4: → RoomObject(single_chair) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "single_chair"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P4: → single_chair placementZone='floor'",
+                         any(str(g.value(obj, PROD.placementZone)) == "floor"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "single_chair")))
     # 반례: 동반 방문이 더 많음 (2/5 = 40% < 70%)
     g = load_base_graph()
     user = _add_user(g, "pp4b")
@@ -1235,6 +1275,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P5: → RoomObject(organized_shelf) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "organized_shelf"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P5: → organized_shelf placementZone='wall'",
+                         any(str(g.value(obj, PROD.placementZone)) == "wall"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "organized_shelf")))
     # 반례: Routine 1개
     g = load_base_graph()
     user = _add_user(g, "pp5b")
@@ -1262,6 +1306,10 @@ def test_persona_rules(rules: dict[str, str]) -> bool:
     results.append(check("P6: → RoomObject(moon_lamp) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "moon_lamp"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("P6: → moon_lamp placementZone='ceiling'",
+                         any(str(g.value(obj, PROD.placementZone)) == "ceiling"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "moon_lamp")))
     # 반례: 오전 방문만
     g = load_base_graph()
     user = _add_user(g, "pp6b")
@@ -1629,6 +1677,10 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(desk_light_bright) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "desk_light_bright"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ desk_light_bright placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "desk_light_bright")))
 
     # 정례 B: Lo-fi 200분 → 역시 발동
     g = load_base_graph()
@@ -1682,6 +1734,10 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(stress_ball) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "stress_ball"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ stress_ball placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "stress_ball")))
 
     # 정례 B: 록 22시 → 역시 발동
     g = load_base_graph()
@@ -1754,6 +1810,10 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(party_light) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "party_light"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ party_light placementZone='ceiling'",
+                         any(str(g.value(obj, PROD.placementZone)) == "ceiling"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "party_light")))
 
     # 정례 B: 팝 + 카페 같은 날 → 역시 발동
     g = load_base_graph()
@@ -1930,6 +1990,10 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
     results.append(check("→ RoomObject(calendar_wall) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "calendar_wall"
                              for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ calendar_wall placementZone='wall'",
+                         any(str(g.value(obj, PROD.placementZone)) == "wall"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "calendar_wall")))
 
     # 정례 B: 같은 날 CalendarEvent 7개 (5개 초과도 발동)
     g = load_base_graph()

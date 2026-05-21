@@ -434,9 +434,7 @@ def _save_results_to_firestore(
             room_objs.append({
                 "objectType":  str(g.value(obj, PROD.objectType) or ""),
                 "inferredFrom": str(g.value(obj, PROD.inferredFrom) or ""),
-                "positionX":   float(g.value(obj, PROD.positionX) or 0),
-                "positionY":   float(g.value(obj, PROD.positionY) or 0),
-                "positionZ":   float(g.value(obj, PROD.positionZ) or 0),
+                "placementZone": str(g.value(obj, PROD.placementZone) or "floor"),
             })
         db.collection("room_objects").document(uid).set(
             {"objects": room_objs}, merge=True
