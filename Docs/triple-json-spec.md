@@ -1,4 +1,4 @@
-# Triple JSON 명세서 (v2)
+# Triple JSON 명세서 (v3)
 
 ## 개요
 
@@ -14,9 +14,9 @@
 
 ```json
 {
-  "s": "Subject URI",
-  "p": "Predicate (약식 또는 full URI)",
-  "o": "Object (URI 또는 리터럴)",
+  "subject": "Subject URI",
+  "predicate": "Predicate (약식 또는 full URI)",
+  "object": "Object (URI 또는 리터럴)",
   "datatype": "xsd 데이터 타입 또는 null"
 }
 ```
@@ -31,6 +31,8 @@ Gemma 응답은 배열을 포함하는 객체 형식이다:
   ]
 }
 ```
+
+**중요**: Firestore에 업로드되는 필드명은 `subject`, `predicate`, `object` (full form)를 사용한다. Gemma 응답 단계에서는 약식(s, p, o)을 쓸 수 있으나, SQLite와 Firestore 사이의 변환 단계에서 full form으로 통일된다.
 
 ---
 
@@ -112,14 +114,14 @@ http://7team.dev/ontology#hasLocation
 
 ### 리터럴 (값)
 ```json
-{ "o": "강남 카페", "datatype": "xsd:string" }
-{ "o": "37.5", "datatype": "xsd:float" }
-{ "o": "100", "datatype": "xsd:integer" }
+{ "object": "강남 카페", "datatype": "xsd:string" }
+{ "object": "37.5", "datatype": "xsd:float" }
+{ "object": "100", "datatype": "xsd:integer" }
 ```
 
 ### URI (관계)
 ```json
-{ "o": "http://7team.dev/ontology#loc_001", "datatype": null }
+{ "object": "http://7team.dev/ontology#loc_001", "datatype": null }
 ```
 
 → 관계 트리플(URI 참조)은 `datatype`을 `null`로 두기.
@@ -146,26 +148,26 @@ http://7team.dev/ontology#hasLocation
 
 **사용자 입력**: "오늘 강남 카페 갔다"
 
-**출력**:
+**출력 (Firestore 저장 형식)**:
 ```json
 {
   "triples": [
     {
-      "s": "http://7team.dev/ontology#user_001",
-      "p": "prod:hasLocation",
-      "o": "http://7team.dev/ontology#loc_001",
+      "subject": "http://7team.dev/ontology#user_001",
+      "predicate": "prod:hasLocation",
+      "object": "http://7team.dev/ontology#loc_001",
       "datatype": null
     },
     {
-      "s": "http://7team.dev/ontology#loc_001",
-      "p": "prod:placeName",
-      "o": "강남 카페",
+      "subject": "http://7team.dev/ontology#loc_001",
+      "predicate": "prod:placeName",
+      "object": "강남 카페",
       "datatype": "xsd:string"
     },
     {
-      "s": "http://7team.dev/ontology#loc_001",
-      "p": "prod:placeType",
-      "o": "cafe",
+      "subject": "http://7team.dev/ontology#loc_001",
+      "predicate": "prod:placeType",
+      "object": "cafe",
       "datatype": "xsd:string"
     }
   ]
@@ -176,32 +178,32 @@ http://7team.dev/ontology#hasLocation
 
 **입력**: 파스타 사진 (레스토랑)
 
-**출력**:
+**출력 (Firestore 저장 형식)**:
 ```json
 {
   "triples": [
     {
-      "s": "http://7team.dev/ontology#user_001",
-      "p": "prod:hasGalleryPhoto",
-      "o": "http://7team.dev/ontology#photo_001",
+      "subject": "http://7team.dev/ontology#user_001",
+      "predicate": "prod:hasGalleryPhoto",
+      "object": "http://7team.dev/ontology#photo_001",
       "datatype": null
     },
     {
-      "s": "http://7team.dev/ontology#photo_001",
-      "p": "prod:foodType",
-      "o": "pasta",
+      "subject": "http://7team.dev/ontology#photo_001",
+      "predicate": "prod:foodType",
+      "object": "pasta",
       "datatype": "xsd:string"
     },
     {
-      "s": "http://7team.dev/ontology#photo_001",
-      "p": "prod:placeType",
-      "o": "restaurant",
+      "subject": "http://7team.dev/ontology#photo_001",
+      "predicate": "prod:placeType",
+      "object": "restaurant",
       "datatype": "xsd:string"
     },
     {
-      "s": "http://7team.dev/ontology#photo_001",
-      "p": "prod:analyzedBy",
-      "o": "Gemma-3n",
+      "subject": "http://7team.dev/ontology#photo_001",
+      "predicate": "prod:analyzedBy",
+      "object": "Gemma-3n",
       "datatype": "xsd:string"
     }
   ]
@@ -241,6 +243,11 @@ http://7team.dev/ontology#hasLocation
 
 ## 8. 변경 이력
 
+### v3 (2026-05-21)
+- Firestore 필드명 통일: `s/p/o` → `subject/predicate/object` (full form)
+- 무성님 측 `ontology_engine.py`와 필드명 일치
+- 통합 테스트 1단계 결과 반영
+
 ### v2 (2026-05-20)
 - Base URI 명시 (`http://7team.dev/ontology#`)
 - Subject URI 형식 full URI로 변경
@@ -251,7 +258,7 @@ http://7team.dev/ontology#hasLocation
 
 ### v1 (이전)
 - 약식 prefix (`prod:`) 형식
-- `prod:visited`, `prod:photographed` 사용
+- 필드명 `s/p/o` 약식
 
 ---
 
@@ -263,4 +270,5 @@ http://7team.dev/ontology#hasLocation
   - `TripleValidator.cs`
 - **Unity 측 sync**: `Unity/Assets/02_Scripts/Firebase/Manager/TempTripleManager.cs`
 - **무성님 측 검증**: `triple_validator.py`
+- **무성님 측 추론 엔진**: `ontology_engine.py`
 - **무성님 측 온톨로지**: `core.ttl`

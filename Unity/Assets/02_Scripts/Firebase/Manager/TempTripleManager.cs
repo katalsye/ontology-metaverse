@@ -141,11 +141,11 @@ public class TempTripleManager : MonoBehaviour
             // 명세서: Docs/triple-json-spec.md 규격
             Dictionary<string, object> data = new Dictionary<string, object>
             {
-                { "s", triple.Subject },
-                { "p", triple.Predicate },
-                { "o", triple.Object },
+                { "subject", triple.Subject },
+                { "predicate", triple.Predicate },
+                { "object", triple.Object },
                 { "datatype", triple.Datatype },
-                { "CreatedAt", FieldValue.ServerTimestamp }  // 서버 시간 자동 설정
+                { "CreatedAt", FieldValue.ServerTimestamp }
             };
 
             docRef.SetAsync(data).ContinueWithOnMainThread(task =>
