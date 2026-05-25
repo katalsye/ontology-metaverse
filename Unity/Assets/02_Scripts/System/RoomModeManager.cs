@@ -22,6 +22,10 @@ public class RoomModeManager : MonoBehaviour
     public GameObject ceilingObject;
     [Tooltip("플레이어 오브젝트 — EditMode에서 숨김")]
     public GameObject playerObject;
+    [Tooltip("조이스틱 area — EditMode에서 끔")]
+    public GameObject joystickArea;
+    [Tooltip("가구 편집 UI 패널 — EditMode에서만 켜짐")]
+    public GameObject furnitureEditUI;
 
     [Header("MyRoom / VisitRoom 공통")]
     [Tooltip("host 캐릭터 오브젝트 — MyRoom에서 비활성")]
@@ -61,36 +65,32 @@ public class RoomModeManager : MonoBehaviour
         switch (CurrentMode)
         {
             case RoomMode.MyRoom:
-                if (ceilingObject != null) ceilingObject.SetActive(true);
-                if (playerObject  != null) playerObject.SetActive(true);
-                // host 없음
+                if (ceilingObject    != null) ceilingObject.SetActive(true);
+                if (playerObject     != null) playerObject.SetActive(true);
+                if (joystickArea     != null) joystickArea.SetActive(true);
+                if (furnitureEditUI  != null) furnitureEditUI.SetActive(false);
                 if (hostObject       != null) hostObject.SetActive(false);
-                // 댓글 추가 버튼 없음
                 if (commentAddButton != null) commentAddButton.SetActive(false);
-                // 포스트잇 스폰 없음
                 if (postItManager    != null) postItManager.enabled = false;
-                // 내 방이니까 자신 줌인 가능
                 if (playerSelfController != null) playerSelfController.gameObject.SetActive(true);
-
                 Debug.Log("[RoomMode] MyRoom 적용");
                 break;
 
             case RoomMode.VisitRoom:
-                if (ceilingObject != null) ceilingObject.SetActive(true);
-                if (playerObject  != null) playerObject.SetActive(true);
-                // host 있음
+                if (ceilingObject    != null) ceilingObject.SetActive(true);
+                if (playerObject     != null) playerObject.SetActive(true);
+                if (joystickArea     != null) joystickArea.SetActive(true);
+                if (furnitureEditUI  != null) furnitureEditUI.SetActive(false);
                 if (hostObject       != null) hostObject.SetActive(true);
-                // 댓글 추가 버튼 있음
                 if (commentAddButton != null) commentAddButton.SetActive(true);
-                // 포스트잇 스폰 있음
                 if (postItManager    != null) postItManager.enabled = true;
-                // 남의 방이니까 자신 줌인 없음
                 if (playerSelfController != null) playerSelfController.gameObject.SetActive(false);
-
                 Debug.Log("[RoomMode] VisitRoom 적용");
                 break;
 
             case RoomMode.EditMode:
+                if (joystickArea     != null) joystickArea.SetActive(false);
+                if (furnitureEditUI  != null) furnitureEditUI.SetActive(true);
                 if (hostObject       != null) hostObject.SetActive(false);
                 if (commentAddButton != null) commentAddButton.SetActive(false);
                 if (postItManager    != null) postItManager.enabled = false;

@@ -97,8 +97,14 @@ public class FurnitureEditController : MonoBehaviour
     public Sprite spriteConfirm;  // moveConfirmBtn 위치편집 모드
     public Sprite spriteCeiling;  // cancelMoveBtn 일반 모드 (천장 편집 진입)
     public Sprite spriteCancel;   // cancelMoveBtn 위치편집 모드 (취소)
+    public Sprite spriteDelete;   // moveConfirmBtn — 추가 가구 선택 시 삭제 버튼으로 재활용
     [Header("UI — 가구 추가 패널")]
     public GameObject addFurniturePanel;
+    [Tooltip("Closet 씬으로 돌아가는 Back 버튼 — 초기 화면에서만 표시")]
+    public UnityEngine.UI.Button backToClosetBtn;
+
+    // 패널 바깥 클릭 감지용 풀스크린 투명 버튼 (런타임 자동 생성)
+    private UnityEngine.UI.Button _panelBlocker;
 
     // ── 환경 원복용 (Start에서 1회 저장) ─────────────────────────
     private float            _origLightIntensity;
@@ -134,6 +140,12 @@ public class FurnitureEditController : MonoBehaviour
     private Vector3 _savedEditCamPosition;
     private Vector3 _savedEditCamLookAt;
 
+    // ── 삭제 모드 (추가 가구 선택 중) ───────────────────────────
+    private bool _deleteMode = false;
+
+    // HideButtonsNextFrame 코루틴 참조 — Stop으로 정확히 취소 (플래그 잔존 문제 방지)
+    private Coroutine _hideButtonsCoroutine = null;
+
     // ── 천장 편집 상태 ────────────────────────────────────────
     private bool _ceilingEditMode = false;
     private System.Collections.Generic.List<(GameObject go, bool wasActive)> _ceilingActivated;
@@ -151,6 +163,10 @@ public class FurnitureEditController : MonoBehaviour
                 joystickObject = jc.joystickArea.gameObject;
         }
 
+        // 버그 1 수정: 씬에서 addFurniturePanel이 활성화된 채로 저장되어 있을 경우
+        // Play 첫 프레임에 보이는 문제를 Awake에서 즉시 비활성화하여 방지
+        if (addFurniturePanel) addFurniturePanel.SetActive(false);
+
         // 씬 로드 시점에 미리 한 번 등록 (EnterEditMode 전에도 동작하도록)
         RefreshEditableItems();
     }
@@ -167,6 +183,36 @@ public class FurnitureEditController : MonoBehaviour
             cancelMoveBtn.onClick.AddListener(EnterCeilingEditMode);
             SetBtnSprite(cancelMoveBtn, spriteCeiling);
         }
+
+        // Back 버튼: Closet 씬으로 이동
+        if (backToClosetBtn)
+            backToClosetBtn.onClick.AddListener(() =>
+            {
+                // Build Settings에 씬이 등록되지 않았을 경우 LoadScene이 조용히 실패하므로
+                // SceneUtility로 사전 확인 후 빌드 인덱스를 사용해 로드
+                int closetBuildIndex = -1;
+                int sceneCount = UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;
+                for (int i = 0; i < sceneCount; i++)
+                {
+                    string scenePath = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+                    if (scenePath.Contains("Closet"))
+                    {
+                        closetBuildIndex = i;
+                        break;
+                    }
+                }
+                if (closetBuildIndex >= 0)
+                {
+                    // 씬 이름 대신 빌드 인덱스로 로드 — 이름 오타 문제 원천 차단
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(closetBuildIndex);
+                }
+                else
+                {
+                    Debug.LogError("[FurnitureEditController] 'Closet' 씬이 Build Settings에 등록되지 않았습니다. " +
+                                   "Unity 메뉴 File > Build Settings > Add Open Scenes 에서 " +
+                                   "Assets/01_Scenes/Closet.unity 를 추가하세요.");
+                }
+            });
 
         // 원본 환경 1회 저장 — WeatherController.Start()가 DefaultExecutionOrder(100)이므로
         // 이 시점(기본 0)에는 아직 WeatherController가 Start()를 실행하기 전일 수 있음.
@@ -244,9 +290,12 @@ public class FurnitureEditController : MonoBehaviour
     public void EnterEditMode()
     {
         if (_selected != null) { SetHighlight(_selected, false); _selected = null; }
+        // TODO: DB에서 가구 위치·종류 불러오기 (씬 진입 시 서버에서 받아온 데이터로 가구 배치)
         RefreshEditableItems();
         if (joystickObject != null) joystickObject.SetActive(false);
         if (_cam == null) _cam = Camera.main;
+        // EditMode 진입 시 AddFurniture 패널은 항상 닫힌 상태로 시작
+        if (addFurniturePanel) addFurniturePanel.SetActive(false);
 
         // WeatherManager/WeatherController의 Start()가 끝난 뒤에 환경을 덮어써야 함.
         // LateStartInit 코루틴이 완료되어 있으면 바로 적용, 아니면 코루틴이 마저 처리함.
@@ -399,15 +448,45 @@ public class FurnitureEditController : MonoBehaviour
         {
             // 일반 모드: 가구(canMove=true)만 디자인 변경, 벽은 무시
             var cfg = GetConfig(furniture);
-if (cfg != null && cfg.canDesign && cfg.canMove)
+            if (cfg != null && cfg.canDesign && cfg.canMove)
             {
                 // 큰 책상 탭 → 줌인 편집 모드 진입
-                if (deskObject != null && cfg.target == deskObject)
+                // (가구 추가 패널 열려있거나 삭제 모드 중에는 차단)
+                bool panelOpen = addFurniturePanel != null && addFurniturePanel.activeInHierarchy;
+                if (deskObject != null && cfg.target == deskObject && !panelOpen && !_deleteMode)
                 {
                     EnterDeskEditMode();
                     return;
                 }
-                DesignSelectUI.Instance?.Open(furniture.name);
+
+                // 추가된 가구면 moveConfirmBtn을 삭제 버튼으로 전환, 아니면 일반 모드
+                if (cfg.isAdded)
+                {
+                    _selected   = furniture; // 삭제 대상 기억
+                    _deleteMode = true;
+                    // 컨테이너를 끄면 moveConfirmBtn도 같이 꺼지므로
+                    // moveConfirmBtn만 따로 켜서 삭제 버튼으로 전환
+                    SetMainButtonsVisible(false);
+                    if (moveConfirmBtn)
+                    {
+                        moveConfirmBtn.gameObject.SetActive(true);
+                        moveConfirmBtn.onClick.RemoveAllListeners();
+                        moveConfirmBtn.onClick.AddListener(DeleteSelectedFurniture);
+                        SetBtnSprite(moveConfirmBtn, spriteDelete);
+                    }
+                }
+                else
+                {
+                    _deleteMode = false;
+                    RestoreMainButtons();
+                    DesignSelectUI.Instance?.Open(furniture.name);
+                }
+            }
+            else
+            {
+                // 편집 불가 가구 클릭 → 버튼 원상복원
+                RestoreMainButtons();
+                _selected = null;
             }
         }
     }
@@ -421,7 +500,12 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
             SetHighlight(_selected, false);
             _selected = null;
         }
-        // 일반 모드 빈 곳 탭 → 아무것도 안 함 (+ 버튼으로 추가)
+        // 일반 모드 빈 곳 탭 → 기본 버튼 복원
+        if (!_positionEditMode)
+        {
+            RestoreMainButtons();
+            _selected = null;
+        }
     }
 
     // ── 하이라이트 ────────────────────────────────────────────
@@ -442,7 +526,10 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
             }
             else
             {
-                r.SetPropertyBlock(null);
+                // 버그 3 수정: r.SetPropertyBlock(null)은 일부 Unity/URP 버전에서
+                // PropertyBlock이 완전히 제거되지 않아 색이 연하게 남는 문제가 있음.
+                // 빈 MaterialPropertyBlock을 설정하여 확실하게 초기화.
+                r.SetPropertyBlock(new MaterialPropertyBlock());
             }
         }
     }
@@ -491,16 +578,128 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
         editableItems = list.ToArray();
     }
 
+    // ── 가구 삭제 (추가된 가구만) ─────────────────────────────
+
+    void DeleteSelectedFurniture()
+    {
+        if (_selected == null) return;
+
+        var cfg = GetConfig(_selected);
+        if (cfg == null || !cfg.isAdded) return; // 기본 가구는 삭제 불가
+
+        // editableItems에서 제거
+        var list = new System.Collections.Generic.List<FurnitureEditConfig>(editableItems ?? new FurnitureEditConfig[0]);
+        list.RemoveAll(c => c.target == _selected);
+        editableItems = list.ToArray();
+
+        Destroy(_selected);
+        _selected = null;
+
+        RestoreMainButtons();
+        Debug.Log("[FurnitureEditController] 추가 가구 삭제 완료");
+    }
+
+    void SetMainButtonsVisible(bool visible)
+    {
+        if (addRotateBtn)    addRotateBtn.gameObject.SetActive(visible);
+        if (moveConfirmBtn)  moveConfirmBtn.gameObject.SetActive(visible);
+        if (cancelMoveBtn)   cancelMoveBtn.gameObject.SetActive(visible);
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(visible);
+    }
+
+    /// <summary>추가 가구 선택 해제 시 메인 버튼 3개를 일반 모드 상태로 복원</summary>
+    void RestoreMainButtons()
+    {
+        _deleteMode = false;
+        SetMainButtonsVisible(true);
+        if (moveConfirmBtn)
+        {
+            moveConfirmBtn.onClick.RemoveAllListeners();
+            moveConfirmBtn.onClick.AddListener(EnterPositionEditMode);
+            SetBtnSprite(moveConfirmBtn, spriteMove);
+        }
+    }
+
     // ── 가구 추가 ─────────────────────────────────────────────
 
     public void OpenAddFurniturePanel()
     {
-        if (addFurniturePanel) addFurniturePanel.SetActive(true);
+        if (addFurniturePanel)
+        {
+            addFurniturePanel.SetActive(true);
+            CreatePanelBlocker();
+        }
+        // 버그 2 수정: Button 클릭 이벤트 처리 중 해당 버튼 GameObject를 SetActive(false)하면
+        // Unity Button의 color transition이 같은 프레임에 Normal 상태로 복귀하면서 다시 켜지는 문제.
+        // 1프레임 뒤에 비활성화하여 transition 충돌 방지.
+        _hideButtonsCoroutine = StartCoroutine(HideButtonsNextFrame());
+    }
+
+    IEnumerator HideButtonsNextFrame()
+    {
+        yield return null;
+        _hideButtonsCoroutine = null;
+        SetMainButtonsVisible(false);
     }
 
     public void CloseAddFurniturePanel()
     {
         if (addFurniturePanel) addFurniturePanel.SetActive(false);
+        DestroyPanelBlocker();
+        // HideButtonsNextFrame 코루틴이 대기 중이면 즉시 Stop — 플래그 잔존 없음
+        if (_hideButtonsCoroutine != null)
+        {
+            StopCoroutine(_hideButtonsCoroutine);
+            _hideButtonsCoroutine = null;
+        }
+        SetMainButtonsVisible(true);
+    }
+
+    void CreatePanelBlocker()
+    {
+        DestroyPanelBlocker(); // 혹시 이미 있으면 제거
+
+        // 패널과 같은 Canvas 아래에 Blocker 생성
+        var canvas = addFurniturePanel.GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        var blockerGo = new GameObject("_AddFurniturePanelBlocker",
+            typeof(RectTransform),
+            typeof(UnityEngine.UI.Image),
+            typeof(UnityEngine.UI.Button));
+
+        blockerGo.transform.SetParent(canvas.transform, false);
+
+        // 풀스크린 stretch
+        var rt = blockerGo.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        // 완전 투명
+        var img = blockerGo.GetComponent<UnityEngine.UI.Image>();
+        img.color = new Color(0, 0, 0, 0);
+
+        // 버그 4 수정: blocker를 addFurniturePanel 바로 아래 sibling으로 배치.
+        // - 패널은 blocker보다 위에 있으므로 패널 내부 클릭은 blocker에 닿지 않음.
+        // - 버튼 3개는 HideButtonsNextFrame() 코루틴으로 1프레임 뒤에 꺼지므로,
+        //   blocker가 버튼보다 아래에 있어야 버튼 클릭이 blocker에 막히지 않음.
+        // - 패널 sibling index를 기준으로 blocker를 패널 바로 아래(index)에 삽입.
+        int panelIndex = addFurniturePanel.transform.GetSiblingIndex();
+        blockerGo.transform.SetSiblingIndex(panelIndex);
+
+        _panelBlocker = blockerGo.GetComponent<UnityEngine.UI.Button>();
+        _panelBlocker.onClick.AddListener(CloseAddFurniturePanel);
+    }
+
+    void DestroyPanelBlocker()
+    {
+        if (_panelBlocker != null)
+        {
+            Destroy(_panelBlocker.gameObject);
+            _panelBlocker = null;
+        }
     }
 
     /// <summary>가구 추가 패널에서 선택 시 호출. 씬에 배치 후 editableItems에 자동 등록.</summary>
@@ -540,8 +739,9 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
                 }
 
         // 버튼 기능 + 스프라이트 전환: 추가→회전, 위치이동→저장
-        if (addRotateBtn)   { addRotateBtn.onClick.RemoveAllListeners();   addRotateBtn.onClick.AddListener(() => RotateSelected(90f)); SetBtnSprite(addRotateBtn,   spriteRotate); }
-        if (moveConfirmBtn) { moveConfirmBtn.onClick.RemoveAllListeners(); moveConfirmBtn.onClick.AddListener(ConfirmPositionEdit);      SetBtnSprite(moveConfirmBtn, spriteConfirm); }
+        if (addRotateBtn)    { addRotateBtn.onClick.RemoveAllListeners();   addRotateBtn.onClick.AddListener(() => RotateSelected(90f)); SetBtnSprite(addRotateBtn,   spriteRotate); }
+        if (moveConfirmBtn)  { moveConfirmBtn.onClick.RemoveAllListeners(); moveConfirmBtn.onClick.AddListener(ConfirmPositionEdit);      SetBtnSprite(moveConfirmBtn, spriteConfirm); }
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false); // 위치편집 중 Back 숨김
 
         // cancelMoveBtn: 취소 버튼으로 전환
         if (cancelMoveBtn)
@@ -554,15 +754,19 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
 
     void ConfirmPositionEdit()
     {
+        // TODO: DB에 가구 위치·종류 저장 (저장 확인 시 서버로 현재 가구 배치 전송)
         // 현재 선택 아이템이 겹치는 상태면 저장 불가 (천장 모드 포함)
         if (_isDragOverlap) return;
         // 방 레벨 가구 전체 겹침 체크 (책상/천장 모드는 별도 공간이므로 스킵)
         if (!_deskEditMode && !_ceilingEditMode && HasAnyOverlap()) return;
 
         // 이동된 모든 canMove 가구에 그리드 스냅 적용
+        // wallMounted(Board 류) / ceilingMounted 가구는 벽·천장 위치가 HandleHangerDrag에서
+        // 정밀하게 계산되므로 그리드 스냅을 적용하지 않음.
+        // 적용 시 X 또는 Z 좌표가 gridCellSize 단위로 반올림되어 벽에서 앞뒤로 밀린다.
         if (editableItems != null)
             foreach (var cfg in editableItems)
-                if (cfg.target != null && cfg.canMove)
+                if (cfg.target != null && cfg.canMove && !cfg.wallMounted && !cfg.ceilingMounted)
                 {
                     var s = SnapToGrid(cfg.target.transform.position);
                     s.y = cfg.target.transform.position.y;
@@ -614,6 +818,9 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
         // 버튼 기능 + 스프라이트 복원: 회전→추가, 저장→위치이동
         if (addRotateBtn)   { addRotateBtn.onClick.RemoveAllListeners();   addRotateBtn.onClick.AddListener(OpenAddFurniturePanel);  SetBtnSprite(addRotateBtn,   spriteAdd); }
         if (moveConfirmBtn) { moveConfirmBtn.onClick.RemoveAllListeners(); moveConfirmBtn.onClick.AddListener(EnterPositionEditMode); SetBtnSprite(moveConfirmBtn, spriteMove); }
+
+        // backToClosetBtn: 위치 편집 종료 시 다시 표시 (EnterPositionEditMode에서 숨겼으므로 복원)
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(true);
 
         // cancelMoveBtn: 천장 편집 진입 버튼으로 복원
         if (cancelMoveBtn)
@@ -668,6 +875,10 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
 
         _deskEditMode = true;
 
+        // 책상 편집 진입 시 backToClosetBtn 즉시 숨김
+        // (EnterPositionEditMode에서도 끄지만, 그 전에 명시적으로 처리해 타이밍 이슈 방지)
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
+
         // 기존 위치 편집 모드 UI·버튼 재사용
         EnterPositionEditMode();
     }
@@ -691,20 +902,105 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
 
     public void EnterCeilingEditMode()
     {
-        if (ceilingItemParent == null) return;
+        if (ceilingItemParent == null)
+        {
+            Debug.LogError("[FurnitureEditController] EnterCeilingEditMode: ceilingItemParent가 null입니다. Inspector에서 연결하세요.");
+            return;
+        }
+        // 이미 천장 편집 모드 중이면 재진입 방지 (_ceilingRoomItems 덮어씀 방지)
+        // 단, SpawnFurniture()에서 새 천장 가구를 추가한 직후 호출되는 경우:
+        // → ceilingItemParent 자식 목록을 다시 스캔해 editableItems와 _ceilingActivated를 갱신한 뒤 return
+        if (_ceilingEditMode)
+        {
+            Debug.Log("[FurnitureEditController] EnterCeilingEditMode: 이미 천장 편집 모드 중 — editableItems 재동기화");
+            // ceilingItemParent 현재 자식 전부를 editableItems로 재구성 (새로 추가된 가구 반영)
+            var addedSetReenter = new System.Collections.Generic.HashSet<GameObject>();
+            if (_ceilingActivated != null)
+                foreach (var (go, _) in _ceilingActivated)
+                    if (go != null) addedSetReenter.Add(go); // 기존에 이미 활성화된 것은 addedSet 기준으로 판단 불가 — isAdded 유지 필요
+            // editableItems에서 isAdded 플래그 맵 구성
+            var isAddedMap = new System.Collections.Generic.Dictionary<GameObject, bool>();
+            if (editableItems != null)
+                foreach (var cfg in editableItems)
+                    if (cfg.target != null) isAddedMap[cfg.target] = cfg.isAdded;
+
+            var reList = new System.Collections.Generic.List<FurnitureEditConfig>();
+            _ceilingActivated = new System.Collections.Generic.List<(GameObject, bool)>();
+            foreach (Transform child in ceilingItemParent)
+            {
+                bool wasActive = child.gameObject.activeSelf;
+                _ceilingActivated.Add((child.gameObject, wasActive));
+                child.gameObject.SetActive(true);
+                reList.Add(new FurnitureEditConfig
+                {
+                    target         = child.gameObject,
+                    canMove        = true,
+                    canDesign      = true,
+                    ceilingMounted = true,
+                    isAdded        = isAddedMap.TryGetValue(child.gameObject, out bool ia) ? ia : true
+                });
+                // 새로 추가된 가구에 콜라이더 자동 추가
+                bool hasActive = false;
+                foreach (var col in child.GetComponentsInChildren<Collider>(true))
+                    if (col.enabled && col.gameObject.activeInHierarchy) { hasActive = true; break; }
+                if (!hasActive)
+                {
+                    bool added = false;
+                    foreach (var mf in child.GetComponentsInChildren<MeshFilter>(true))
+                    {
+                        if (mf.sharedMesh == null) continue;
+                        var mc = mf.gameObject.AddComponent<MeshCollider>();
+                        mc.sharedMesh = mf.sharedMesh;
+                        added = true;
+                    }
+                    if (!added)
+                    {
+                        var box = child.gameObject.AddComponent<BoxCollider>();
+                        box.size = new Vector3(20f, 10f, 20f);
+                    }
+                }
+            }
+            editableItems = reList.ToArray();
+            // _posSnapshot도 새 가구 포함하도록 재구성 (위치 편집 모드 중이면)
+            if (_positionEditMode && _posSnapshot != null)
+            {
+                foreach (var cfg in editableItems)
+                    if (cfg.target != null && !_posSnapshot.ContainsKey(cfg.target))
+                        _posSnapshot[cfg.target] = (cfg.target.transform.position, cfg.target.transform.rotation);
+            }
+            // 재진입 경로에서도 backToClosetBtn 숨김 보장 (EnterPositionEditMode를 호출하지 않으므로 명시적 처리)
+            if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
+            return;
+        }
 
         _ceilingRoomItems = editableItems; // 방 가구 백업 (겹침 체크용)
         _ceilingActivated = new System.Collections.Generic.List<(GameObject, bool)>();
+
+        // 현재 editableItems 중 ceilingMounted 아이템의 isAdded 플래그를 보존하기 위해 미리 조회
+        var addedSet = new System.Collections.Generic.HashSet<GameObject>();
+        if (editableItems != null)
+            foreach (var cfg in editableItems)
+                if (cfg.target != null && cfg.ceilingMounted && cfg.isAdded)
+                    addedSet.Add(cfg.target);
+
         var list = new System.Collections.Generic.List<FurnitureEditConfig>();
         foreach (Transform child in ceilingItemParent)
         {
             bool wasActive = child.gameObject.activeSelf;
             _ceilingActivated.Add((child.gameObject, wasActive));
             child.gameObject.SetActive(true);
-            list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, ceilingMounted = true });
+            list.Add(new FurnitureEditConfig
+            {
+                target         = child.gameObject,
+                canMove        = true,
+                canDesign      = true,
+                ceilingMounted = true,
+                isAdded        = addedSet.Contains(child.gameObject)
+            });
         }
         editableItems    = list.ToArray();
         _ceilingEditMode = true;
+        Debug.Log($"[FurnitureEditController] EnterCeilingEditMode: 진입 성공. 천장 가구 {editableItems.Length}개. ceilingCamPosition={ceilingCamPosition}");
 
         // 조이스틱 끄기
         if (joystickObject != null) joystickObject.SetActive(false);
@@ -715,6 +1011,10 @@ if (cfg != null && cfg.canDesign && cfg.canMove)
         // 천장 메시 켜기 (RoomModeManager가 EditMode 진입 시 꺼둔 것)
         var rmm = Object.FindObjectOfType<RoomModeManager>();
         if (rmm != null && rmm.ceilingObject != null) rmm.ceilingObject.SetActive(true);
+
+        // 천장 편집 진입 시 backToClosetBtn 즉시 숨김
+        // (EnterPositionEditMode에서도 끄지만, 그 전에 명시적으로 처리해 타이밍 이슈 방지)
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
 
         // 카메라 즉시 스냅
         if (_cam != null)
@@ -1244,4 +1544,5 @@ public class FurnitureEditConfig
     public bool       wallMounted    = false; // true = 벽면 슬라이딩 드래그 사용 (Board 류)
     public bool       ceilingMounted = false; // true = 천장 XZ 드래그 사용 (Ceiling 류)
                                               // RefreshEditableItems()에서 이름 기반 자동 세팅
+    public bool       isAdded     = false;  // true = AddFurnitureSelectionUI로 런타임에 추가된 가구 → 삭제 버튼 표시
 }

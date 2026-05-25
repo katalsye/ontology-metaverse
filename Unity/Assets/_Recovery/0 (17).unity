@@ -7376,7 +7376,7 @@ MonoBehaviour:
   roomMaxZ: 140
   hangerMinY: 10
   hangerMaxY: 60
-  ceilingY: 70
+  ceilingY: 150
   editCamPosition: {x: -50, y: 150, z: 80}
   editCamLookAt: {x: -50, y: 0, z: 80}
   highlightColor: {r: 0.60784316, g: 0.95432836, b: 1, a: 1}
@@ -7402,7 +7402,6 @@ MonoBehaviour:
   spriteCancel: {fileID: 0}
   spriteDelete: {fileID: 0}
   addFurniturePanel: {fileID: 915274353}
-  backToClosetBtn: {fileID: 734314774}
 --- !u!1 &1179931394
 GameObject:
   m_ObjectHideFlags: 0

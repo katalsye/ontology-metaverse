@@ -10,10 +10,11 @@ public class FurnitureCatalog : ScriptableObject
     [System.Serializable]
     public class FurnitureData
     {
-        public int    id;
-        public string displayName;
-        public Sprite thumbnail;
-        public GameObject prefab;   // 씬에 배치할 프리팹
+        public int        id;
+        public string     displayName;
+        public Sprite     thumbnail;
+        public GameObject prefab;      // 씬에 배치할 프리팹
+        public bool       isCeiling;   // true → ceilingItemParent 아래 배치
     }
 
     public FurnitureData[] furnitures;
