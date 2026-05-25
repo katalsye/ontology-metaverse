@@ -20,9 +20,10 @@ public class FurnitureFocusController : MonoBehaviour
 
     private static readonly (string obj, string scene)[] FurnitureEntries =
     {
+        // TODO: 침대(SingleBed) — VisitRoom에서 막을지 미정. 결정 후 FocusFurniture 차단 로직에 추가
         ("SingleBed",     "SampleScene"),
         ("KitchenIsland", "SampleScene"),
-        ("Drawer1",       "Closet"),
+        ("Drawer1",       "Closet"),     // VisitRoom 차단 대상 (옷장)
         ("Door",          "SampleScene"),
     };
 
@@ -99,6 +100,10 @@ public class FurnitureFocusController : MonoBehaviour
                ?? target.GetComponentInParent<FurnitureInteraction>();
         if (fi == null || string.IsNullOrEmpty(fi.sceneName))
         { Debug.Log($"[Furniture] FurnitureInteraction 없음: {target.name}"); return; }
+
+        // VisitRoom: Door만 허용, 나머지 가구 전부 차단
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom && target.name != "Door")
+        { Debug.Log($"[Furniture] VisitRoom — {target.name} 차단 (Door만 허용)"); return; }
 
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) { Debug.LogError("[Furniture] Camera.main null"); return; }

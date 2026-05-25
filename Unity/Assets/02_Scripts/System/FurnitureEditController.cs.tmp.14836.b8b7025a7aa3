@@ -1,0 +1,457 @@
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using DynamicWeatherSystem;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+
+/// <summary>
+/// EditMode에서 가구 선택 → 디자인 변경 / 위치 이동을 담당.
+/// 씬에 하나만 배치, RoomModeManager.ApplyMode()에서 EnterEditMode() 호출.
+/// </summary>
+public class FurnitureEditController : MonoBehaviour
+{
+    public static FurnitureEditController Instance { get; private set; }
+
+    [Header("편집 가능 가구 키워드 (오브젝트 이름에 포함되면 편집 가능)")]
+    public string[] editableKeywords = { "Door", "Board", "Drawer", "KitchenIsland", "LaunchTable", "SingleBed", "Chair" };
+
+    [Header("그리드")]
+    public float gridCellSize = 10f;
+    [Tooltip("바닥 높이 (보통 0 — 가구 Y 위치 기준)")]
+    public float floorY = 0f;
+
+    [Header("카메라 고정 뷰 (Inspector에서 튜닝)")]
+    public Vector3 editCamPosition = new Vector3(-50f, 90f,  80f);
+    public Vector3 editCamLookAt   = new Vector3(-50f,  0f,  10f);
+
+    [Header("선택 하이라이트")]
+    public Color highlightColor = new Color(1f, 0.85f, 0f);
+    [Range(0f, 1f)]
+    public float highlightIntensity = 0.35f;
+
+    [Header("조이스틱")]
+    public GameObject joystickObject;
+
+    [Header("UI — 선택 팝업 (가구 선택 시 등장)")]
+    public GameObject editPopup;
+    public Button designChangeBtn;
+    public Button positionMoveBtn;
+
+    [Header("UI — 이동 확인 (위치이동 모드 중)")]
+    public GameObject confirmUI;
+    public Button confirmBtn;
+    public Button cancelBtn;
+
+    // ── 환경 원복용 (Start에서 1회 저장) ─────────────────────────
+    private float            _origLightIntensity;
+    private Color            _origLightColor;
+    private AmbientMode      _origAmbientMode;
+    private Color            _origAmbientLight;
+    private bool             _origFog;
+    private CameraClearFlags _origClearFlags;
+    private Color            _origBgColor;
+    private bool             _origPostProcessing;
+    private Volume[]         _sceneVolumes;
+
+    // EditMode 중 매 프레임 환경 강제 고정에 쓰는 플래그
+    private bool _editModeActive = false;
+
+    // ── 상태 ─────────────────────────────────────────────────
+    private Camera      _cam;
+    private GameObject  _selected;
+    private Vector3     _originalPos;
+    private bool        _movingMode;
+    private int         _dragFingerId = -1;
+    private Material _highlightMat;
+
+    void Awake()
+    {
+        Instance = this;
+        _cam = Camera.main;
+
+        var shader = Shader.Find("Custom/FurnitureHighlight");
+        if (shader != null)
+        {
+            _highlightMat = new Material(shader);
+            _highlightMat.SetColor("_Color", highlightColor);
+            _highlightMat.SetFloat("_Intensity", highlightIntensity);
+        }
+        else Debug.LogWarning("[FEC] FurnitureHighlight 셰이더를 찾을 수 없음");
+
+        if (joystickObject == null)
+        {
+            var jc = FindObjectOfType<JoystickController>();
+            if (jc != null && jc.joystickArea != null)
+                joystickObject = jc.joystickArea.gameObject;
+        }
+
+        if (editPopup)  editPopup.SetActive(false);
+        if (confirmUI)  confirmUI.SetActive(false);
+    }
+
+    void Start()
+    {
+        if (designChangeBtn) designChangeBtn.onClick.AddListener(OnDesignChange);
+        if (positionMoveBtn) positionMoveBtn.onClick.AddListener(OnPositionMove);
+        if (confirmBtn)      confirmBtn.onClick.AddListener(Confirm);
+        if (cancelBtn)       cancelBtn.onClick.AddListener(Cancel);
+
+        // 원본 환경 1회 저장 — WeatherController.Start()가 DefaultExecutionOrder(100)이므로
+        // 이 시점(기본 0)에는 아직 WeatherController가 Start()를 실행하기 전일 수 있음.
+        // 따라서 저장은 1프레임 뒤로 미루고, EditMode가 이미 켜져 있다면 재진입.
+        StartCoroutine(LateStartInit());
+    }
+
+    // WeatherController(ExecutionOrder=100)가 Start()를 마친 뒤 저장하기 위해 1프레임 대기
+    IEnumerator LateStartInit()
+    {
+        yield return null; // 1프레임 대기
+
+        _sceneVolumes = FindObjectsOfType<Volume>(true);
+
+        _origAmbientMode  = RenderSettings.ambientMode;
+        _origAmbientLight = RenderSettings.ambientLight;
+        _origFog          = RenderSettings.fog;
+
+        var sun = RenderSettings.sun ?? FindObjectOfType<Light>();
+        if (sun != null)
+        {
+            _origLightIntensity = sun.intensity;
+            _origLightColor     = sun.color;
+        }
+
+        if (_cam != null)
+        {
+            _origClearFlags = _cam.clearFlags;
+            _origBgColor    = _cam.backgroundColor;
+            var cd = _cam.GetComponent<UniversalAdditionalCameraData>();
+            if (cd != null) _origPostProcessing = cd.renderPostProcessing;
+        }
+
+        // EditMode가 이미 요청되어 있으면 지금 다시 적용
+        if (RoomModeManager.CurrentMode == RoomMode.EditMode)
+            ApplyEditEnvironment();
+    }
+
+    void OnEnable()  { EnhancedTouchSupport.Enable(); }
+    void OnDisable() { EnhancedTouchSupport.Disable(); }
+
+    // ── EditMode 진입/퇴장 ────────────────────────────────────
+
+    public void EnterEditMode()
+    {
+        Deselect();
+        if (joystickObject != null) joystickObject.SetActive(false);
+        if (_cam == null) _cam = Camera.main;
+
+        // WeatherManager/WeatherController의 Start()가 끝난 뒤에 환경을 덮어써야 함.
+        // LateStartInit 코루틴이 완료되어 있으면 바로 적용, 아니면 코루틴이 마저 처리함.
+        if (_sceneVolumes != null)
+            ApplyEditEnvironment();
+        // else: LateStartInit 코루틴 끝에서 자동으로 적용됨
+
+        _editModeActive = true;
+        Debug.Log("[Edit] EditMode 진입");
+    }
+
+    // 실제 환경 설정 — WeatherManager/Controller가 덮어쓰므로 별도 메서드로 분리
+    void ApplyEditEnvironment()
+    {
+        // WeatherManager(DWS) 비활성 — 이것이 핵심. LightModule이 매 프레임 조명을 재설정함.
+        var weatherManager = FindObjectOfType<WeatherManager>();
+        if (weatherManager != null) weatherManager.enabled = false;
+
+        // WeatherController도 비활성
+        var weatherController = FindObjectOfType<WeatherController>();
+        if (weatherController != null) weatherController.enabled = false;
+
+        if (_cam == null) _cam = Camera.main;
+        Debug.Log($"[Edit] 환경 적용 — cam={_cam?.name} volumes={_sceneVolumes?.Length}");
+
+        if (_cam != null)
+        {
+            var cd = _cam.GetComponent<UniversalAdditionalCameraData>();
+            Debug.Log($"[Edit] camData={cd != null} postProcessing={cd?.renderPostProcessing}");
+            if (cd != null) cd.renderPostProcessing = false;
+            _cam.clearFlags      = CameraClearFlags.SolidColor;
+            _cam.backgroundColor = new Color(0.75f, 0.75f, 0.75f);
+        }
+
+        if (_sceneVolumes != null)
+            foreach (var v in _sceneVolumes) if (v != null) v.enabled = false;
+
+        RenderSettings.ambientMode  = AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.55f);
+        RenderSettings.fog          = false;
+
+        var sunLight = RenderSettings.sun ?? FindObjectOfType<Light>();
+        if (sunLight != null)
+        {
+            sunLight.intensity = 0.4f;
+            sunLight.color     = Color.white;
+        }
+
+        DynamicGI.UpdateEnvironment();
+        _editModeActive = true;
+    }
+
+    public void ExitEditMode()
+    {
+        _editModeActive = false;
+        Deselect();
+        CancelMove();
+        if (joystickObject != null) joystickObject.SetActive(true);
+
+        // WeatherManager/Controller 복원
+        var weatherManager = FindObjectOfType<WeatherManager>();
+        if (weatherManager != null) weatherManager.enabled = true;
+
+        var weatherController = FindObjectOfType<WeatherController>();
+        if (weatherController != null) weatherController.enabled = true;
+
+        // 전부 원복
+        if (_cam != null)
+        {
+            var cd = _cam.GetComponent<UniversalAdditionalCameraData>();
+            if (cd != null) cd.renderPostProcessing = _origPostProcessing;
+            _cam.clearFlags      = _origClearFlags;
+            _cam.backgroundColor = _origBgColor;
+        }
+        if (_sceneVolumes != null)
+            foreach (var v in _sceneVolumes) if (v != null) v.enabled = true;
+
+        RenderSettings.ambientMode  = _origAmbientMode;
+        RenderSettings.ambientLight = _origAmbientLight;
+        RenderSettings.fog          = _origFog;
+
+        var sunLight = RenderSettings.sun ?? FindObjectOfType<Light>();
+        if (sunLight != null)
+        {
+            sunLight.intensity = _origLightIntensity;
+            sunLight.color     = _origLightColor;
+        }
+        DynamicGI.UpdateEnvironment();
+
+        // WeatherController에게 현재 날씨를 재적용시켜 원래 상태로 되돌림
+        if (weatherController != null)
+            weatherController.SetWeather(weatherController.CurrentWeather, weatherController.CurrentTime);
+
+        Debug.Log("[Edit] EditMode 종료");
+    }
+
+    // ── Update ────────────────────────────────────────────────
+
+    void Update()
+    {
+        if (RoomModeManager.CurrentMode != RoomMode.EditMode) return;
+
+        // Inspector에서 실시간 튜닝 가능하도록 매 프레임 카메라 적용
+        if (_cam != null && !_movingMode)
+        {
+            _cam.transform.position = editCamPosition;
+            _cam.transform.LookAt(editCamLookAt, Vector3.up);
+            _cam.transform.Rotate(Vector3.forward, 180f, Space.Self);
+        }
+
+        if (_movingMode) HandleDrag();
+    }
+
+    // ── 가구 클릭 (CameraController에서 호출) ─────────────────
+
+    /// <summary>EditMode에서 가구 클릭 시 CameraController가 호출</summary>
+    public void OnFurnitureClicked(GameObject furniture)
+    {
+        Debug.Log($"[FEC] OnFurnitureClicked — name={furniture.name} movingMode={_movingMode} isEditable={IsEditable(furniture)} editPopup={editPopup}");
+        if (_movingMode) return;
+        if (!IsEditable(furniture)) { Deselect(); return; }
+        SelectFurniture(furniture);
+    }
+
+    /// <summary>EditMode에서 빈 곳 클릭 시 CameraController가 호출</summary>
+    public void OnEmptyClicked()
+    {
+        Debug.Log($"[FEC] OnEmptyClicked — movingMode={_movingMode}");
+        if (_movingMode) return;
+        Deselect();
+    }
+
+    // ── 선택 ─────────────────────────────────────────────────
+
+    void SelectFurniture(GameObject furniture)
+    {
+        if (_selected != null) SetHighlight(_selected, false);
+        _selected = furniture;
+        SetHighlight(furniture, true);
+        if (editPopup)
+        {
+            editPopup.SetActive(true);
+            PositionPopupAbove(furniture);
+        }
+        Debug.Log($"[Edit] 선택: {furniture.name}");
+    }
+
+    void Deselect()
+    {
+        if (_selected != null) SetHighlight(_selected, false);
+        _selected = null;
+        if (editPopup) editPopup.SetActive(false);
+    }
+
+    // ── 하이라이트 ────────────────────────────────────────────
+
+    void SetHighlight(GameObject go, bool show)
+    {
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        {
+            if (show)
+            {
+                var block = new MaterialPropertyBlock();
+                r.GetPropertyBlock(block);
+                // 원본 BaseColor에 하이라이트 색상을 혼합
+                Color baseColor = r.sharedMaterial != null && r.sharedMaterial.HasProperty("_BaseColor")
+                    ? r.sharedMaterial.GetColor("_BaseColor")
+                    : Color.white;
+                block.SetColor("_BaseColor", Color.Lerp(baseColor, highlightColor, highlightIntensity));
+                r.SetPropertyBlock(block);
+            }
+            else
+            {
+                r.SetPropertyBlock(null); // PropertyBlock 제거 → 원본 머티리얼 색상 복귀
+            }
+        }
+    }
+
+    // ── 버튼 콜백 ────────────────────────────────────────────
+
+    void OnDesignChange()
+    {
+        if (_selected == null) return;
+        DesignSelectUI.Instance?.Open(_selected.name);
+        Debug.Log($"[Edit] 디자인 변경 — {_selected.name}");
+    }
+
+    void OnPositionMove()
+    {
+        if (_selected == null) return;
+        _originalPos = _selected.transform.position;
+        _movingMode  = true;
+        _dragFingerId = -1;
+
+        if (editPopup) editPopup.SetActive(false);
+        if (confirmUI) confirmUI.SetActive(true);
+        Debug.Log($"[Edit] 위치 이동 모드 — {_selected.name}");
+    }
+
+    void Confirm()
+    {
+        _movingMode = false;
+        if (confirmUI) confirmUI.SetActive(false);
+
+        // TODO: 변경된 위치 DB에 저장
+        // FirebaseManager.Instance.SaveFurniturePosition(_selected.name, _selected.transform.position);
+        Debug.Log($"[Edit] 위치 확정 — {_selected.name} pos={_selected.transform.position} (TODO: DB 저장)");
+
+        Deselect();
+    }
+
+    void Cancel() => CancelMove();
+
+    void CancelMove()
+    {
+        if (_selected != null && _movingMode)
+            _selected.transform.position = _originalPos;
+
+        _movingMode = false;
+        if (confirmUI) confirmUI.SetActive(false);
+        Debug.Log("[Edit] 위치 취소");
+        Deselect();
+    }
+
+    // ── 드래그 처리 ───────────────────────────────────────────
+
+    void HandleDrag()
+    {
+        if (_selected == null) return;
+
+        Vector2 inputPos  = Vector2.zero;
+        bool    hasInput  = false;
+
+        if (Touch.activeTouches.Count > 0)
+        {
+            foreach (var t in Touch.activeTouches)
+            {
+                if (t.phase == UnityEngine.InputSystem.TouchPhase.Began)
+                { _dragFingerId = t.finger.index; inputPos = t.screenPosition; hasInput = true; break; }
+                if (t.finger.index == _dragFingerId)
+                { inputPos = t.screenPosition; hasInput = true; break; }
+            }
+        }
+        else if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+        {
+            inputPos = Mouse.current.position.ReadValue();
+            hasInput = true;
+        }
+
+        if (!hasInput) return;
+
+        Ray ray = _cam.ScreenPointToRay(inputPos);
+        // y=floorY 평면과 교차점 계산 (레이어 불필요)
+        if (RaycastFloorPlane(ray, out Vector3 worldPos))
+        {
+            Vector3 snapped = SnapToGrid(worldPos);
+            snapped.y = _originalPos.y; // Y는 원래 높이 유지
+            _selected.transform.position = snapped;
+        }
+    }
+
+    // ── 바닥 평면 교차 ────────────────────────────────────────
+
+    bool RaycastFloorPlane(Ray ray, out Vector3 result)
+    {
+        // y = floorY 평면과 ray 교차점
+        float denom = ray.direction.y;
+        if (Mathf.Abs(denom) < 0.0001f) { result = Vector3.zero; return false; }
+        float t = (floorY - ray.origin.y) / denom;
+        if (t < 0f) { result = Vector3.zero; return false; }
+        result = ray.origin + ray.direction * t;
+        return true;
+    }
+
+    // ── 그리드 스냅 ───────────────────────────────────────────
+
+    Vector3 SnapToGrid(Vector3 pos)
+    {
+        return new Vector3(
+            Mathf.Round(pos.x / gridCellSize) * gridCellSize,
+            pos.y,
+            Mathf.Round(pos.z / gridCellSize) * gridCellSize);
+    }
+
+    // ── 팝업 위치 ─────────────────────────────────────────────
+
+    void PositionPopupAbove(GameObject furniture)
+    {
+        if (editPopup == null) return;
+        var ren = furniture.GetComponentInChildren<Renderer>();
+        Vector3 topWorld = ren != null
+            ? ren.bounds.center + Vector3.up * ren.bounds.extents.y
+            : furniture.transform.position + Vector3.up * 20f;
+
+        Vector3 screenPos = _cam.WorldToScreenPoint(topWorld);
+        var rt = editPopup.GetComponent<RectTransform>();
+        if (rt) rt.position = screenPos + Vector3.up * 60f;
+    }
+
+    // ── 유틸 ─────────────────────────────────────────────────
+
+    public bool IsEditable(GameObject go)
+    {
+        foreach (var kw in editableKeywords)
+            if (go.name.IndexOf(kw, System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
+        return false;
+    }
+}

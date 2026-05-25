@@ -55,6 +55,14 @@ public class CameraController : MonoBehaviour
     public void SaveState()    { _savedYaw = _yaw; _savedPitch = _pitch; }
     public void RestoreState() { _yaw = _savedYaw; _pitch = _savedPitch; }
 
+    /// <summary>EditMode 등에서 카메라 각도를 즉시 전환</summary>
+    public void SetAngle(float yaw, float pitch)
+    {
+        _yaw   = yaw;
+        _pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+        ApplyPositionAndRotation(snap: true);
+    }
+
     void Start()
     {
         _pitch = startPitch;
@@ -65,6 +73,9 @@ public class CameraController : MonoBehaviour
     void LateUpdate()
     {
         HandleRotationInput();
+
+        // EditMode: FurnitureEditController가 카메라 제어
+        if (RoomModeManager.CurrentMode == RoomMode.EditMode) return;
 
         var bfc  = BoardFocusController.Instance;
         var ltfc = LaunchTableFocusController.Instance;
@@ -105,27 +116,36 @@ public class CameraController : MonoBehaviour
 
     void HandleRotationInput()
     {
+        bool isEditMode = RoomModeManager.CurrentMode == RoomMode.EditMode;
+
         if (Touch.activeTouches.Count > 0)
         {
             foreach (Touch touch in Touch.activeTouches)
             {
                 if (touch.phase == TouchPhase.Began)
                 {
-                    if (IsTouchOnJoystick(touch.screenPosition)) continue;
-                    if (IsPointerOverUI(touch.screenPosition)) continue;
+                    if (!isEditMode && IsTouchOnJoystick(touch.screenPosition)) continue;
+                    // EditMode: UI 위의 터치도 _dragFingerId / _touchClickStartPos 기록
+                    // (UI 버튼 탭이 Ended에서 CheckBoardClick을 막지 않도록 overUI 여부를 Ended에서 판단)
+                    // 일반 모드: UI 우선 유지 (Began에서 차단)
+                    if (!isEditMode && IsPointerOverUI(touch.screenPosition)) continue;
                     _dragFingerId       = touch.finger.index;
                     _lastDragPos        = touch.screenPosition;
                     _touchClickStartPos = touch.screenPosition;
                 }
-                else if (touch.phase == TouchPhase.Moved && touch.finger.index == _dragFingerId)
+                else if (!isEditMode && touch.phase == TouchPhase.Moved && touch.finger.index == _dragFingerId)
                 {
+                    // EditMode에서는 드래그 회전 차단 (FurnitureEditController가 드래그 처리)
                     ApplyRotation((touch.screenPosition - _lastDragPos) * touchSensitivityMultiplier);
                     _lastDragPos = touch.screenPosition;
                 }
                 else if ((touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
                          && touch.finger.index == _dragFingerId)
                 {
-                    if (Vector2.Distance(touch.screenPosition, _touchClickStartPos) < clickMaxDragPx)
+                    // EditMode: Ended 시점에 UI 위면 버튼 탭이므로 3D 클릭 처리 생략
+                    bool overUI = isEditMode && IsPointerOverButton(touch.screenPosition);
+                    Debug.Log($"[CAM] Touch Ended — isEdit={isEditMode} overUI={overUI} dist={Vector2.Distance(touch.screenPosition, _touchClickStartPos):F1}");
+                    if (!overUI && Vector2.Distance(touch.screenPosition, _touchClickStartPos) < clickMaxDragPx)
                         CheckBoardClick(touch.screenPosition);
                     _dragFingerId = -1;
                 }
@@ -140,15 +160,19 @@ public class CameraController : MonoBehaviour
                 _mouseClickStartPos = mousePos;
                 _mouseDragActive    = true;
             }
-            else if (Mouse.current.leftButton.isPressed && _mouseDragActive)
+            else if (!isEditMode && Mouse.current.leftButton.isPressed && _mouseDragActive)
             {
+                // EditMode에서는 드래그 회전 차단 (FurnitureEditController가 드래그 처리)
                 ApplyRotation(mousePos - _lastDragPos);
                 _lastDragPos = mousePos;
             }
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
-                if (!IsTouchOnJoystick(mousePos) && !IsPointerOverUI(mousePos)
-                    && Vector2.Distance(mousePos, _mouseClickStartPos) < clickMaxDragPx)
+                bool overUI     = isEditMode ? IsPointerOverButton(mousePos) : IsPointerOverUI(mousePos);
+                bool onJoystick = !isEditMode && IsTouchOnJoystick(mousePos);
+                bool blockByUI  = overUI || onJoystick;
+                Debug.Log($"[CAM] Mouse Released — isEdit={isEditMode} overUI={overUI} blockByUI={blockByUI} dist={Vector2.Distance(mousePos, _mouseClickStartPos):F1}");
+                if (!blockByUI && Vector2.Distance(mousePos, _mouseClickStartPos) < clickMaxDragPx)
                     CheckBoardClick(mousePos);
                 _mouseDragActive = false;
             }
@@ -164,6 +188,26 @@ public class CameraController : MonoBehaviour
 
     void CheckBoardClick(Vector2 screenPos)
     {
+        // EditMode: FurnitureEditController로 라우팅
+        if (RoomModeManager.CurrentMode == RoomMode.EditMode)
+        {
+            var fec = FurnitureEditController.Instance;
+            Debug.Log($"[CAM][Edit] CheckBoardClick — screenPos={screenPos} fec={fec}");
+            if (fec == null) { Debug.LogWarning("[CAM][Edit] FurnitureEditController.Instance가 null!"); return; }
+
+            RaycastHit[] editHits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 2000f);
+            System.Array.Sort(editHits, (a, b) => a.distance.CompareTo(b.distance)); // 가까운 것 우선
+            Debug.Log($"[CAM][Edit] RaycastAll hits={editHits.Length}");
+            foreach (var h in editHits)
+            {
+                GameObject target = fec.GetEditTarget(h.collider.gameObject);
+                Debug.Log($"[CAM][Edit]   hit: {h.collider.gameObject.name} dist={h.distance:F1} | target={target?.name ?? "none"}");
+                if (target != null) { fec.OnFurnitureClicked(target); return; }
+            }
+            fec.OnEmptyClicked();
+            return;
+        }
+
         var cui = CommentInputUI.Instance;
         if (cui != null && cui.IsPanelOpen) return;
 
@@ -302,7 +346,12 @@ public class CameraController : MonoBehaviour
         var ltfc2 = LaunchTableFocusController.Instance;
         if (hTable.HasValue && bfc.State == BoardFocusController.FocusState.Free
             && ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Free)
-        { Debug.Log("[CAM] → FocusTable"); SaveState(); ltfc2.FocusTable(); return; }
+        {
+            // VisitRoom: 작은책상 상호작용 차단
+            if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
+            { Debug.Log("[CAM] VisitRoom — 작은책상 차단"); return; }
+            Debug.Log("[CAM] → FocusTable"); SaveState(); ltfc2.FocusTable(); return;
+        }
 
         if (ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Table)
         {
@@ -319,7 +368,12 @@ public class CameraController : MonoBehaviour
                 foreach (var h in hits)
                     if (tableRoot != null &&
                         (h.collider.transform == tableRoot || h.collider.transform.IsChildOf(tableRoot)))
-                    { dui.OpenWriteDiary(); return; }
+                    {
+                        // VisitRoom: 남의 방에서는 일기 쓰기 불가
+                        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
+                        { Debug.Log("[CAM] VisitRoom — 일기 쓰기 차단"); return; }
+                        dui.OpenWriteDiary(); return;
+                    }
             }
 
             if (!hTable.HasValue) { ltfc2.BackToFree(); }
@@ -345,6 +399,22 @@ public class CameraController : MonoBehaviour
         var results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
         EventSystem.current.RaycastAll(ped, results);
         return results.Count > 0;
+    }
+
+    /// <summary>
+    /// EditMode 전용: 실제 Button 컴포넌트가 있는 UI 위에 있을 때만 true.
+    /// 투명 Canvas 배경은 무시하여 3D 오브젝트 클릭을 차단하지 않음.
+    /// </summary>
+    static bool IsPointerOverButton(Vector2 screenPos)
+    {
+        var ped = new UnityEngine.EventSystems.PointerEventData(EventSystem.current) { position = screenPos };
+        var results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+        EventSystem.current.RaycastAll(ped, results);
+        foreach (var r in results)
+            if (r.gameObject.GetComponent<UnityEngine.UI.Button>() != null
+             || r.gameObject.GetComponentInParent<UnityEngine.UI.Button>() != null)
+                return true;
+        return false;
     }
 
     bool IsTouchOnJoystick(Vector2 screenPos)
