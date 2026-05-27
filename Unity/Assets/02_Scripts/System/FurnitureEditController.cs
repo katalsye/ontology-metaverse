@@ -167,6 +167,27 @@ public class FurnitureEditController : MonoBehaviour
         // Play 첫 프레임에 보이는 문제를 Awake에서 즉시 비활성화하여 방지
         if (addFurniturePanel) addFurniturePanel.SetActive(false);
 
+        // backToClosetBtn: Inspector에서 연결이 안 됐을 때를 대비한 fallback
+        // 씬의 모든 Button 중 이름에 "back"이 포함된 첫 번째 버튼을 자동 탐색
+        if (backToClosetBtn == null)
+        {
+            foreach (var btn in FindObjectsOfType<UnityEngine.UI.Button>(true))
+            {
+                if (btn.name.IndexOf("back", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    backToClosetBtn = btn;
+                    Debug.Log($"[FurnitureEditController] backToClosetBtn 자동 탐색 성공: '{btn.name}'");
+                    break;
+                }
+            }
+            if (backToClosetBtn == null)
+                Debug.LogWarning("[FurnitureEditController] backToClosetBtn을 찾지 못했습니다. " +
+                                 "Inspector에서 'Back To Closet Btn' 필드에 Back 버튼을 직접 연결하세요.");
+        }
+
+        // 시작 시 backToClosetBtn은 무조건 숨김 — EnterEditMode()에서만 표시
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
+
         // 씬 로드 시점에 미리 한 번 등록 (EnterEditMode 전에도 동작하도록)
         RefreshEditableItems();
     }
@@ -183,6 +204,11 @@ public class FurnitureEditController : MonoBehaviour
             cancelMoveBtn.onClick.AddListener(EnterCeilingEditMode);
             SetBtnSprite(cancelMoveBtn, spriteCeiling);
         }
+
+        // Start()는 모든 Awake() 이후에 실행되므로 여기서 초기 상태 보정
+        // Awake에서 backToClosetBtn을 무조건 숨겼으나, EditMode면 다시 표시
+        if (backToClosetBtn != null)
+            backToClosetBtn.gameObject.SetActive(RoomModeManager.CurrentMode == RoomMode.EditMode);
 
         // Back 버튼: Closet 씬으로 이동
         if (backToClosetBtn)
@@ -296,6 +322,8 @@ public class FurnitureEditController : MonoBehaviour
         if (_cam == null) _cam = Camera.main;
         // EditMode 진입 시 AddFurniture 패널은 항상 닫힌 상태로 시작
         if (addFurniturePanel) addFurniturePanel.SetActive(false);
+        // Back 버튼: EditMode 초기 화면에서만 표시
+        if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(true);
 
         // WeatherManager/WeatherController의 Start()가 끝난 뒤에 환경을 덮어써야 함.
         // LateStartInit 코루틴이 완료되어 있으면 바로 적용, 아니면 코루틴이 마저 처리함.
@@ -540,6 +568,14 @@ public class FurnitureEditController : MonoBehaviour
 
     void RefreshEditableItems()
     {
+        // RefreshEditableItems 호출 시 기존 isAdded 플래그 보존
+        // (천장 편집 종료 후 RestoreCeilingState→RefreshEditableItems 경로에서 isAdded가 초기화되는 버그 수정)
+        var addedSet = new System.Collections.Generic.HashSet<GameObject>();
+        if (editableItems != null)
+            foreach (var cfg in editableItems)
+                if (cfg.target != null && cfg.isAdded)
+                    addedSet.Add(cfg.target);
+
         var list = new System.Collections.Generic.List<FurnitureEditConfig>();
 
         // furnitureParent 직계 자식 전부 자동 등록
@@ -556,13 +592,17 @@ public class FurnitureEditController : MonoBehaviour
                 // hangerItemParent가 없을 때만 이름 기반 폴백으로 Board 감지
                 bool isWallMounted = hangerItemParent == null &&
                                      child.name.IndexOf("Board", System.StringComparison.OrdinalIgnoreCase) >= 0;
-                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = !isDoor, canDesign = true, wallMounted = isWallMounted, ceilingMounted = isCeiling });
+                // TODO: DB 연동 후 서버에서 받아온 "추가 가구" 목록으로 isAdded 판별할 것
+                // 디폴트: 이름에 "bedlight" 또는 "bedside" 포함된 가구를 추가 가구로 처리 (삭제 버튼 테스트용)
+                bool isAddedDefault = child.name.IndexOf("bedlight", System.StringComparison.OrdinalIgnoreCase) >= 0
+                                   || child.name.IndexOf("bedside",  System.StringComparison.OrdinalIgnoreCase) >= 0;
+                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = !isDoor, canDesign = true, wallMounted = isWallMounted, ceilingMounted = isCeiling, isAdded = addedSet.Contains(child.gameObject) || isAddedDefault });
             }
 
         // hangerItemParent 직계 자식 전부 → wallMounted=true (이름 무관)
         if (hangerItemParent != null)
             foreach (Transform child in hangerItemParent)
-                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, wallMounted = true });
+                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, wallMounted = true, isAdded = addedSet.Contains(child.gameObject) });
 
         // wallParent 직계 자식 전부 → canMove=false, canDesign=true
         if (wallParent != null)
@@ -573,7 +613,7 @@ public class FurnitureEditController : MonoBehaviour
         if (ceilingItemParent != null)
             foreach (Transform child in ceilingItemParent)
                 if (child.gameObject.activeSelf)
-                    list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, ceilingMounted = true });
+                    list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, ceilingMounted = true, isAdded = addedSet.Contains(child.gameObject) });
 
         editableItems = list.ToArray();
     }

@@ -11,7 +11,14 @@ public class RoomModeManager : MonoBehaviour
     // 씬 로드 전에 SetMode()로 설정 — static이라 씬 이동해도 유지
     public static RoomMode CurrentMode { get; private set; } = RoomMode.MyRoom;
 
-    public static void SetMode(RoomMode mode) { CurrentMode = mode; }
+    // SetMode()가 외부에서 호출됐는지 추적 — true면 Awake에서 _debugMode로 덮어쓰지 않음
+    private static bool _modeSetExternally = false;
+
+    public static void SetMode(RoomMode mode)
+    {
+        CurrentMode        = mode;
+        _modeSetExternally = true;
+    }
 
     [Header("디버그 — Inspector에서 모드 설정 (런타임에서도 적용됨)")]
     [SerializeField] private RoomMode _debugMode = RoomMode.MyRoom;
@@ -43,9 +50,22 @@ public class RoomModeManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        // Inspector 값으로 static CurrentMode 덮어쓰기 (디버그용)
-        CurrentMode   = _debugMode;
-        _prevDebugMode = _debugMode;
+
+        if (_modeSetExternally)
+        {
+            // 씬 이동 전에 SetMode()로 명시적으로 설정된 경우 → _debugMode로 덮어쓰지 않음
+            // _debugMode는 현재 CurrentMode에 맞게 동기화만 해둠 (Inspector 값 변경 감지용)
+            _debugMode     = CurrentMode;
+            _prevDebugMode = CurrentMode;
+            _modeSetExternally = false; // 다음 씬 이동을 위해 리셋
+        }
+        else
+        {
+            // 직접 씬을 Play한 경우(에디터 테스트) → Inspector _debugMode 사용
+            CurrentMode    = _debugMode;
+            _prevDebugMode = _debugMode;
+        }
+
         ApplyMode();
     }
 

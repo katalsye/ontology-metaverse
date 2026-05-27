@@ -10,6 +10,8 @@ public class ClosetUI : MonoBehaviour
     public Button characterButton;
     public Button furnitureButton;
     public Button moveButton;
+    [Tooltip("저장 없이 MyRoom 모드로 3D 방 씬으로 이동")]
+    public Button backButton;
 
     [Header("커스텀 버튼 & 윈도우")]
     public Button     colorButton;
@@ -25,8 +27,13 @@ public class ClosetUI : MonoBehaviour
     public GameObject characterRoot;
     public GameObject furnitureRoot;
 
+    [Header("가구 캐러셀")]
+    [Tooltip("furniturePanel 안의 FurnitureCarouselUI — 카메라 타겟 및 초기화를 대신 처리")]
+    public FurnitureCarouselUI furnitureCarousel;
+
     [Header("씬")]
-    public string roomSceneName = "SampleScene";
+    [Tooltip("3D 방 씬 이름 — Build Settings에 등록된 이름과 정확히 일치해야 함")]
+    public string roomSceneName = "3DRoomScene";
 
     void Awake() => Instance = this;
 
@@ -34,7 +41,10 @@ public class ClosetUI : MonoBehaviour
     {
         characterButton?.onClick.AddListener(() => SelectTab(true));
         furnitureButton?.onClick.AddListener(() => SelectTab(false));
-        moveButton?.onClick.AddListener(() => SceneManager.LoadScene(roomSceneName));
+        // Move 버튼: EditMode로 설정 후 3D 방 씬으로 이동
+        moveButton?.onClick.AddListener(() => LoadRoomScene(RoomMode.EditMode));
+        // Back 버튼: 저장 없이 MyRoom 모드로 3D 방 씬으로 이동
+        backButton?.onClick.AddListener(() => LoadRoomScene(RoomMode.MyRoom));
 
         colorButton?.onClick.AddListener(() => SwitchCustomWindow(true));
         hatButton?.onClick.AddListener(() => SwitchCustomWindow(false));
@@ -60,6 +70,29 @@ public class ClosetUI : MonoBehaviour
         hatButton?.gameObject.SetActive(isColor);
     }
 
+    void LoadRoomScene(RoomMode mode)
+    {
+        RoomModeManager.SetMode(mode);
+
+        // Build Settings에서 씬 이름 포함 여부로 인덱스 탐색 후 로드
+        int buildIdx = -1;
+        int count = SceneManager.sceneCountInBuildSettings;
+        for (int i = 0; i < count; i++)
+        {
+            string path = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+            if (path.Contains(roomSceneName)) { buildIdx = i; break; }
+        }
+
+        if (buildIdx >= 0)
+            SceneManager.LoadScene(buildIdx);
+        else
+        {
+            Debug.LogWarning($"[ClosetUI] '{roomSceneName}' 씬을 Build Settings에서 찾지 못했습니다. " +
+                              "File > Build Settings > Add Open Scenes 에서 해당 씬을 추가하세요.");
+            SceneManager.LoadScene(roomSceneName);
+        }
+    }
+
     void SelectTab(bool isCharacter)
     {
         characterButton?.gameObject.SetActive(!isCharacter);
@@ -74,8 +107,20 @@ public class ClosetUI : MonoBehaviour
         var cam = ClosetOrbitCamera.Instance;
         if (cam == null) return;
         cam.ResetView();
-        cam.target = isCharacter
-            ? (characterRoot != null ? characterRoot.transform : null)
-            : (furnitureRoot  != null ? furnitureRoot.transform  : null);
+
+        if (isCharacter)
+        {
+            // 캐릭터 탭: 캐릭터 루트를 카메라 타겟으로
+            cam.target = characterRoot != null ? characterRoot.transform : null;
+        }
+        else
+        {
+            // 가구 탭: FurnitureCarouselUI가 있으면 현재 선택 가구를 타겟으로,
+            // 없으면 furnitureRoot 전체를 타겟으로
+            if (furnitureCarousel != null)
+                furnitureCarousel.ShowFurniture(furnitureCarousel.CurrentIndex);
+            else
+                cam.target = furnitureRoot != null ? furnitureRoot.transform : null;
+        }
     }
 }
