@@ -29,6 +29,10 @@ public class TableFocusController : MonoBehaviour
     [Header("카메라 이동 속도")]
     public float moveSpeed = 5f;
 
+    [Header("플레이어 이동 잠금")]
+    public PlayerMovementController playerMovement;
+    public GameObject joystickObject;
+
     public bool IsZoomed { get; private set; }
 
     private Camera     _cam;
@@ -49,6 +53,16 @@ public class TableFocusController : MonoBehaviour
                   ?? GameObject.Find("KitchenIsland");
             if (go != null) table = go.transform;
             else            table = transform;
+        }
+
+        // playerMovement / joystickObject 미연결 시 자동 탐색
+        if (playerMovement == null)
+            playerMovement = FindObjectOfType<PlayerMovementController>();
+        if (joystickObject == null)
+        {
+            var jc = FindObjectOfType<JoystickController>();
+            if (jc != null && jc.joystickArea != null)
+                joystickObject = jc.joystickArea.gameObject;
         }
 
         // TableInteraction 마커 자동 추가 (클릭 감지용)
@@ -97,6 +111,7 @@ public class TableFocusController : MonoBehaviour
         _camRotTarget = Quaternion.LookRotation(center - _camPosTarget, table.forward);
 
         IsZoomed = true;
+        LockPlayer(true);
         Debug.Log($"[Table] 줌인 — target={_camPosTarget}");
     }
 
@@ -107,6 +122,13 @@ public class TableFocusController : MonoBehaviour
         _camPosTarget = _camPosBefore;
         _camRotTarget = _camRotBefore;
         IsZoomed = false;
+        LockPlayer(false);
         Debug.Log("[Table] 줌아웃");
+    }
+
+    void LockPlayer(bool locked)
+    {
+        if (playerMovement != null) playerMovement.enabled = !locked;
+        if (joystickObject  != null) joystickObject.SetActive(!locked);
     }
 }

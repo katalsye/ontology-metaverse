@@ -77,6 +77,9 @@ public class CameraController : MonoBehaviour
         // EditMode: FurnitureEditController가 카메라 제어
         if (RoomModeManager.CurrentMode == RoomMode.EditMode) return;
 
+        var tfc2 = TableFocusController.Instance;
+        if (tfc2 != null && tfc2.IsZoomed) return;
+
         var bfc  = BoardFocusController.Instance;
         var ltfc = LaunchTableFocusController.Instance;
         var ffc  = FurnitureFocusController.Instance;
@@ -210,6 +213,10 @@ public class CameraController : MonoBehaviour
 
         var cui = CommentInputUI.Instance;
         if (cui != null && cui.IsPanelOpen) return;
+
+        // TableFocusController 줌인 중 클릭 → 줌아웃
+        var tfc = TableFocusController.Instance;
+        if (tfc != null && tfc.IsZoomed) { tfc.BackToFree(); return; }
 
         RaycastHit[] hits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
 

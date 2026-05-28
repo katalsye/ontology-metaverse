@@ -36,6 +36,7 @@ public class FurnitureFocusController : MonoBehaviour
     private Vector3    _camPosBefore;
     private Quaternion _camRotBefore;
     private string     _targetScene;
+    private string     _targetObjName;
 
     void Awake()
     {
@@ -101,18 +102,39 @@ public class FurnitureFocusController : MonoBehaviour
         if (fi == null || string.IsNullOrEmpty(fi.sceneName))
         { Debug.Log($"[Furniture] FurnitureInteraction 없음: {target.name}"); return; }
 
-        // VisitRoom: Door만 허용, 나머지 가구 전부 차단
-        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom && target.name != "Door")
-        { Debug.Log($"[Furniture] VisitRoom — {target.name} 차단 (Door만 허용)"); return; }
+        // VisitRoom: Door / KitchenIsland만 허용, 나머지 차단
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom
+            && fi.gameObject.name != "Door"
+            && fi.gameObject.name.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            Debug.Log($"[Furniture] VisitRoom — {fi.gameObject.name} 차단");
+            return;
+        }
 
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) { Debug.LogError("[Furniture] Camera.main null"); return; }
 
         _camPosBefore = _cam.transform.position;
         _camRotBefore = _cam.transform.rotation;
-        _targetScene  = fi.sceneName;
+        _targetScene   = fi.sceneName;
+        _targetObjName = fi.gameObject.name;
 
         CalcViewPoint(target, out _camPosTarget, out _camRotTarget);
+
+        // VisitRoom + KitchenIsland: EditMode 책상 줌인과 동일한 카메라 설정 적용
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom &&
+            _targetObjName.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            var fec = FurnitureEditController.Instance;
+            if (fec != null)
+            {
+                var ren = target.GetComponentInChildren<Renderer>();
+                Vector3 deskCenter = ren != null ? ren.bounds.center : target.transform.position;
+                _camPosTarget = deskCenter + fec.deskCamOffset;
+                _camRotTarget = Quaternion.LookRotation((deskCenter + fec.deskCamLookOffset) - _camPosTarget);
+            }
+        }
+
         Debug.Log($"[Furniture] FocusFurniture({target.name}) → target={_camPosTarget}");
 
         CurrentState = State.ZoomingIn;
@@ -125,6 +147,11 @@ public class FurnitureFocusController : MonoBehaviour
         yield return new WaitForSeconds(zoomHoldTime);
 
         if (CurrentState != State.ZoomingIn) yield break;
+
+        // VisitRoom에서 KitchenIsland(큰 책상)는 씬 이동 없이 줌인만
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom &&
+            _targetObjName.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            yield break;
 
         // TODO: 씬 준비되면 각 가구별 실제 씬 이름으로 교체
         SceneManager.LoadScene(_targetScene);
