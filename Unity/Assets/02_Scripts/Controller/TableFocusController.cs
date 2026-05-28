@@ -2,13 +2,29 @@ using UnityEngine;
 
 public class TableFocusController : MonoBehaviour
 {
-    public static TableFocusController Instance { get; private set; }
+    private static TableFocusController _instance;
+    public static TableFocusController Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindObjectOfType<TableFocusController>();
+                if (_instance == null)
+                {
+                    var go = new GameObject("TableFocusController");
+                    _instance = go.AddComponent<TableFocusController>();
+                }
+            }
+            return _instance;
+        }
+    }
 
-    [Header("연결")]
+    [Header("큰책상 Transform (비워두면 KitchenIsland 자동 검색)")]
     public Transform table;
 
     [Header("줌인 높이 (테이블 위)")]
-    public float viewHeight = 3f;
+    public float viewHeight = 5f;
 
     [Header("카메라 이동 속도")]
     public float moveSpeed = 5f;
@@ -23,14 +39,37 @@ public class TableFocusController : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
+        _instance = this;
         _cam = Camera.main;
 
-        // 자기 자신이 테이블이면 자동 연결
-        if (table == null) table = transform;
+        // table 미연결 시 KitchenIsland 자동 탐색
+        if (table == null)
+        {
+            var go = GameObject.Find("(Prb)KitchenIsland")
+                  ?? GameObject.Find("KitchenIsland");
+            if (go != null) table = go.transform;
+            else            table = transform;
+        }
 
-        if (table.GetComponent<TableInteraction>() == null)
-            table.gameObject.AddComponent<TableInteraction>();
+        // TableInteraction 마커 자동 추가 (클릭 감지용)
+        if (table != null && table.GetComponent<TableInteraction>() == null)
+            AddTableInteractionRecursive(table);
+    }
+
+    // 자식 Collider가 있는 오브젝트에 마커 추가
+    void AddTableInteractionRecursive(Transform root)
+    {
+        foreach (var col in root.GetComponentsInChildren<Collider>(true))
+        {
+            if (col.GetComponent<TableInteraction>() == null)
+                col.gameObject.AddComponent<TableInteraction>();
+        }
+        // 콜라이더가 아예 없으면 루트에 BoxCollider + 마커 추가
+        if (root.GetComponentsInChildren<Collider>(true).Length == 0)
+        {
+            root.gameObject.AddComponent<BoxCollider>();
+            root.gameObject.AddComponent<TableInteraction>();
+        }
     }
 
     void Update()

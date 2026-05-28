@@ -176,11 +176,16 @@ public class WeatherController : MonoBehaviour
         {
             RenderSettings.fogDensity = 0.008f;
             if (directionalLight != null)
+            {
                 directionalLight.intensity = 1.2f;
+                directionalLight.color     = new Color(0.85f, 0.90f, 1.00f); // 덜 파란 흐린 날 낮
+            }
+            RenderSettings.ambientLight = new Color(0.28f, 0.30f, 0.35f); // 차가운 회색 (파란 ambient 제거)
         }
         else if (weather == WeatherType.Cloudy && time == TimeOfDay.Dawn)
         {
             RenderSettings.fogDensity = 0.008f;
+            RenderSettings.ambientLight = new Color(0.10f, 0.10f, 0.14f); // 흐린 새벽 ambient
         }
         else if (weather == WeatherType.Rainy && time == TimeOfDay.Night)
         {
@@ -197,6 +202,7 @@ public class WeatherController : MonoBehaviour
         {
             if (directionalLight != null)
                 directionalLight.color = new Color(0.88f, 0.76f, 0.68f); // 흐린 날 새벽, 살짝 붉은기
+            RenderSettings.ambientLight = new Color(0.09f, 0.09f, 0.12f); // 비오는 새벽 ambient
         }
         else if (weather == WeatherType.Cloudy && time == TimeOfDay.Sunset)
         {

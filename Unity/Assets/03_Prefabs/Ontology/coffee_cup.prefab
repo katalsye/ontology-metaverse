@@ -10,27 +10,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalScale.x
-      value: 5
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalScale.y
-      value: 5
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalScale.z
-      value: 5
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.1038187
+      value: -90.37766
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.75
+      value: 22.95605
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.70356953
+      value: 58.131813
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_LocalRotation.w
@@ -66,7 +66,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6, type: 2}
     - target: {fileID: 919132149155446097, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: m_Name
-      value: Coffee
+      value: coffee_cup
       objectReference: {fileID: 0}
     - target: {fileID: 2005770763058998634, guid: 2963eea001caa7a458cbffdaf951d0d4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

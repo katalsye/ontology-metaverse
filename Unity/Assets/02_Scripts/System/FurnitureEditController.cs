@@ -188,8 +188,43 @@ public class FurnitureEditController : MonoBehaviour
         // 시작 시 backToClosetBtn은 무조건 숨김 — EnterEditMode()에서만 표시
         if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
 
+        // deskObject 미연결 시 KitchenIsland 자동 탐색
+        if (deskObject == null)
+        {
+            deskObject = GameObject.Find("KitchenIsland")
+                      ?? GameObject.Find("(Prb)KitchenIsland");
+            if (deskObject != null)
+                Debug.Log($"[FurnitureEditController] deskObject 자동 탐색 성공: '{deskObject.name}'");
+            else
+                Debug.LogWarning("[FurnitureEditController] deskObject를 찾지 못했습니다. Inspector에서 직접 연결하세요.");
+        }
+
         // 씬 로드 시점에 미리 한 번 등록 (EnterEditMode 전에도 동작하도록)
         RefreshEditableItems();
+
+        // deskObject가 editableItems에 없으면 재매핑 또는 강제 추가
+        if (deskObject != null)
+        {
+            bool inItems = editableItems != null &&
+                           System.Array.Exists(editableItems, c => c.target == deskObject);
+            if (!inItems && editableItems != null)
+            {
+                // 같은 이름 오브젝트가 이미 등록돼 있으면 deskObject를 그쪽으로 교체
+                foreach (var c in editableItems)
+                    if (c.target != null && string.Equals(c.target.name, deskObject.name,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    { deskObject = c.target; inItems = true; break; }
+            }
+            if (!inItems)
+            {
+                // 그래도 없으면 editableItems에 직접 추가
+                var l = new System.Collections.Generic.List<FurnitureEditConfig>(
+                    editableItems ?? new FurnitureEditConfig[0]);
+                l.Add(new FurnitureEditConfig { target = deskObject, canMove = true, canDesign = true });
+                editableItems = l.ToArray();
+                Debug.Log($"[FurnitureEditController] editableItems에 deskObject '{deskObject.name}' 자동 추가");
+            }
+        }
     }
 
     void Start()
@@ -481,7 +516,12 @@ public class FurnitureEditController : MonoBehaviour
                 // 큰 책상 탭 → 줌인 편집 모드 진입
                 // (가구 추가 패널 열려있거나 삭제 모드 중에는 차단)
                 bool panelOpen = addFurniturePanel != null && addFurniturePanel.activeInHierarchy;
-                if (deskObject != null && cfg.target == deskObject && !panelOpen && !_deleteMode)
+                bool isDeskTarget = deskObject != null && cfg.target == deskObject;
+                // 참조 불일치 방어: 이름으로도 체크
+                if (!isDeskTarget && deskObject != null && cfg.target != null &&
+                    string.Equals(cfg.target.name, deskObject.name, System.StringComparison.OrdinalIgnoreCase))
+                { isDeskTarget = true; deskObject = cfg.target; }
+                if (isDeskTarget && !panelOpen && !_deleteMode)
                 {
                     EnterDeskEditMode();
                     return;
