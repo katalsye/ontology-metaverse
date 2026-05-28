@@ -25,13 +25,22 @@ public class HatSelectionUI : MonoBehaviour
     void Start()
     {
         // TODO: DB에서 구매 목록 받아오면 SetPurchased() 호출
-        // 임시: 전부 구매 완료로 초기화
+        // 현재는 HatCatalog.isPurchased 값 그대로 사용
         _purchased = new bool[catalog.hats.Length];
-        for (int i = 0; i < _purchased.Length; i++)
-            _purchased[i] = true;
+        for (int i = 0; i < catalog.hats.Length; i++)
+            _purchased[i] = catalog.hats[i].isPurchased;
 
         BuildGrid();
         Select(0);
+    }
+
+    /// <summary>현재 선택된 모자가 구매된 것인지 반환 (없음=0번은 항상 true)</summary>
+    public bool IsCurrentHatPurchased()
+    {
+        if (_selected == 0) return true;               // 모자 없음
+        int hatIdx = _selected - 1;
+        if (hatIdx < 0 || hatIdx >= _purchased.Length) return true;
+        return _purchased[hatIdx];
     }
 
     // DB 연결 후 외부에서 구매 여부 주입
@@ -78,7 +87,7 @@ public class HatSelectionUI : MonoBehaviour
         if (lockOverlay != null) lockOverlay.gameObject.SetActive(!isPurchased);
 
         int idx = index;
-        btn.interactable = isPurchased;
+        // 미구매도 조회는 가능 — 저장 시점에 구매 여부 체크
         btn.onClick.AddListener(() => Select(idx));
 
         var colors = btn.colors;

@@ -28,8 +28,8 @@ public class ClosetUI : MonoBehaviour
     public GameObject furnitureRoot;
 
     [Header("가구 캐러셀")]
-    [Tooltip("furniturePanel 안의 FurnitureCarouselUI — 카메라 타겟 및 초기화를 대신 처리")]
-    public FurnitureCarouselUI furnitureCarousel;
+    [Tooltip("furniturePanel 안의 FurnitureCarouselController — 카메라 타겟 및 초기화를 대신 처리")]
+    public FurnitureCarouselController furnitureCarousel;
 
     [Header("씬")]
     [Tooltip("3D 방 씬 이름 — Build Settings에 등록된 이름과 정확히 일치해야 함")]
