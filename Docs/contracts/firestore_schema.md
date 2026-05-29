@@ -2,7 +2,7 @@
 
 > 유니티팀(노성민, 이서윤) 인터페이스 명세서  
 > 작성: 김무성 (온톨로지 담당)  
-> 최종 갱신: 2026-05-21 (placementZone 기반 v0.1)
+> 최종 갱신: 2026-05-29 (rewardAmount 정책 확정 v0.2)
 
 ---
 
@@ -70,12 +70,14 @@ Unity가 실시간 리스너(Firestore Snapshot)로 수신. 추론 실행 후 `m
     {
       "title": "30분 산책하기",
       "questType": "삶 개선형",
+      "rewardAmount": 50,
       "isCompleted": false,
       "createdAt": "2026-05-21T12:00:00"
     },
     {
       "title": "오늘 스타벅스 강남점 누구랑 갔어?",
       "questType": "데이터 보완형",
+      "rewardAmount": 30,
       "isCompleted": false,
       "createdAt": "2026-05-21T12:00:00"
     }
@@ -89,6 +91,7 @@ Unity가 실시간 리스너(Firestore Snapshot)로 수신. 추론 실행 후 `m
 |------|------|---------|------|
 | `title` | `string` | — | 퀘스트 표시 문구. 사용자에게 그대로 노출 |
 | `questType` | `string` | `"삶 개선형"`, `"데이터 보완형"` | 퀘스트 분류 |
+| `rewardAmount` | `integer` | `30`, `50` | 완료 시 지급 코인. 데이터 보완형=30, 삶 개선형=50 ✅ |
 | `isCompleted` | `boolean` | `true`, `false` | Android 앱에서 완료 처리 후 `true`로 갱신 |
 | `createdAt` | `string` | ISO 8601 | 생성 시각 (`"2026-05-21T12:00:00"` 형식) |
 
@@ -126,7 +129,7 @@ persona는 `users` 문서 내 중첩 필드로 저장. `merge:true`.
 
 ## 미확정 항목 ❓
 
-| 항목 | 현황 | 필요한 합의 |
+| 항목 | 현황 | 필요한 합의 |ls Functions/serviceAccountKey.json
 |------|------|------------|
 | 같은 `placementZone`에 복수 오브젝트 | ❓ 미정 | Unity에서 자동 배치 조정 방식 결정 필요 |
 | `room_objects` 누적 vs 초기화 | ✅ `merge:true` 누적 | 확정 |

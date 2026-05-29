@@ -43,6 +43,36 @@ def _err(msg: str) -> str:
     return f"{_RED}✗ {msg}{_RESET}"
 
 
+def _read_triple_fields(t: dict) -> tuple[str, str, str, str]:
+    """subject/predicate/object 또는 s/p/o 약식 필드명 양쪽 지원.
+
+    Returns: (subj, pred, obj, fmt_hint)
+      fmt_hint — 약식 필드명 사용 시 "(필드: s/p/o)" 형태 문자열, 정식 필드면 빈 문자열.
+    """
+    if t.get("subject") is not None:
+        subj_key, subj = "subject", str(t["subject"])
+    else:
+        subj_key, subj = "s", str(t.get("s", ""))
+
+    if t.get("predicate") is not None:
+        pred_key, pred = "predicate", str(t["predicate"])
+    else:
+        pred_key, pred = "p", str(t.get("p", ""))
+
+    if t.get("object") is not None:
+        obj_key, obj = "object", str(t["object"])
+    elif t.get("o") is not None:
+        obj_key, obj = "o", str(t["o"])
+    elif t.get("object_uri") is not None:
+        obj_key, obj = "object_uri", str(t["object_uri"])
+    else:
+        obj_key, obj = "object", ""
+
+    short = {subj_key, pred_key, obj_key} & {"s", "p", "o"}
+    fmt_hint = f"  (필드: {subj_key}/{pred_key}/{obj_key})" if short else ""
+    return subj, pred, obj, fmt_hint
+
+
 def _header(title: str) -> None:
     print(f"\n{_BOLD}{'=' * 52}{_RESET}")
     print(f"{_BOLD}  {title}{_RESET}")
@@ -104,10 +134,8 @@ def check_temp_triples(uid: str, db: Any = None) -> list[dict]:
     preview_n = min(5, count)
     print(f"  [처음 {preview_n}개 미리보기]")
     for i, t in enumerate(triples[:preview_n]):
-        subj = t.get("subject", "")
-        pred = t.get("predicate", "")
-        obj  = t.get("object", t.get("object_uri", ""))
-        print(f"  {i + 1}. {subj!r}  —[{pred}]→  {obj!r}")
+        subj, pred, obj, fmt_hint = _read_triple_fields(t)
+        print(f"  {i + 1}. {subj!r}  —[{pred}]→  {obj!r}{fmt_hint}")
 
     print()
 
@@ -118,8 +146,7 @@ def check_temp_triples(uid: str, db: Any = None) -> list[dict]:
         unknown_preds: set[str] = set()
 
         for t in triples:
-            subj = t.get("subject", "")
-            pred = t.get("predicate", "")
+            subj, pred, _, _ = _read_triple_fields(t)
 
             if subj and not subj.startswith("http"):
                 invalid_subjects.add(subj)

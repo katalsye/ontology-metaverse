@@ -413,12 +413,14 @@ def _save_results_to_firestore(
             is_done  = g.value(quest, PROD.isCompleted)
             created  = g.value(quest, PROD.createdAt)
             title_str = str(title) if title else ""
+            reward_amt = g.value(quest, PROD.rewardAmount)
             quests_payload.append({
-                "title":       title_str,
-                "questType":   str(q_type) if q_type else "",
+                "title":        title_str,
+                "questType":    str(q_type) if q_type else "",
+                "rewardAmount": int(reward_amt.toPython()) if reward_amt is not None else 0,
                 # Literal.toPython() → Python bool/int/float 변환 (str 변환 금지)
-                "isCompleted": is_done.toPython() if is_done is not None else False,
-                "createdAt":   str(created) if created else "",
+                "isCompleted":  is_done.toPython() if is_done is not None else False,
+                "createdAt":    str(created) if created else "",
             })
             new_quest_titles.append(title_str)
         db.collection("quests").document(uid).set(

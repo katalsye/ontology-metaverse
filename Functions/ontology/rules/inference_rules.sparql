@@ -86,6 +86,7 @@ CONSTRUCT {
     _:q   a prod:Quest ;
           prod:title "가벼운 스트레칭 10분" ;
           prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -117,6 +118,7 @@ CONSTRUCT {
     _:q   a prod:Quest ;
           prod:title "30분 산책하기" ;
           prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
     _:obj_sedentary a prod:RoomObject ;
@@ -191,6 +193,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title "오후엔 디카페인 어때요?" ;
         prod:questType "삶 개선형" ;
+        prod:rewardAmount 50 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -220,6 +223,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -245,6 +249,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -275,6 +280,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -312,6 +318,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -343,6 +350,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -371,6 +379,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -448,6 +457,7 @@ CONSTRUCT {
     _:q a prod:Quest ;
         prod:title "날씨가 맑아요! 지금 딱 산책하기 좋아요" ;
         prod:questType "삶 개선형" ;
+        prod:rewardAmount 50 ;
         prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -625,6 +635,7 @@ CONSTRUCT {
     _:q   a prod:Quest ;
           prod:title "이번 주 활동량이 많이 줄었어요. 짧은 산책부터 시작해볼까요?" ;
           prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
 }
@@ -874,6 +885,7 @@ CONSTRUCT {
     _:q   a prod:Quest ;
           prod:title "오늘 힘든 일 있었어?" ;
           prod:questType "데이터 보완형" ;
+          prod:rewardAmount 30 ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
     _:obj_stress a prod:RoomObject ;
@@ -977,6 +989,7 @@ CONSTRUCT {
     _:q   a prod:Quest ;
           prod:title "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?" ;
           prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
           prod:isCompleted false .
     ?user prod:receivesQuest _:q .
     _:obj_calendar a prod:RoomObject ;

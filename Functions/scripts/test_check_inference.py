@@ -134,6 +134,72 @@ class TestCheckTempTriples(unittest.TestCase):
         all_output = " ".join(str(c) for c in mock_print.call_args_list)
         self.assertIn("user_plain", all_output)
 
+    # ── s/p/o 약식 필드명 호환성 ──────────────────────────────────────────────
+
+    def test_spo_format_returns_triples(self):
+        """s/p/o 약식 필드명으로 저장된 트리플도 정상 반환."""
+        items = [
+            {"s": "http://7team.dev/ontology#u1", "p": "slept", "o": "6.5"},
+            {"s": "http://7team.dev/ontology#u1", "p": "walked", "o": "3000"},
+        ]
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=None):
+            result = check_inference.check_temp_triples("uid1", db=db)
+        self.assertEqual(len(result), 2)
+
+    def test_spo_format_preview_shows_hint(self):
+        """s/p/o 약식 필드 사용 시 미리보기에 필드명 힌트 포함."""
+        items = [{"s": "http://7team.dev/ontology#u1", "p": "slept", "o": "5.0"}]
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=None):
+            with patch("builtins.print") as mock_print:
+                check_inference.check_temp_triples("uid1", db=db)
+        all_output = " ".join(str(c) for c in mock_print.call_args_list)
+        self.assertIn("s/p/o", all_output)
+
+    def test_spo_format_subject_uri_validated(self):
+        """s/p/o 약식 필드에서도 절대 URI 아닌 subject 경고."""
+        items = [{"s": "plain_user", "p": "slept", "o": "5.0"}]
+        prop_map = {"slept": "http://7team.dev/ontology#slept"}
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=prop_map):
+            with patch("builtins.print") as mock_print:
+                check_inference.check_temp_triples("uid1", db=db)
+        all_output = " ".join(str(c) for c in mock_print.call_args_list)
+        self.assertIn("plain_user", all_output)
+
+    def test_spo_object_uri_fallback(self):
+        """object_uri 필드도 object 값으로 인식."""
+        items = [{"subject": "http://7team.dev/ontology#u1", "predicate": "visited",
+                  "object_uri": "http://7team.dev/ontology#cafe_gangnam"}]
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=None):
+            with patch("builtins.print") as mock_print:
+                check_inference.check_temp_triples("uid1", db=db)
+        all_output = " ".join(str(c) for c in mock_print.call_args_list)
+        self.assertIn("cafe_gangnam", all_output)
+
+    def test_mixed_format_returns_all(self):
+        """subject/predicate/object 정식 + s/p/o 약식 혼합 배치도 모두 반환."""
+        items = [
+            {"subject": "http://7team.dev/ontology#u1", "predicate": "slept", "object": "7.0"},
+            {"s": "http://7team.dev/ontology#u1", "p": "walked", "o": "5000"},
+        ]
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=None):
+            result = check_inference.check_temp_triples("uid1", db=db)
+        self.assertEqual(len(result), 2)
+
+    def test_full_format_preview_no_hint(self):
+        """subject/predicate/object 정식 필드 사용 시 힌트 미출력."""
+        items = [{"subject": "http://7team.dev/ontology#u1", "predicate": "slept", "object": "7.0"}]
+        db = _db_for_temp(items)
+        with patch("check_inference._load_prop_map", return_value=None):
+            with patch("builtins.print") as mock_print:
+                check_inference.check_temp_triples("uid1", db=db)
+        all_output = " ".join(str(c) for c in mock_print.call_args_list)
+        self.assertNotIn("필드:", all_output)
+
 
 # ── trigger_inference ─────────────────────────────────────────────────────────
 

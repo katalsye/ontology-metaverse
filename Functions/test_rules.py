@@ -251,6 +251,10 @@ def test_burnout_warning(rules: dict[str, str]) -> bool:
                 (user, PROD.hasState, PROD.BurnoutWarning) in g)
     ok2 = check("→ '가벼운 스트레칭 10분' 퀘스트 생성",
                 "가벼운 스트레칭 10분" in quest_titles(g))
+    results.append(check("→ '가벼운 스트레칭 10분' 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "가벼운 스트레칭 10분")))
     results += [ok1, ok2]
 
     # 반례 A: FatigueRisk 없음 → 미생성
@@ -300,6 +304,10 @@ def test_sedentary_pattern(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.SedentaryPattern) in g))
     results.append(check("→ '30분 산책하기' 퀘스트 생성",
                          "30분 산책하기" in quest_titles(g)))
+    results.append(check("→ '30분 산책하기' 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "30분 산책하기")))
     results.append(check("→ 퀘스트가 User에 연결됨",
                          any((q, PROD.title, Literal("30분 산책하기")) in g
                              for q in g.objects(user, PROD.receivesQuest))))
@@ -447,6 +455,10 @@ def test_late_caffeine_sleep_quality(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["late_caffeine_sleep_quality"])
     results.append(check("수면질 55 + 오후 카페 → '오후엔 디카페인 어때요?' 퀘스트",
                          "오후엔 디카페인 어때요?" in quest_titles(g)))
+    results.append(check("→ '오후엔 디카페인 어때요?' 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "오후엔 디카페인 어때요?")))
 
     # 반례 A: 수면질 70 (≥60) → 미생성
     g = load_base_graph()
@@ -489,6 +501,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["missing_companion"])
     results.append(check("companion 없는 위치 → '오늘 스타벅스 누구랑 갔어?' 퀘스트",
                          "오늘 스타벅스 누구랑 갔어?" in quest_titles(g)))
+    results.append(check("→ '오늘 스타벅스 누구랑 갔어?' 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "오늘 스타벅스 누구랑 갔어?")))
 
     # 반례 A: companion 있음
     g = load_base_graph()
@@ -566,6 +582,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["missing_emotion"])
     results.append(check("emotion 없는 Activity → '오늘 독서 어떤 기분이었어?' 퀘스트",
                          "오늘 독서 어떤 기분이었어?" in quest_titles(g)))
+    results.append(check("→ '오늘 독서 어떤 기분이었어?' 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "오늘 독서 어떤 기분이었어?")))
 
     # 반례 A: emotion 있음
     g = load_base_graph()
@@ -633,6 +653,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["missing_purpose"])
     results.append(check("3회 방문 + purpose 없음 → '도서관에 자주 가는 이유가 있어?' 퀘스트",
                          "도서관에 자주 가는 이유가 있어?" in quest_titles(g)))
+    results.append(check("→ '도서관에 자주 가는 이유가 있어?' 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "도서관에 자주 가는 이유가 있어?")))
 
     # 엣지 C1: 5회 방문 중 3회는 purpose 있음, 2회는 없음 → 퀘스트 생성 (EXISTS 검증)
     g = load_base_graph()
@@ -699,6 +723,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["missing_music_mood"])
     results.append(check("mood 없는 MusicListening → '요즘 재즈 음악 자주 듣네...' 퀘스트",
                          any("재즈" in t for t in quest_titles(g))))
+    results.append(check("→ 음악 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if "재즈" in str(g.value(q, PROD.title) or ""))))
 
     # 엣지 D1: 같은 장르 4회 중 2회만 mood 있음 → GROUP BY로 퀘스트 1개
     g = load_base_graph()
@@ -740,6 +768,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     title = "어젯밤 잠이 잘 안 왔어? 이유가 있었어?"
     results.append(check("수면질 50 + cause 없음 → 수면원인 퀘스트 생성",
                          title in quest_titles(g)))
+    results.append(check("→ 수면원인 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == title)))
 
     # 중복 방지: 같은 규칙 재실행 → 퀘스트 1개 유지
     apply_rule(g, rules["missing_sleep_cause"])
@@ -799,6 +831,10 @@ def test_blank_node_detection(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["missing_event_review"])
     results.append(check("종료 이벤트 + review 없음 → '팀 미팅 어땠어?' 퀘스트",
                          "팀 미팅 어땠어?" in quest_titles(g)))
+    results.append(check("→ '팀 미팅 어땠어?' 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "팀 미팅 어땠어?")))
 
     # 반례 A: 종료된 이벤트지만 review 이미 존재 → 퀘스트 미생성
     g = load_base_graph()
@@ -959,6 +995,10 @@ def test_indoor_day_pattern(rules: dict[str, str]) -> bool:
     apply_rule(g, rules["sunny_indoor_quest"])
     results.append(check("IndoorDayPattern + 맑은 날씨 → 산책 강화 퀘스트",
                          "날씨가 맑아요! 지금 딱 산책하기 좋아요" in quest_titles(g)))
+    results.append(check("→ 산책 강화 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "날씨가 맑아요! 지금 딱 산책하기 좋아요")))
     # 반례: IndoorDayPattern 없음
     g = load_base_graph()
     user = _add_user(g, "r14b")
@@ -1105,6 +1145,10 @@ def test_causal_chain(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.BurnoutWarning) in g))
     results.append(check("→ 활동량 감소 퀘스트 생성",
                          any("이번 주 활동량" in t for t in quest_titles(g))))
+    results.append(check("→ 활동량 감소 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if "이번 주 활동량" in str(g.value(q, PROD.title) or ""))))
 
     # 전체 체인 순서대로 실행 (10→11→12→13)
     print("  --- 전체 체인 순서 실행 ---")
@@ -1731,6 +1775,10 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.StressIndicator) in g))
     results.append(check("→ '오늘 힘든 일 있었어?' 퀘스트 생성",
                          "오늘 힘든 일 있었어?" in quest_titles(g)))
+    results.append(check("→ '오늘 힘든 일 있었어?' 퀘스트 rewardAmount=30",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if str(g.value(q, PROD.title)) == "오늘 힘든 일 있었어?")))
     results.append(check("→ RoomObject(stress_ball) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "stress_ball"
                              for obj in g.objects(user, PROD.hasRoomObject))))
@@ -1987,6 +2035,10 @@ def test_schedule_overload(rules: dict[str, str]) -> bool:
                          (user, PROD.hasState, PROD.ScheduleOverload) in g))
     results.append(check("→ 휴식 권장 퀘스트 생성",
                          any("오늘 일정이 빡빡해 보여요" in t for t in quest_titles(g))))
+    results.append(check("→ 휴식 권장 퀘스트 rewardAmount=50",
+                         any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                             for q in g.objects(user, PROD.receivesQuest)
+                             if "오늘 일정이 빡빡해 보여요" in str(g.value(q, PROD.title) or ""))))
     results.append(check("→ RoomObject(calendar_wall) 생성",
                          any(str(g.value(obj, PROD.objectType)) == "calendar_wall"
                              for obj in g.objects(user, PROD.hasRoomObject))))

@@ -244,6 +244,12 @@ class TestOntologyPipeline(unittest.TestCase):
                         "Rule 2: BurnoutWarning 상태 생성 실패")
         self.assertIn("가벼운 스트레칭 10분", self._quest_titles(g),
                       "Rule 2: BurnoutWarning 퀘스트 생성 실패")
+        self.assertTrue(
+            any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                for q in g.objects(user, PROD.receivesQuest)
+                if str(g.value(q, PROD.title)) == "가벼운 스트레칭 10분"),
+            "Rule 2: BurnoutWarning 퀘스트 rewardAmount≠50"
+        )
         print(f"  [{PASS}] FatigueRisk → BurnoutWarning 체인 성공")
 
     def test_scenario_2_sedentary_pattern_with_duckdb(self):
@@ -274,6 +280,12 @@ class TestOntologyPipeline(unittest.TestCase):
                         "Rule 3: SedentaryPattern 상태 생성 실패")
         self.assertIn("30분 산책하기", self._quest_titles(g),
                       "Rule 3: SedentaryPattern 퀘스트 생성 실패")
+        self.assertTrue(
+            any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                for q in g.objects(user, PROD.receivesQuest)
+                if str(g.value(q, PROD.title)) == "30분 산책하기"),
+            "Rule 3: SedentaryPattern 퀘스트 rewardAmount≠50"
+        )
         print(f"  [{PASS}] DuckDB 집계 → SedentaryPattern 성공 (연속 4일)")
 
     def test_scenario_3_place_habit_and_room_object(self):
@@ -318,6 +330,12 @@ class TestOntologyPipeline(unittest.TestCase):
         # 검증
         self.assertIn("오후엔 디카페인 어때요?", self._quest_titles(g),
                       "Rule 5: 카페인-수면 퀘스트 생성 실패")
+        self.assertTrue(
+            any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                for q in g.objects(user, PROD.receivesQuest)
+                if str(g.value(q, PROD.title)) == "오후엔 디카페인 어때요?"),
+            "Rule 5: 카페인-수면 퀘스트 rewardAmount≠50"
+        )
         print(f"  [{PASS}] 카페인-수면 인과관계 퀘스트 생성 성공")
 
     def test_scenario_5_blank_node_companion(self):
@@ -341,6 +359,13 @@ class TestOntologyPipeline(unittest.TestCase):
         self.assertTrue(
             any("스타벅스 강남점" in t and "누구랑 갔어?" in t for t in quest_titles),
             "Rule 6: missing_companion 퀘스트 생성 실패"
+        )
+        self.assertTrue(
+            any(int(g.value(q, PROD.rewardAmount) or 0) == 30
+                for q in g.objects(user, PROD.receivesQuest)
+                if "스타벅스 강남점" in str(g.value(q, PROD.title) or "")
+                and "누구랑 갔어?" in str(g.value(q, PROD.title) or "")),
+            "Rule 6: missing_companion 퀘스트 rewardAmount≠30"
         )
         print(f"  [{PASS}] 빈 노드 감지 → 보완형 퀘스트 생성 성공")
 
@@ -425,6 +450,12 @@ class TestOntologyPipeline(unittest.TestCase):
         self.assertTrue(
             any("이번 주 활동량" in t for t in quest_titles),
             "Rule 13: 인과 체인 종점 퀘스트 생성 실패"
+        )
+        self.assertTrue(
+            any(int(g.value(q, PROD.rewardAmount) or 0) == 50
+                for q in g.objects(user, PROD.receivesQuest)
+                if "이번 주 활동량" in str(g.value(q, PROD.title) or "")),
+            "Rule 13: 인과 체인 퀘스트 rewardAmount≠50"
         )
         print(f"  [{PASS}] 다단계 인과 체인 4단계 모두 발동 성공")
 
@@ -650,6 +681,16 @@ class TestOntologyPipeline(unittest.TestCase):
                     g.value(obj, PROD.positionX),
                     f"positionX should not exist: {g.value(obj, PROD.objectType)}"
                 )
+
+        # Quest rewardAmount 검증 — 모든 Quest는 30 또는 50이어야 함
+        for q in g.objects(user, PROD.receivesQuest):
+            q_title = g.value(q, PROD.title)
+            if q_title:
+                reward = g.value(q, PROD.rewardAmount)
+                self.assertIsNotNone(reward,
+                                     f"Quest missing rewardAmount: {q_title}")
+                self.assertIn(int(reward or 0), (30, 50),
+                              f"Quest rewardAmount should be 30 or 50, got {reward}: {q_title}")
 
         print(f"  [{PASS}] 전체 파이프라인 {len(fired_rules)}개 규칙 발동 성공")
         print(f"    발동된 규칙: {', '.join(fired_rules)}")
