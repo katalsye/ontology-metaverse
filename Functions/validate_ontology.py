@@ -58,6 +58,8 @@ REQUIRED_PROPERTIES = [
     "placeType",
     # RoomObject 배치 영역 (positionX/Y/Z deprecated)
     "placementZone",
+    # Quest 보상 수량 (데이터 보완형=30, 삶 개선형=50)
+    "rewardAmount",
 ]
 
 DISJOINT_PAIRS = [
@@ -95,6 +97,7 @@ RANGE_CONSTRAINTS = [
     ("Weather",   "humidity"),
     ("Location",  "visitCount"),
     ("AppUsage",  "usageDuration"),
+    ("Quest",     "rewardAmount"),
     ("Reward",    "amount"),
     ("GalleryPhoto",    "latitude"),
     ("GalleryPhoto",    "longitude"),

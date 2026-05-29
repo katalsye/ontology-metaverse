@@ -334,6 +334,12 @@ prod:isCompleted a owl:DatatypeProperty ;
     rdfs:domain prod:Quest ;
     rdfs:range  xsd:boolean .
 
+prod:rewardAmount a owl:DatatypeProperty ;
+    rdfs:label   "rewardAmount" ;
+    rdfs:comment "퀘스트 완료 시 지급되는 코인 보상 수량. 데이터 보완형=30, 삶 개선형=50. 형식: 정수." ;
+    rdfs:domain  prod:Quest ;
+    rdfs:range   xsd:integer .
+
 prod:createdAt a owl:DatatypeProperty ;
     rdfs:label   "createdAt" ;
     rdfs:comment "퀘스트 생성 시각. 추론 엔진 실행 시 자동 기록. 형식: xsd:dateTime." ;
@@ -729,6 +735,20 @@ prod:AppUsage rdfs:subClassOf [
         owl:withRestrictions (
             [ xsd:minInclusive "0"^^xsd:integer    ]
             [ xsd:maxInclusive "1440"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Quest.rewardAmount: 0 ~ 1000 (퀘스트 보상 코인)
+prod:Quest rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:rewardAmount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer    ]
+            [ xsd:maxInclusive "1000"^^xsd:integer ]
         )
     ]
 ] .
