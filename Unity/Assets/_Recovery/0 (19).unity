@@ -6198,7 +6198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1027224337
 Transform:
   m_ObjectHideFlags: 0
@@ -9155,8 +9155,8 @@ MonoBehaviour:
   table: {fileID: 4185114172347016242}
   viewHeight: 5
   moveSpeed: 5
-  playerMovement: {fileID: 1639255167}
-  joystickObject: {fileID: 1227914831}
+  playerMovement: {fileID: 0}
+  joystickObject: {fileID: 0}
 --- !u!1 &1623602737
 GameObject:
   m_ObjectHideFlags: 0

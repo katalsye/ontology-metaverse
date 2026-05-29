@@ -1307,8 +1307,8 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             if (col.enabled) furBounds.Encapsulate(col.bounds);
         Vector3 pivotToCenter = furBounds.center - _selected.transform.position;
         Vector3 predictedCenter = targetPos + pivotToCenter;
-        predictedCenter.x = Mathf.Clamp(predictedCenter.x, roomMinX + furBounds.extents.x, roomMaxX - furBounds.extents.x);
-        predictedCenter.z = Mathf.Clamp(predictedCenter.z, roomMinZ + furBounds.extents.z, roomMaxZ - furBounds.extents.z);
+        predictedCenter.x = ClampInRoom(predictedCenter.x, roomMinX + furBounds.extents.x, roomMaxX - furBounds.extents.x);
+        predictedCenter.z = ClampInRoom(predictedCenter.z, roomMinZ + furBounds.extents.z, roomMaxZ - furBounds.extents.z);
         targetPos = predictedCenter - pivotToCenter;
 
         // 가구끼리 겹칠 때 빨간색
@@ -1378,8 +1378,8 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             if (col.enabled) furBounds.Encapsulate(col.bounds);
         Vector3 pivotToCenter = furBounds.center - _selected.transform.position;
         Vector3 predictedCenter = targetPos + pivotToCenter;
-        predictedCenter.x = Mathf.Clamp(predictedCenter.x, roomMinX + furBounds.extents.x, roomMaxX - furBounds.extents.x);
-        predictedCenter.z = Mathf.Clamp(predictedCenter.z, roomMinZ + furBounds.extents.z, roomMaxZ - furBounds.extents.z);
+        predictedCenter.x = ClampInRoom(predictedCenter.x, roomMinX + furBounds.extents.x, roomMaxX - furBounds.extents.x);
+        predictedCenter.z = ClampInRoom(predictedCenter.z, roomMinZ + furBounds.extents.z, roomMaxZ - furBounds.extents.z);
         targetPos = predictedCenter - pivotToCenter;
         targetPos.y = furY; // 아이템 원래 Y 유지
 
@@ -1603,9 +1603,22 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         return cfg?.target;
     }
 
+    // 가구 콜라이더 합산 bounds가 방보다 큰 축에서는 (roomMin+extents) > (roomMax-extents)로
+    // 클램프 범위가 역전돼 Mathf.Clamp가 가구를 한 점에 고정시킨다 → 드래그가 안 먹힘.
+    // (KitchenIsland처럼 메시+OnTable+Chair2를 한 덩어리로 잡으면 합산 bounds가 방 폭을 넘김)
+    // 이 경우 해당 축은 클램프를 건너뛰어 자유 이동을 허용한다.
+    static float ClampInRoom(float value, float min, float max)
+        => min > max ? value : Mathf.Clamp(value, min, max);
+
     FurnitureEditConfig GetConfig(GameObject go)
     {
         if (editableItems == null) return null;
+
+        // furnitureParent 직계 자식만 cfg로 등록되므로, 그 자식(예: KitchenIsland 안의
+        // kitchenIsland 메시 / OnTable / (Prb)Chair2)을 클릭하면 IsChildOf 매칭으로
+        // 컨테이너(KitchenIsland) cfg가 반환된다 → 자동으로 한 덩어리 선택.
+        // 책상 zoom-in(_deskEditMode)에선 editableItems가 OnTable 자식 개별 등록으로
+        // 교체돼 있어 같은 매칭이 개별 아이템을 반환 → zoom-in 개별 이동 유지.
         foreach (var cfg in editableItems)
         {
             if (cfg.target == null) continue;
