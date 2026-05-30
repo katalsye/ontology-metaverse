@@ -849,11 +849,43 @@ public class FurnitureEditController : MonoBehaviour
 
     void ConfirmPositionEdit()
     {
-        // TODO: DB에 가구 위치·종류 저장 (저장 확인 시 서버로 현재 가구 배치 전송)
-        // 현재 선택 아이템이 겹치는 상태면 저장 불가 (천장 모드 포함)
-        if (_isDragOverlap) return;
-        // 방 레벨 가구 전체 겹침 체크 (책상/천장 모드는 별도 공간이므로 스킵)
-        if (!_deskEditMode && !_ceilingEditMode && HasAnyOverlap()) return;
+        Debug.Log($"[ConfirmPositionEdit] 진입 — _isDragOverlap={_isDragOverlap}, _deskEditMode={_deskEditMode}, _ceilingEditMode={_ceilingEditMode}, _selected={(_selected ? _selected.name : "null")}");
+
+        try
+        {
+            // TODO: DB에 가구 위치·종류 저장 (저장 확인 시 서버로 현재 가구 배치 전송)
+            // 현재 선택 아이템이 겹치는 상태면 저장 불가 (천장 모드 포함)
+            if (_isDragOverlap)
+            {
+                Debug.LogWarning($"[ConfirmPositionEdit] ❌ 저장 차단: _isDragOverlap=true (드래그 중 겹침 플래그가 살아있음). 선택='{(_selected ? _selected.name : "null")}'");
+                return;
+            }
+            Debug.Log("[ConfirmPositionEdit] step1 통과 (_isDragOverlap=false)");
+
+            // 방 레벨 가구 전체 겹침 체크 (책상/천장 모드는 별도 공간이므로 스킵)
+            if (!_deskEditMode && !_ceilingEditMode)
+            {
+                Debug.Log("[ConfirmPositionEdit] step2 진입 (방 레벨 — FindAnyOverlapPair 호출 직전)");
+                string overlapPair = FindAnyOverlapPair();
+                Debug.Log($"[ConfirmPositionEdit] step2 반환: overlapPair={overlapPair ?? "null(겹침없음)"}");
+                if (overlapPair != null)
+                {
+                    Debug.LogWarning($"[ConfirmPositionEdit] ❌ 저장 차단: HasAnyOverlap=true. 겹침 쌍: {overlapPair}");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.Log("[ConfirmPositionEdit] step2 스킵 (책상/천장 모드)");
+            }
+
+            Debug.Log("[ConfirmPositionEdit] ✓ 저장 진행 (겹침 없음)");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[ConfirmPositionEdit] 🔥 예외 발생! {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            return;
+        }
 
 
         // TODO: DB 저장
@@ -1679,10 +1711,22 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         return false;
     }
 
-    /// <summary>전체 canMove 가구(+문) 중 겹치는 쌍이 하나라도 있으면 true — 저장 가능 여부 판단용</summary>
-    bool HasAnyOverlap()
+    // 진단용: GameObject의 root까지 경로 ("Root/Child/SubChild")
+    static string GetPath(Transform t)
     {
-        if (editableItems == null) return false;
+        if (t == null) return "<null>";
+        var stack = new System.Collections.Generic.Stack<string>();
+        for (var cur = t; cur != null; cur = cur.parent) stack.Push(cur.name);
+        return string.Join("/", stack);
+    }
+
+    /// <summary>전체 canMove 가구(+문) 중 겹치는 쌍이 하나라도 있으면 true — 저장 가능 여부 판단용</summary>
+    bool HasAnyOverlap() => FindAnyOverlapPair() != null;
+
+    /// <summary>HasAnyOverlap 진단판 — 겹치는 첫 쌍을 "A vs B" 문자열로 반환, 없으면 null</summary>
+    string FindAnyOverlapPair()
+    {
+        if (editableItems == null) return null;
         foreach (var cfg in editableItems)
         {
             if (cfg.target == null || !cfg.canMove) continue; // 이동 가능 가구만 검사 주체
@@ -1698,12 +1742,24 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
                     {
                         if (other.target == null || other.target == cfg.target) continue;
                         if (!IsOverlapTarget(other, cfg.wallMounted)) continue; // 가구 + 문 + 유리(wallMounted 한정)
-                        if (ov.transform.IsChildOf(other.target.transform)) return true;
+                        if (ov.transform.IsChildOf(other.target.transform))
+                        {
+                            // 어느 collider 가 진짜 hit 인지 모든 collider 나열 (숨은 MeshCollider 등 추적용)
+                            var sb = new System.Text.StringBuilder();
+                            sb.AppendLine($"'{cfg.target.name}' (col='{col.name}' type={col.GetType().Name} center={col.bounds.center} size={col.bounds.size}) ↔ '{other.target.name}' (hit='{ov.name}' type={ov.GetType().Name} center={ov.bounds.center} size={ov.bounds.size})");
+                            sb.AppendLine($"  ── '{other.target.name}' 의 모든 collider 목록 ──");
+                            foreach (var c2 in other.target.GetComponentsInChildren<Collider>(true))
+                            {
+                                string isHit = (c2 == ov) ? " ← HIT" : "";
+                                sb.AppendLine($"    [{c2.GetType().Name}] enabled={c2.enabled} on '{c2.gameObject.name}' (path={GetPath(c2.transform)}) center={c2.bounds.center} size={c2.bounds.size} layer={LayerMask.LayerToName(c2.gameObject.layer)}{isHit}");
+                            }
+                            return sb.ToString();
+                        }
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
 
     void SetDragHighlightColor(Color color)
