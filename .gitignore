@@ -130,3 +130,8 @@ Thumbs.db
 # AuthConfig
 Unity/Assets/02_Scripts/Config/AuthConfig.asset
 Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
+
+# Keystore (절대 커밋 금지)
+*.keystore
+*.jks
+keystore.properties
