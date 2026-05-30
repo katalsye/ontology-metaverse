@@ -428,11 +428,11 @@ def _save_results_to_firestore(
         )
         logger.info("Saved %d new quests for uid=%s", len(quests_payload), uid)
 
-    # room_objects — hasRoomObject로 연결된 노드만 수집
-    new_obj_subjects = {s for s, p, _ in new_triples if p == PROD.hasRoomObject}
-    if new_obj_subjects:
+    # room_objects — 그래프에서 직접 순회 (new_triples blank node ID 불일치 버그 수정)
+    all_obj_subjects = list(g.objects(user_uri, PROD.hasRoomObject))
+    if all_obj_subjects:
         room_objs = []
-        for obj in new_obj_subjects:
+        for obj in all_obj_subjects:
             room_objs.append({
                 "objectType":  str(g.value(obj, PROD.objectType) or ""),
                 "inferredFrom": str(g.value(obj, PROD.inferredFrom) or ""),

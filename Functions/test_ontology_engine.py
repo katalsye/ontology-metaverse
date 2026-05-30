@@ -311,6 +311,9 @@ class TestOntologyPipeline(unittest.TestCase):
         obj = room_objects[0]
         obj_type = str(g.value(obj, PROD.objectType))
         self.assertEqual(obj_type, "dumbbell", "RoomObject.objectType 오류")
+        inferred_from = str(g.value(obj, PROD.inferredFrom) or "")
+        self.assertNotEqual(inferred_from, "",
+                            "RoomObject.inferredFrom 빈값 — blank node ID 불일치 버그 재발")
         print(f"  [{PASS}] PlaceHabit → RoomObject 생성 성공 (objectType=dumbbell)")
 
     def test_scenario_4_late_caffeine_sleep_quality(self):
@@ -669,6 +672,16 @@ class TestOntologyPipeline(unittest.TestCase):
             self.assertIn(ot, obj_types,
                           f"RoomObject objectType '{ot}' 생성 실패 (발동된 규칙 기반)\n"
                           f"실제 objectTypes: {obj_types}")
+
+        # objectType 있는 노드에서 inferredFrom 비어있지 않음 확인 (blank node 버그 회귀 방지)
+        typed_objs = [obj for obj in room_objects if g.value(obj, PROD.objectType)]
+        self.assertGreater(len(typed_objs), 0, "RoomObject objectType 있는 노드 없음")
+        for obj in typed_objs:
+            self.assertNotEqual(
+                str(g.value(obj, PROD.inferredFrom) or ""), "",
+                f"RoomObject.inferredFrom 빈값: objectType={g.value(obj, PROD.objectType)} "
+                f"(blank node ID 불일치 버그 재발)"
+            )
 
         # placementZone 존재 확인 + positionX/Y/Z 없음 확인
         for obj in room_objects:
