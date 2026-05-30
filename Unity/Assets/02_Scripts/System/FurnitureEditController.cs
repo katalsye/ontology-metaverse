@@ -155,6 +155,8 @@ public class FurnitureEditController : MonoBehaviour
     private bool _ceilingEditMode = false;
     private System.Collections.Generic.List<(GameObject go, bool wasActive)> _ceilingActivated;
     private FurnitureEditConfig[] _ceilingRoomItems; // 천장 편집 진입 시 방 가구 백업 (겹침 체크용)
+    private System.Collections.Generic.List<(GameObject go, bool wasActive)> _hiddenCeilingItems; // 일반 이동 모드에서 숨긴 천장 가구
+    private System.Collections.Generic.List<(GameObject go, bool wasActive)> _hiddenRoomItems;    // 천장 편집 모드에서 숨긴 방 가구
 
     void Awake()
     {
@@ -820,6 +822,17 @@ public class FurnitureEditController : MonoBehaviour
                     foreach (var anim in cfg.target.GetComponentsInChildren<Animator>()) anim.enabled = false;
                 }
 
+        // 일반 이동 모드: 천장 가구 전부 숨기기 (천장 편집 모드에서 호출된 경우는 제외)
+        if (!_ceilingEditMode && ceilingItemParent != null)
+        {
+            _hiddenCeilingItems = new System.Collections.Generic.List<(GameObject, bool)>();
+            foreach (Transform child in ceilingItemParent)
+            {
+                _hiddenCeilingItems.Add((child.gameObject, child.gameObject.activeSelf));
+                child.gameObject.SetActive(false);
+            }
+        }
+
         // 버튼 기능 + 스프라이트 전환: 추가→회전, 위치이동→저장
         if (addRotateBtn)    { addRotateBtn.onClick.RemoveAllListeners();   addRotateBtn.onClick.AddListener(() => RotateSelected(90f)); SetBtnSprite(addRotateBtn,   spriteRotate); }
         if (moveConfirmBtn)  { moveConfirmBtn.onClick.RemoveAllListeners(); moveConfirmBtn.onClick.AddListener(ConfirmPositionEdit);      SetBtnSprite(moveConfirmBtn, spriteConfirm); }
@@ -842,18 +855,6 @@ public class FurnitureEditController : MonoBehaviour
         // 방 레벨 가구 전체 겹침 체크 (책상/천장 모드는 별도 공간이므로 스킵)
         if (!_deskEditMode && !_ceilingEditMode && HasAnyOverlap()) return;
 
-        // 이동된 모든 canMove 가구에 그리드 스냅 적용
-        // wallMounted(Board 류) / ceilingMounted 가구는 벽·천장 위치가 HandleHangerDrag에서
-        // 정밀하게 계산되므로 그리드 스냅을 적용하지 않음.
-        // 적용 시 X 또는 Z 좌표가 gridCellSize 단위로 반올림되어 벽에서 앞뒤로 밀린다.
-        if (editableItems != null)
-            foreach (var cfg in editableItems)
-                if (cfg.target != null && cfg.canMove && !cfg.wallMounted && !cfg.ceilingMounted)
-                {
-                    var s = SnapToGrid(cfg.target.transform.position);
-                    s.y = cfg.target.transform.position.y;
-                    cfg.target.transform.position = s;
-                }
 
         // TODO: DB 저장
         // 각 editableItems 중 canMove=true인 가구의 position·rotation을 저장
@@ -896,6 +897,14 @@ public class FurnitureEditController : MonoBehaviour
         _isDragOverlap    = false;
         _positionEditMode = false;
         _posSnapshot      = null;
+
+        // 일반 이동 모드에서 숨겼던 천장 가구 복원
+        if (_hiddenCeilingItems != null)
+        {
+            foreach (var (go, wasActive) in _hiddenCeilingItems)
+                if (go != null) go.SetActive(wasActive);
+            _hiddenCeilingItems = null;
+        }
 
         // 버튼 기능 + 스프라이트 복원: 회전→추가, 저장→위치이동
         if (addRotateBtn)   { addRotateBtn.onClick.RemoveAllListeners();   addRotateBtn.onClick.AddListener(OpenAddFurniturePanel);  SetBtnSprite(addRotateBtn,   spriteAdd); }
@@ -1076,6 +1085,16 @@ public class FurnitureEditController : MonoBehaviour
         _ceilingRoomItems = editableItems; // 방 가구 백업 (겹침 체크용)
         _ceilingActivated = new System.Collections.Generic.List<(GameObject, bool)>();
 
+        // 천장 편집 모드: 방 가구(비천장) 전부 숨기기
+        _hiddenRoomItems = new System.Collections.Generic.List<(GameObject, bool)>();
+        if (_ceilingRoomItems != null)
+            foreach (var cfg in _ceilingRoomItems)
+                if (cfg.target != null && !cfg.ceilingMounted)
+                {
+                    _hiddenRoomItems.Add((cfg.target, cfg.target.activeSelf));
+                    cfg.target.SetActive(false);
+                }
+
         // 현재 editableItems 중 ceilingMounted 아이템의 isAdded 플래그를 보존하기 위해 미리 조회
         var addedSet = new System.Collections.Generic.HashSet<GameObject>();
         if (editableItems != null)
@@ -1154,6 +1173,14 @@ public class FurnitureEditController : MonoBehaviour
         if (deactivateItems && _ceilingActivated != null)
             foreach (var (go, wasActive) in _ceilingActivated)
                 if (go != null) go.SetActive(wasActive);
+
+        // 천장 편집 모드에서 숨겼던 방 가구 복원
+        if (_hiddenRoomItems != null)
+        {
+            foreach (var (go, wasActive) in _hiddenRoomItems)
+                if (go != null) go.SetActive(wasActive);
+            _hiddenRoomItems = null;
+        }
 
         _ceilingEditMode  = false;
         _ceilingActivated = null;
@@ -1503,13 +1530,24 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             _selected.transform.rotation *= Quaternion.Euler(0f, 90f, 0f);
         }
 
-        // Renderer bounds로 피벗 → 벽 접촉면 거리 계산 (콜라이더 없어도 항상 존재)
+        // 피벗 → 벽 접촉면 거리 계산: Collider 우선, 없으면 Renderer fallback
+        // (BoxCollider를 Inspector에서 직접 추가한 가구는 그 bounds를 기준으로 정렬)
         Bounds rb = new Bounds(_selected.transform.position, Vector3.zero);
         bool hasBounds = false;
-        foreach (var r in _selected.GetComponentsInChildren<Renderer>())
+        var cols = _selected.GetComponentsInChildren<Collider>();
+        foreach (var c in cols)
         {
-            if (!hasBounds) { rb = r.bounds; hasBounds = true; }
-            else rb.Encapsulate(r.bounds);
+            if (!c.enabled) continue;
+            if (!hasBounds) { rb = c.bounds; hasBounds = true; }
+            else rb.Encapsulate(c.bounds);
+        }
+        if (!hasBounds)
+        {
+            foreach (var r in _selected.GetComponentsInChildren<Renderer>())
+            {
+                if (!hasBounds) { rb = r.bounds; hasBounds = true; }
+                else rb.Encapsulate(r.bounds);
+            }
         }
 
         // wallNormal 부호에 따라 벽 접촉면 edge 선택 후, 그 edge가 wall 표면에 오도록 피벗 보정
