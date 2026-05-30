@@ -40,6 +40,11 @@ public class FurnitureEditController : MonoBehaviour
     public float hangerMinY = 10f;
     public float hangerMaxY = 80f;
 
+    [Header("PostIt 바운더리 보정")]
+    [Tooltip("PostIt(generic_marker)만 콜라이더(바운더리)를 글로벌 Y축으로 위로 올리는 양 (월드 단위).\n0 = 보정 없음. 본체보다 박스가 아래로 내려가 있을 때 양수로 키워서 맞춤")]
+    public float postItColliderYOffset = 0f;
+
+
     [Header("천장 부착 가구 Y (Ceiling 등)")]
     [Tooltip("천장 가구가 이동할 Y 높이 — 실제 천장 내부 표면에 맞게 조정")]
     public float ceilingY = 150f;
@@ -627,6 +632,11 @@ public class FurnitureEditController : MonoBehaviour
         if (furnitureParent != null)
             foreach (Transform child in furnitureParent)
             {
+                // Hanger / Ceiling 컨테이너 자체는 등록하지 않음 — 아래 전용 루프에서 자식을 개별 등록함.
+                // (등록하면 IsChildOf 매칭으로 자식들이 컨테이너 cfg에 묶여 한 덩어리로 움직이게 됨)
+                if (hangerItemParent  != null && child == hangerItemParent)  continue;
+                if (ceilingItemParent != null && child == ceilingItemParent) continue;
+
                 bool isDoor    = child.name.IndexOf("Door",    System.StringComparison.OrdinalIgnoreCase) >= 0;
                 bool isCeiling = child.name.IndexOf("Ceiling", System.StringComparison.OrdinalIgnoreCase) >= 0;
                 // hangerItemParent가 없을 때만 이름 기반 폴백으로 Board 감지
@@ -636,13 +646,17 @@ public class FurnitureEditController : MonoBehaviour
                 // 디폴트: 이름에 "bedlight" 또는 "bedside" 포함된 가구를 추가 가구로 처리 (삭제 버튼 테스트용)
                 bool isAddedDefault = child.name.IndexOf("bedlight", System.StringComparison.OrdinalIgnoreCase) >= 0
                                    || child.name.IndexOf("bedside",  System.StringComparison.OrdinalIgnoreCase) >= 0;
+                EnsureCollider(child.gameObject);
                 list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = !isDoor, canDesign = true, wallMounted = isWallMounted, ceilingMounted = isCeiling, isAdded = addedSet.Contains(child.gameObject) || isAddedDefault });
             }
 
         // hangerItemParent 직계 자식 전부 → wallMounted=true (이름 무관)
         if (hangerItemParent != null)
             foreach (Transform child in hangerItemParent)
+            {
+                EnsureCollider(child.gameObject);
                 list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, wallMounted = true, isAdded = addedSet.Contains(child.gameObject) });
+            }
 
         // wallParent 직계 자식 전부 → canMove=false, canDesign=true
         if (wallParent != null)
@@ -653,7 +667,10 @@ public class FurnitureEditController : MonoBehaviour
         if (ceilingItemParent != null)
             foreach (Transform child in ceilingItemParent)
                 if (child.gameObject.activeSelf)
+                {
+                    EnsureCollider(child.gameObject);
                     list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true, ceilingMounted = true, isAdded = addedSet.Contains(child.gameObject) });
+                }
 
         editableItems = list.ToArray();
     }
@@ -865,9 +882,9 @@ public class FurnitureEditController : MonoBehaviour
 
     void CancelPositionEdit()
     {
-        // 책상/천장 모드는 겹침 무관하게 항상 복원 후 나갈 수 있음
-        // 방 편집 모드는 겹침 있으면 취소 불가 — 먼저 겹침 해소해야 함
-        if (!_deskEditMode && !_ceilingEditMode && HasAnyOverlap()) return;
+        // Cancel은 시작 상태(EditMode 진입 시점) 스냅샷으로 되돌리는 동작이므로
+        // 겹침 여부와 무관하게 항상 허용한다. (겹침 차단은 Confirm/저장 쪽에서만)
+        // 이전엔 HasAnyOverlap 시 return으로 막혀서 빨강 상태에선 X 버튼이 안 먹는 것처럼 보였음.
 
         // 스냅샷으로 전부 복원
         if (_posSnapshot != null)
@@ -950,7 +967,10 @@ public class FurnitureEditController : MonoBehaviour
         var list = new System.Collections.Generic.List<FurnitureEditConfig>();
         foreach (Transform child in itemRoot)
             if (child.gameObject.activeSelf)
+            {
+                EnsureCollider(child.gameObject);
                 list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = true, canDesign = true });
+            }
         editableItems = list.ToArray();
 
         _deskEditMode = true;
@@ -1210,6 +1230,9 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             {
                 if (t.phase == UnityEngine.InputSystem.TouchPhase.Began)
                 {
+                    // UI 위에서 시작된 began은 가구 드래그로 캡처하지 않음
+                    // (Hanger 선택 상태에서 버튼 탭 시 hanger가 버튼 위치로 이동하던 버그 방지)
+                    if (IsPointerOverUI(t.finger.index)) continue;
                     _dragFingerId    = t.finger.index;
                     inputPos         = t.screenPosition;
                     began            = true;
@@ -1217,11 +1240,27 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
                     _waitForNewTouch = false; // 새 터치 시작 → 드래그 허용
                     break;
                 }
-                // Ended/Canceled 터치는 드래그 입력으로 처리하지 않음
+                // Ended/Canceled 터치는 드래그 입력으로 처리하지 않음.
+                // 드래그 중이던 손가락이 떼지면 _dragFingerId를 리셋하고 새 began을 기다리게 함 —
+                // 손가락 인덱스가 재사용될 때 버튼/다른 곳을 누른 새 터치가 직전 드래그를
+                // 이어받아 hanger가 그쪽으로 순간이동하던 버그 방지.
                 if (t.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
-                    t.phase == UnityEngine.InputSystem.TouchPhase.Canceled) continue;
+                    t.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
+                {
+                    if (t.finger.index == _dragFingerId)
+                    {
+                        _dragFingerId    = -1;
+                        _dragOffsetInit  = false;
+                        _waitForNewTouch = true;
+                    }
+                    continue;
+                }
+                // UI 위로 이동한 프레임은 드래그 입력으로 쓰지 않음 (버튼 위에서 멈춤)
                 if (t.finger.index == _dragFingerId && !_waitForNewTouch)
-                { inputPos = t.screenPosition; hasInput = true; break; }
+                {
+                    if (IsPointerOverUI(t.finger.index)) continue;
+                    inputPos = t.screenPosition; hasInput = true; break;
+                }
                 // Began 프레임을 버튼 탭이 소비해서 _dragFingerId가 아직 -1이면 Moved로 캡처
                 // 단, 선택 전환 후 새 Began을 기다리는 중이면 차단
                 // 천장 모드: 이미 누르고 있는 채로 선택될 수 있으므로 _waitForNewTouch 예외 허용
@@ -1239,7 +1278,7 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         }
         else if (Mouse.current != null)
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
+            if (Mouse.current.leftButton.wasPressedThisFrame && !IsPointerOverUI(-1))
             { inputPos = Mouse.current.position.ReadValue(); began = true; hasInput = true; _waitForNewTouch = false; }
             else if (Mouse.current.leftButton.isPressed)
             {
@@ -1259,13 +1298,15 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         Ray ray = _cam.ScreenPointToRay(inputPos);
 
         // 드래그 시작 시점에 터치 위치가 다른 가구 위면 선택 전환 탭이므로 이동 차단
-        // (Hanger는 XZ 위치 기반으로 즉시 벽에 스냅하기 때문에 이 체크가 필수)
         // ※ RaycastAll 사용: 단수 Raycast는 씬 지오메트리를 먼저 히트해 오판할 수 있음
         // ※ ceilingMounted: 카메라가 위를 향하므로 ray가 바닥 가구들을 먼저 통과 — guard 생략
-        if (!_isCeiling && (began || !_dragOffsetInit))
+        // ※ wallMounted(Hanger): _dragOffsetInit을 set하지 않아 매 프레임 guard가 돌게 되는데,
+        //   다른 벽 가구 위로 끌고 가면 그 가구 hit → return으로 이동이 막힘 → guard 생략
+        if (!_isCeiling && (began || (!_isWall && !_dragOffsetInit)))
         {
             RaycastHit[] initHits = Physics.RaycastAll(ray, Mathf.Infinity);
             System.Array.Sort(initHits, (a, b) => a.distance.CompareTo(b.distance));
+            bool hitSelected = false;
             foreach (var initHit in initHits)
             {
                 var hitCfg = GetConfig(initHit.collider.gameObject);
@@ -1273,11 +1314,24 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
                 if (hitCfg.target != _selected)
                 {
                     // 다른 가구가 맞았음 → OnFurnitureClicked가 선택 전환 처리하므로 드래그 생략
-                    _dragFingerId   = -1;
-                    _dragOffsetInit = false;
+                    _dragFingerId    = -1;
+                    _dragOffsetInit  = false;
+                    _waitForNewTouch = true;
                     return;
                 }
+                hitSelected = true;
                 break; // 현재 선택 가구가 먼저 히트 → 드래그 허용
+            }
+
+            // wallMounted(Hanger): began 터치가 선택 가구를 직접 짚지 않았으면 드래그 시작 안 함.
+            // (드래그 중 다른 곳/빈 공간/버튼을 탭하면 hanger가 그 위치로 순간이동하던 버그 방지)
+            // 일반 바닥 가구는 기존 동작 유지(빈 곳 탭-드래그 허용)이라 _isWall에만 적용.
+            if (_isWall && began && !hitSelected)
+            {
+                _dragFingerId    = -1;
+                _dragOffsetInit  = false;
+                _waitForNewTouch = true;
+                return;
             }
         }
 
@@ -1435,6 +1489,21 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         // 회전 먼저 적용 → 이후 bounds가 실제 방향 기준으로 계산됨
         _selected.transform.rotation = Quaternion.LookRotation(wallNormal, Vector3.up);
 
+        // PostIt(generic_marker) 보정 — 이 모델은 종이 면이 mesh local +Y.
+        // 1) Euler(90,0,0): mesh +Y(종이 면) → root +Z(wallNormal) 매핑 (평평하게 벽에 붙임)
+        // 2) Euler(0,90,0): 벽면 내 시계방향 90° 어긋남 1차 보정
+        // 3) Euler(0,90,0): 2차 보정 (+90° 추가 — 총 Y=180°)
+        // ※ Postit.prefab(대P)는 tag=Untagged 유지(태그 변경 시 클릭 불가 버그) →
+        //   CompareTag("PostIt") 로 잡히는 "postit"(소p) 과 이름 "Postit"(대P) 를 OR 로 처리
+        bool isPostIt = _selected.CompareTag("PostIt") ||
+                        string.Equals(_selected.name, "Postit", System.StringComparison.OrdinalIgnoreCase);
+        if (isPostIt)
+        {
+            _selected.transform.rotation *= Quaternion.Euler(90f, 0f, 0f);
+            _selected.transform.rotation *= Quaternion.Euler(0f, 90f, 0f);
+            _selected.transform.rotation *= Quaternion.Euler(0f, 90f, 0f);
+        }
+
         // Renderer bounds로 피벗 → 벽 접촉면 거리 계산 (콜라이더 없어도 항상 존재)
         Bounds rb = new Bounds(_selected.transform.position, Vector3.zero);
         bool hasBounds = false;
@@ -1472,6 +1541,41 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
 
         // 겹침 체크
         bool overlap = OverlapsFurniture(targetPos);
+
+        // 유리(Window) 직접 검사 — Window는 벽 두께 너머(예: 벽 z=140, Window z=155)에
+        // 있을 수 있어 Physics.OverlapBox의 얇은 검사 범위로 안 잡힘. 그래서 벽 평면 위
+        // 2D 겹침(Y + 벽에 평행한 다른 한 축)을 별도로 검사한다.
+        if (!overlap && glassObject != null)
+        {
+            var gc = glassObject.GetComponent<Collider>();
+            if (gc != null && gc.enabled)
+            {
+                Bounds hb = new Bounds(_selected.transform.position, Vector3.zero);
+                bool hasHb = false;
+                foreach (var c in _selected.GetComponentsInChildren<Collider>())
+                {
+                    if (!c.enabled) continue;
+                    if (!hasHb) { hb = c.bounds; hasHb = true; } else hb.Encapsulate(c.bounds);
+                }
+                if (hasHb)
+                {
+                    Bounds gb = gc.bounds;
+                    bool yOver     = hb.min.y <= gb.max.y && hb.max.y >= gb.min.y;
+                    bool planeOver = isXWall
+                        ? (hb.min.z <= gb.max.z && hb.max.z >= gb.min.z)
+                        : (hb.min.x <= gb.max.x && hb.max.x >= gb.min.x);
+                    // 깊이축(가구가 붙은 벽의 법선 축) 근접 검사 — 이게 없으면 Window가 큰 경우
+                    // (예: 110×110) 다른 벽·먼 위치의 보드도 Y+평면 겹침만으로 빨강이 떠버린다.
+                    // 벽 두께 너머 유리 보정용 여유(glassDepthTolerance)만큼만 허용.
+                    const float glassDepthTolerance = 40f;
+                    bool depthNear = isXWall
+                        ? (hb.min.x - glassDepthTolerance <= gb.max.x && hb.max.x + glassDepthTolerance >= gb.min.x)
+                        : (hb.min.z - glassDepthTolerance <= gb.max.z && hb.max.z + glassDepthTolerance >= gb.min.z);
+                    overlap = yOver && planeOver && depthNear;
+                }
+            }
+        }
+
         if (overlap != _isDragOverlap)
         {
             _isDragOverlap = overlap;
@@ -1511,6 +1615,13 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             foreach (var ov in Physics.OverlapBox(center, half, col.transform.rotation, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (ov == null || ov.transform.IsChildOf(_selected.transform)) continue;
+
+                // 유리(Window) 직접 체크 — wallParent 자식이 아니라 editableItems에 등록 안 돼있어도
+                // wallMounted(Hanger) 가구가 유리 위에 오면 빨강 표시.
+                if (isWallMounted && glassObject != null &&
+                    (ov.gameObject == glassObject || ov.transform.IsChildOf(glassObject.transform)))
+                    return true;
+
                 if (editableItems == null) continue;
                 foreach (var cfg in editableItems)
                 {
@@ -1609,6 +1720,49 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
     // 이 경우 해당 축은 클램프를 건너뛰어 자유 이동을 허용한다.
     static float ClampInRoom(float value, float min, float max)
         => min > max ? value : Mathf.Clamp(value, min, max);
+
+    // 손가락/마우스가 UI 위에 있는지 검사. 새 began 입력이 UI 위에서 시작되면 가구 드래그로
+    // 캡처하지 않아야 한다. (Hanger 선택 상태에서 UI 버튼 탭 시 hanger가 버튼 위치로 이동하던 버그)
+    static bool IsPointerOverUI(int fingerId)
+    {
+        var es = UnityEngine.EventSystems.EventSystem.current;
+        if (es == null) return false;
+        return fingerId >= 0 ? es.IsPointerOverGameObject(fingerId) : es.IsPointerOverGameObject();
+    }
+
+    // 등록 가구에 enabled Collider가 하나도 없으면 raycast가 안 맞아 선택 자체가 불가.
+    // (ontology 프리팹들 중 dumbbell, coffee_cup 등 다수가 Collider 미포함으로 임포트됨)
+    // Renderer 합산 bounds 기준 BoxCollider를 자동 부착해 클릭 가능하게 만든다.
+    // AddFurnitureSelectionUI 등 외부에서 새 가구 추가 시 콜라이더 보장용
+    public void EnsureColliderPublic(GameObject go) => EnsureCollider(go);
+
+    void EnsureCollider(GameObject go)
+    {
+        if (go == null) return;
+        foreach (var c in go.GetComponentsInChildren<Collider>())
+            if (c.enabled) return;
+
+        var renderers = go.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return;
+
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+
+        var box = go.AddComponent<BoxCollider>();
+        box.center = go.transform.InverseTransformPoint(b.center);
+        Vector3 s = go.transform.lossyScale;
+        box.size = new Vector3(
+            Mathf.Abs(s.x) > 1e-5f ? b.size.x / Mathf.Abs(s.x) : b.size.x,
+            Mathf.Abs(s.y) > 1e-5f ? b.size.y / Mathf.Abs(s.y) : b.size.y,
+            Mathf.Abs(s.z) > 1e-5f ? b.size.z / Mathf.Abs(s.z) : b.size.z
+        );
+
+        // PostIt(generic_marker)만: 바운더리 박스를 글로벌 Y축으로 위로 올림.
+        // BoxCollider.center는 로컬 좌표라, 월드 +Y 이동량을 로컬 벡터로 변환해 더한다
+        // (PostIt은 회전돼 있어 로컬 Y ≠ 글로벌 Y). 양은 Inspector(postItColliderYOffset)에서 조정.
+        if (go.CompareTag("PostIt") && Mathf.Abs(postItColliderYOffset) > 1e-5f)
+            box.center += go.transform.InverseTransformVector(Vector3.up * postItColliderYOffset);
+    }
 
     FurnitureEditConfig GetConfig(GameObject go)
     {

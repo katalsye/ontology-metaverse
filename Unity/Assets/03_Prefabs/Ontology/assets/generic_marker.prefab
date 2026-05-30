@@ -187,7 +187,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -197,7 +197,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uCD5C\uADFC \uC218\uC601\uC7A5\uC5D0\n\uB2E4\uB140\uC654\uC5B4"
+  m_text: "최근 수영장에\n다녀왔어"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9207151437ad97a4ab11ab2acba56b12, type: 2}
   m_sharedMaterial: {fileID: 8795509825792846734, guid: 9207151437ad97a4ab11ab2acba56b12, type: 2}

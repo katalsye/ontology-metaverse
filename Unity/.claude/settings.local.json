@@ -80,7 +80,25 @@
       "Bash(python /tmp/wavpeak2.py)",
       "Bash(py /tmp/wavpeak2.py)",
       "Bash(python /tmp/peakall.py)",
-      "Bash(py /tmp/peakall.py)"
+      "Bash(py /tmp/peakall.py)",
+      "PowerShell(Copy-Item -Path \"Assets\\\\03_Prefabs\\\\Ontology\\\\generic_marker.prefab\" -Destination \"Assets\\\\03_Prefabs\\\\Ontology\\\\generic_marker.prefab.bak\")",
+      "PowerShell(Copy-Item -Path \"Assets\\\\03_Prefabs\\\\Ontology\\\\generic_marker.prefab.meta\" -Destination \"Assets\\\\03_Prefabs\\\\Ontology\\\\generic_marker.prefab.meta.bak\")",
+      "Bash(awk '/^v / {n++; if\\(n==1\\){minx=$2;maxx=$2;miny=$3;maxy=$3;minz=$4;maxz=$4} if\\($2<minx\\)minx=$2; if\\($2>maxx\\)maxx=$2; if\\($3<miny\\)miny=$3; if\\($3>maxy\\)maxy=$3; if\\($4<minz\\)minz=$4; if\\($4>maxz\\)maxz=$4} END {printf \"verts=%d\\\\n\", n; printf \"X: %.4f .. %.4f  \\(size %.4f, center %.4f\\)\\\\n\", minx,maxx,maxx-minx,\\(minx+maxx\\)/2; printf \"Y: %.4f .. %.4f  \\(size %.4f, center %.4f\\)\\\\n\", miny,maxy,maxy-miny,\\(miny+maxy\\)/2; printf \"Z: %.4f .. %.4f  \\(size %.4f, center %.4f\\)\\\\n\", minz,maxz,maxz-minz,\\(minz+maxz\\)/2}' heaterready.obj)",
+      "Bash(awk '/^v / {b=int\\($4\\); c[b]++} END {for\\(i=-4;i<=5;i++\\) printf \"z[%3d, %3d\\): %d\\\\n\", i, i+1, c[i]}' heaterready.obj)",
+      "Bash(awk '/^v / {b=int\\($3\\); c[b]++} END {for\\(i=-4;i<=4;i++\\) printf \"y[%3d, %3d\\): %d\\\\n\", i, i+1, c[i]}' heaterready.obj)",
+      "Bash(awk '/^v / && $4<1.5 {n++; if\\(n==1\\){minx=$2;maxx=$2;miny=$3;maxy=$3;minz=$4;maxz=$4} if\\($2<minx\\)minx=$2; if\\($2>maxx\\)maxx=$2; if\\($3<miny\\)miny=$3; if\\($3>maxy\\)maxy=$3; if\\($4<minz\\)minz=$4; if\\($4>maxz\\)maxz=$4} END {printf \"verts=%d  X:%.3f..%.3f\\(%.3f\\)  Y:%.3f..%.3f\\(%.3f\\)  Z:%.3f..%.3f\\(%.3f\\)\\\\n\", n,minx,maxx,maxx-minx,miny,maxy,maxy-miny,minz,maxz,maxz-minz}' heaterready.obj)",
+      "Bash(awk '/^v / && $4>=1.5 {n++; if\\(n==1\\){minx=$2;maxx=$2;miny=$3;maxy=$3;minz=$4;maxz=$4} if\\($2<minx\\)minx=$2; if\\($2>maxx\\)maxx=$2; if\\($3<miny\\)miny=$3; if\\($3>maxy\\)maxy=$3; if\\($4<minz\\)minz=$4; if\\($4>maxz\\)maxz=$4} END {printf \"verts=%d  X:%.3f..%.3f\\(%.3f\\)  Y:%.3f..%.3f\\(%.3f\\)  Z:%.3f..%.3f\\(%.3f\\)\\\\n\", n,minx,maxx,maxx-minx,miny,maxy,maxy-miny,minz,maxz,maxz-minz}' heaterready.obj)",
+      "Bash(awk '/^v / {z=$4; x=$2; y=$3; b=int\\(\\(z+4.0\\)/0.5\\); cnt[b]++; if\\(z<lo[b]||lo[b]==\"\"\\){} ; zmin[b]=\\(zmin[b]==\"\"||z<zmin[b]\\)?z:zmin[b]; zmax[b]=\\(zmax[b]==\"\"||z>zmax[b]\\)?z:zmax[b]; xmn[b]=\\(xmn[b]==\"\"||x<xmn[b]\\)?x:xmn[b]; xmx[b]=\\(xmx[b]==\"\"||x>xmx[b]\\)?x:xmx[b]; ymn[b]=\\(ymn[b]==\"\"||y<ymn[b]\\)?y:ymn[b]; ymx[b]=\\(ymx[b]==\"\"||y>ymx[b]\\)?y:ymx[b]} END { for\\(i=0;i<=30;i++\\) if\\(cnt[i]>0\\) printf \"z[%.2f..%.2f] n=%4d  Xw=%.2f Yh=%.2f\\\\n\", zmin[i], zmax[i], cnt[i], xmx[i]-xmn[i], ymx[i]-ymn[i] }' heaterready.obj)",
+      "Bash(python tmp_obj_edit.py)",
+      "Bash(grep -n -B2 -A1 \"&398310836$\" Assets/01_Scenes/3DRoomScene.unity)",
+      "Bash(python -c ' *)",
+      "Bash(rm -f \"C:\\\\ontology-metaverse\\\\tmp_obj_edit.py\")",
+      "Bash(cp \"heaterready.obj.bak\" \"heaterready.obj\")",
+      "Bash(py --version)",
+      "Bash(python -)",
+      "Bash(cd \"C:/ontology-metaverse/Unity/Assets/04_Models/Office Supplies Low Poly/Assets/Prefabs\")",
+      "Bash(echo -n '__TRACKED_VAR__: ')",
+      "Bash(grep -i ^guid __TRACKED_VAR__.prefab.meta)"
     ]
   }
 }

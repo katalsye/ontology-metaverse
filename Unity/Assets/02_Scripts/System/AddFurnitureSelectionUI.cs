@@ -233,23 +233,32 @@ public class AddFurnitureSelectionUI : MonoBehaviour
         }
         else
         {
-            Transform parent   = ctrl.furnitureParent;
             float centerX = (ctrl.roomMinX + ctrl.roomMaxX) * 0.5f;
             float centerZ = (ctrl.roomMinZ + ctrl.roomMaxZ) * 0.5f;
             Vector3 spawnPos = new Vector3(centerX, ctrl.floorY, centerZ);
 
-            var instance = parent != null
-                ? Instantiate(item.prefab, spawnPos, Quaternion.identity, parent)
-                : Instantiate(item.prefab, spawnPos, Quaternion.identity);
+            // 먼저 부모 없이 instantiate → 인스턴스에서 태그 검사가 가장 신뢰성 있음
+            var instance = Instantiate(item.prefab, spawnPos, Quaternion.identity);
+
+            // PostIt(generic_marker)은 벽 부착 가구 → hangerItemParent 아래에 두고 wallMounted=true 등록
+            bool isPostIt = instance.CompareTag("PostIt");
+            Transform parent = isPostIt && ctrl.hangerItemParent != null
+                ? ctrl.hangerItemParent
+                : ctrl.furnitureParent;
+
+            if (parent != null) instance.transform.SetParent(parent, true);
+
+            ctrl.EnsureColliderPublic(instance);
 
             var list = new System.Collections.Generic.List<FurnitureEditConfig>(
                 ctrl.editableItems ?? new FurnitureEditConfig[0]);
             list.Add(new FurnitureEditConfig
             {
-                target    = instance,
-                canMove   = true,
-                canDesign = true,
-                isAdded   = true
+                target      = instance,
+                canMove     = true,
+                canDesign   = true,
+                wallMounted = isPostIt,
+                isAdded     = true
             });
             ctrl.editableItems = list.ToArray();
         }
