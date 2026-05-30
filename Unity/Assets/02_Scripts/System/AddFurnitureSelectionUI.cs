@@ -115,7 +115,6 @@ public class AddFurnitureSelectionUI : MonoBehaviour
 
         if (catalog == null || catalog.furnitures == null || catalog.furnitures.Length == 0)
         {
-            Debug.LogWarning("[AddFurnitureSelectionUI] catalog이 비어 있습니다.");
             return;
         }
 
@@ -192,14 +191,12 @@ public class AddFurnitureSelectionUI : MonoBehaviour
     {
         if (item.prefab == null)
         {
-            Debug.LogWarning($"[AddFurnitureSelectionUI] '{item.displayName}' prefab이 없습니다.");
             return;
         }
 
         var ctrl = FurnitureEditController.Instance;
         if (ctrl == null)
         {
-            Debug.LogWarning("[AddFurnitureSelectionUI] FurnitureEditController.Instance가 없습니다.");
             return;
         }
 
@@ -208,7 +205,6 @@ public class AddFurnitureSelectionUI : MonoBehaviour
             Transform parent = ctrl.ceilingItemParent;
             if (parent == null)
             {
-                Debug.LogError("[AddFurnitureSelectionUI] ceilingItemParent가 null입니다. Inspector에서 FurnitureEditController의 ceilingItemParent를 연결하세요.");
                 return;
             }
 
@@ -272,6 +268,6 @@ public class AddFurnitureSelectionUI : MonoBehaviour
         else
             ctrl.EnterPositionEditMode();
 
-        Debug.Log($"[AddFurnitureSelectionUI] '{item.displayName}' 생성 완료 (isCeiling={item.isCeiling})");
+        // Debug.Log($"[AddFurnitureSelectionUI] '{item.displayName}' 생성 완료 (isCeiling={item.isCeiling})");
     }
 }

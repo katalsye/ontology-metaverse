@@ -87,8 +87,8 @@ public class ClosetUI : MonoBehaviour
             SceneManager.LoadScene(buildIdx);
         else
         {
-            Debug.LogWarning($"[ClosetUI] '{roomSceneName}' 씬을 Build Settings에서 찾지 못했습니다. " +
-                              "File > Build Settings > Add Open Scenes 에서 해당 씬을 추가하세요.");
+            // Debug.LogWarning($"[ClosetUI] '{roomSceneName}' 씬을 Build Settings에서 찾지 못했습니다. " +
+            //                   "File > Build Settings > Add Open Scenes 에서 해당 씬을 추가하세요.");
             SceneManager.LoadScene(roomSceneName);
         }
     }

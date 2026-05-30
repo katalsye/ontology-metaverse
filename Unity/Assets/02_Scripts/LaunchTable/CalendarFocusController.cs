@@ -114,7 +114,6 @@ public class CalendarFocusController : MonoBehaviour
         {
             pos = _cam.transform.position;
             rot = _cam.transform.rotation;
-            Debug.LogWarning("[CalendarFocusController] calendarObject 미연결");
             return;
         }
 

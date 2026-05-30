@@ -233,7 +233,6 @@ public class WeatherController : MonoBehaviour
         Material sky = GetSkybox(weather, time);
         if (sky == null)
         {
-            Debug.LogWarning($"[WeatherController] 스카이박스 없음: {weather} / {time}");
             return;
         }
         RenderSettings.skybox = sky;
@@ -255,7 +254,6 @@ public class WeatherController : MonoBehaviour
 
         if (preset == null)
         {
-            Debug.LogWarning($"[WeatherController] DWS 프리셋 없음: {weather}");
             return;
         }
 

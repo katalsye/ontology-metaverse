@@ -67,7 +67,6 @@ public class DesignSelectUI : MonoBehaviour
         var config = designConfigs.Find(c => c.furnitureName == furnitureName);
         if (config == null || config.designs == null || config.designs.Count == 0)
         {
-            Debug.Log($"[DesignSelectUI] '{furnitureName}' 디자인 없음 — Inspector에서 추가 필요");
             return;
         }
 
@@ -99,7 +98,6 @@ public class DesignSelectUI : MonoBehaviour
 
     void OnDesignSelected(DesignData design)
     {
-        Debug.Log($"[DesignSelectUI] 선택 — {_currentFurnitureName} / {design.designName}");
 
         // TODO: 실제 가구 메시/머티리얼 교체
         // FurnitureEditController.Instance?.ApplyDesign(_currentFurnitureName, design);

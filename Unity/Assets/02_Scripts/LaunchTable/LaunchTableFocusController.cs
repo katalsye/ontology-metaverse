@@ -115,7 +115,6 @@ public class LaunchTableFocusController : MonoBehaviour
         {
             pos = _cam.transform.position;
             rot = _cam.transform.rotation;
-            Debug.LogWarning("[LaunchTableFocusController] table 미연결");
             return;
         }
 

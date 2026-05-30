@@ -147,7 +147,7 @@ public class CameraController : MonoBehaviour
                 {
                     // EditMode: Ended 시점에 UI 위면 버튼 탭이므로 3D 클릭 처리 생략
                     bool overUI = isEditMode && IsPointerOverButton(touch.screenPosition);
-                    Debug.Log($"[CAM] Touch Ended — isEdit={isEditMode} overUI={overUI} dist={Vector2.Distance(touch.screenPosition, _touchClickStartPos):F1}");
+                    // Debug.Log($"[CAM] Touch Ended — isEdit={isEditMode} overUI={overUI} dist={Vector2.Distance(touch.screenPosition, _touchClickStartPos):F1}");
                     if (!overUI && Vector2.Distance(touch.screenPosition, _touchClickStartPos) < clickMaxDragPx)
                         CheckBoardClick(touch.screenPosition);
                     _dragFingerId = -1;
@@ -174,7 +174,7 @@ public class CameraController : MonoBehaviour
                 bool overUI     = isEditMode ? IsPointerOverButton(mousePos) : IsPointerOverUI(mousePos);
                 bool onJoystick = !isEditMode && IsTouchOnJoystick(mousePos);
                 bool blockByUI  = overUI || onJoystick;
-                Debug.Log($"[CAM] Mouse Released — isEdit={isEditMode} overUI={overUI} blockByUI={blockByUI} dist={Vector2.Distance(mousePos, _mouseClickStartPos):F1}");
+                // Debug.Log($"[CAM] Mouse Released — isEdit={isEditMode} overUI={overUI} blockByUI={blockByUI} dist={Vector2.Distance(mousePos, _mouseClickStartPos):F1}");
                 if (!blockByUI && Vector2.Distance(mousePos, _mouseClickStartPos) < clickMaxDragPx)
                     CheckBoardClick(mousePos);
                 _mouseDragActive = false;
@@ -195,16 +195,13 @@ public class CameraController : MonoBehaviour
         if (RoomModeManager.CurrentMode == RoomMode.EditMode)
         {
             var fec = FurnitureEditController.Instance;
-            Debug.Log($"[CAM][Edit] CheckBoardClick — screenPos={screenPos} fec={fec}");
-            if (fec == null) { Debug.LogWarning("[CAM][Edit] FurnitureEditController.Instance가 null!"); return; }
+            if (fec == null) { return; }
 
             RaycastHit[] editHits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 2000f);
             System.Array.Sort(editHits, (a, b) => a.distance.CompareTo(b.distance)); // 가까운 것 우선
-            Debug.Log($"[CAM][Edit] RaycastAll hits={editHits.Length}");
             foreach (var h in editHits)
             {
                 GameObject target = fec.GetEditTarget(h.collider.gameObject);
-                Debug.Log($"[CAM][Edit]   hit: {h.collider.gameObject.name} dist={h.distance:F1} | target={target?.name ?? "none"}");
                 if (target != null) { fec.OnFurnitureClicked(target); return; }
             }
             fec.OnEmptyClicked();
@@ -222,10 +219,6 @@ public class CameraController : MonoBehaviour
 
         var bfc = BoardFocusController.Instance;
         if (bfc == null) return;
-
-        Debug.Log($"[CAM] Click — hits={hits.Length} bfcState={bfc.State}");
-        foreach (var h in hits)
-            Debug.Log($"[CAM]   hit: {h.collider.gameObject.name} (parent: {h.collider.transform.parent?.name})");
 
         RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null, hHost = null, hSelf = null;
         foreach (var h in hits)
@@ -246,7 +239,6 @@ public class CameraController : MonoBehaviour
             bool hasSelf      = h.collider.GetComponent<PlayerSelfInteraction>() != null
                              || h.collider.GetComponentInParent<PlayerSelfInteraction>() != null;
 
-            Debug.Log($"[CAM]   → {h.collider.gameObject.name} | marker={hasMarker} note={hasNote} board={hasBoard} furniture={hasFurniture} table={hasTable} calendar={hasCalendar} host={hasHost} self={hasSelf}");
 
             if      (hCommentBtn == null && hasMarker)    hCommentBtn = h;
             else if (hPostIt     == null && hasNote)      hPostIt     = h;
@@ -258,7 +250,6 @@ public class CameraController : MonoBehaviour
             else if (hCalendar   == null && hasCalendar)  hCalendar   = h;
         }
 
-        Debug.Log($"[CAM] 감지 결과 — calendar={hCalendar.HasValue} | host={hHost.HasValue} | self={hSelf.HasValue} | cfc={CalendarFocusController.Instance?.State}");
 
         if (hCommentBtn.HasValue && bfc.State == BoardFocusController.FocusState.Board)
         {
@@ -290,13 +281,11 @@ public class CameraController : MonoBehaviour
             if (hfc.State == HostFocusController.FocusState.Free
                 && bfc.State == BoardFocusController.FocusState.Free)
             {
-                Debug.Log("[CAM] → Host 클릭 — 줌인");
                 SaveState();
                 hfc.FocusHost();
             }
             else if (hfc.State == HostFocusController.FocusState.Host)
             {
-                Debug.Log("[CAM] → Host 재클릭 — 줌아웃");
                 hfc.BackToFree();
             }
             return;
@@ -312,8 +301,8 @@ public class CameraController : MonoBehaviour
         var psc = PlayerSelfController.Instance;
         if (hSelf.HasValue && psc != null && bfc.State == BoardFocusController.FocusState.Free)
         {
-            if (!psc.IsOpen) { Debug.Log("[CAM] → 플레이어 자신 클릭 — 줌인 + UI 오픈"); SaveState(); psc.Open(); }
-            else             { Debug.Log("[CAM] → 플레이어 자신 재클릭 — UI 닫기"); psc.Close(); }
+            if (!psc.IsOpen) { SaveState(); psc.Open(); }
+            else             { psc.Close(); }
             return;
         }
         if (psc != null && psc.IsOpen && !hSelf.HasValue)
@@ -327,7 +316,6 @@ public class CameraController : MonoBehaviour
         if (hCalendar.HasValue && bfc.State == BoardFocusController.FocusState.Free
             && cfc != null && cfc.State == CalendarFocusController.FocusState.Free)
         {
-            Debug.Log("[CAM] → 캘린더 클릭 — 줌인");
             SaveState();
             cfc.FocusCalendar();
             return;
@@ -356,8 +344,7 @@ public class CameraController : MonoBehaviour
         {
             // VisitRoom: 작은책상 상호작용 차단
             if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
-            { Debug.Log("[CAM] VisitRoom — 작은책상 차단"); return; }
-            Debug.Log("[CAM] → FocusTable"); SaveState(); ltfc2.FocusTable(); return;
+            { return; }
         }
 
         if (ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Table)
@@ -378,7 +365,7 @@ public class CameraController : MonoBehaviour
                     {
                         // VisitRoom: 남의 방에서는 일기 쓰기 불가
                         if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
-                        { Debug.Log("[CAM] VisitRoom — 일기 쓰기 차단"); return; }
+                        { return; }
                         dui.OpenWriteDiary(); return;
                     }
             }

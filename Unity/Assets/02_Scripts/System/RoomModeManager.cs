@@ -93,7 +93,6 @@ public class RoomModeManager : MonoBehaviour
                 if (commentAddButton != null) commentAddButton.SetActive(false);
                 if (postItManager    != null) postItManager.enabled = false;
                 if (playerSelfController != null) playerSelfController.gameObject.SetActive(true);
-                Debug.Log("[RoomMode] MyRoom 적용");
                 break;
 
             case RoomMode.VisitRoom:
@@ -105,7 +104,6 @@ public class RoomModeManager : MonoBehaviour
                 if (commentAddButton != null) commentAddButton.SetActive(true);
                 if (postItManager    != null) postItManager.enabled = true;
                 if (playerSelfController != null) playerSelfController.gameObject.SetActive(false);
-                Debug.Log("[RoomMode] VisitRoom 적용");
                 break;
 
             case RoomMode.EditMode:
@@ -118,7 +116,6 @@ public class RoomModeManager : MonoBehaviour
                 if (ceilingObject    != null) ceilingObject.SetActive(false);
                 if (playerObject     != null) playerObject.SetActive(false);
                 FurnitureEditController.Instance?.EnterEditMode();
-                Debug.Log("[RoomMode] EditMode 적용");
                 break;
         }
     }

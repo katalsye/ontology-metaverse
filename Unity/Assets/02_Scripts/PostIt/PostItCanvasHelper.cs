@@ -40,11 +40,10 @@ public static class PostItCanvasHelper
                 bc.center = rt.InverseTransformPoint(wb.center);
                 Vector3 ls = rt.InverseTransformVector(wb.size);
                 bc.size = new Vector3(Mathf.Abs(ls.x), Mathf.Abs(ls.y), Mathf.Abs(ls.z));
-                Debug.Log($"[PostItCanvasHelper] '{root.name}' MeshFilter 없음, Renderer.bounds fallback — center={bc.center} size={bc.size}");
             }
             else
             {
-                Debug.LogWarning($"[PostItCanvasHelper] '{root.name}' MeshFilter/Renderer 둘 다 없음 — 콜라이더 기본(1,1,1) 유지");
+                // Debug.LogWarning($"[PostItCanvasHelper] '{root.name}' MeshFilter/Renderer 둘 다 없음 — 콜라이더 기본(1,1,1) 유지");
             }
             return;
         }
@@ -77,6 +76,5 @@ public static class PostItCanvasHelper
         bc.center = rootLocal.center;
         bc.size   = rootLocal.size;
 
-        Debug.Log($"[PostItCanvasHelper] '{root.name}' BoxCollider fit — center={bc.center} size={bc.size} tag={root.tag}");
     }
 }

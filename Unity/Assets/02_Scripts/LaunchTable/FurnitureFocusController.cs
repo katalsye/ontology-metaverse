@@ -18,31 +18,33 @@ public class FurnitureFocusController : MonoBehaviour
     [Header("씬 전환")]
     public float zoomHoldTime = 1f;
 
-    private static readonly (string obj, string scene)[] FurnitureEntries =
+    [System.Serializable]
+    public class FurnitureEntry
     {
-        // TODO: 침대(SingleBed) — VisitRoom에서 막을지 미정. 결정 후 FocusFurniture 차단 로직에 추가
-        ("SingleBed",     "SampleScene"),
-        ("KitchenIsland", "SampleScene"),
-        ("Drawer1",       "Closet"),     // VisitRoom 차단 대상 (옷장)
-        ("Door",          "SampleScene"),
-    };
+        public GameObject target;
+        public string     sceneName;
+        public bool       allowInVisitRoom;  // VisitRoom에서 줌인 허용 여부
+        public bool       zoomOnlyNoScene;   // 줌인만, 씬 전환 없음
+    }
+
+    [Header("가구 목록 (Inspector에서 연결)")]
+    public FurnitureEntry[] furnitureEntries;
 
     public enum State { Free, ZoomingIn, Returning }
     public State CurrentState { get; private set; } = State.Free;
 
-    private Camera     _cam;
-    private Vector3    _camPosTarget;
-    private Quaternion _camRotTarget;
-    private Vector3    _camPosBefore;
-    private Quaternion _camRotBefore;
-    private string     _targetScene;
-    private string     _targetObjName;
+    private Camera              _cam;
+    private Vector3             _camPosTarget;
+    private Quaternion          _camRotTarget;
+    private Vector3             _camPosBefore;
+    private Quaternion          _camRotBefore;
+    private string              _targetScene;
+    private FurnitureInteraction _currentFI;
 
     void Awake()
     {
         Instance = this;
         _cam = Camera.main;
-        Debug.Log("[Furniture] Awake 실행됨");
 
         if (joystickObject == null)
         {
@@ -54,25 +56,23 @@ public class FurnitureFocusController : MonoBehaviour
 
     void Start()
     {
-        foreach (var (objName, sceneName) in FurnitureEntries)
+        if (furnitureEntries == null) return;
+
+        foreach (var entry in furnitureEntries)
         {
-            var obj = GameObject.Find(objName) ?? FindIgnoreCase(objName);
-            if (obj == null)
+            if (entry.target == null) continue;
+
+            if (entry.target.GetComponent<Collider>() == null)
             {
-                Debug.LogWarning($"[Furniture] '{objName}' 오브젝트를 찾지 못함");
-                continue;
+                var col = entry.target.AddComponent<BoxCollider>();
+                FitColliderToBounds(entry.target, col);
             }
 
-            if (obj.GetComponent<Collider>() == null)
-            {
-                var col = obj.AddComponent<BoxCollider>();
-                FitColliderToBounds(obj, col);
-            }
-
-            var fi = obj.GetComponent<FurnitureInteraction>();
-            if (fi == null) fi = obj.AddComponent<FurnitureInteraction>();
-            fi.sceneName = sceneName;
-            Debug.Log($"[Furniture] '{objName}' 등록 완료 → {sceneName}");
+            var fi = entry.target.GetComponent<FurnitureInteraction>();
+            if (fi == null) fi = entry.target.AddComponent<FurnitureInteraction>();
+            fi.sceneName        = entry.sceneName;
+            fi.allowInVisitRoom = entry.allowInVisitRoom;
+            fi.zoomOnlyNoScene  = entry.zoomOnlyNoScene;
         }
     }
 
@@ -95,35 +95,29 @@ public class FurnitureFocusController : MonoBehaviour
 
     public void FocusFurniture(GameObject target)
     {
-        if (CurrentState != State.Free) { Debug.Log("[Furniture] 이미 포커스 중"); return; }
+        if (CurrentState != State.Free) { return; }
 
         var fi = target.GetComponent<FurnitureInteraction>()
                ?? target.GetComponentInParent<FurnitureInteraction>();
         if (fi == null || string.IsNullOrEmpty(fi.sceneName))
-        { Debug.Log($"[Furniture] FurnitureInteraction 없음: {target.name}"); return; }
+        { return; }
 
-        // VisitRoom: Door / KitchenIsland만 허용, 나머지 차단
-        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom
-            && fi.gameObject.name != "Door"
-            && fi.gameObject.name.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) < 0)
-        {
-            Debug.Log($"[Furniture] VisitRoom — {fi.gameObject.name} 차단");
-            return;
-        }
+        // VisitRoom: allowInVisitRoom이 켜진 가구만 허용
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom && !fi.allowInVisitRoom)
+        { return; }
 
         if (_cam == null) _cam = Camera.main;
-        if (_cam == null) { Debug.LogError("[Furniture] Camera.main null"); return; }
+        if (_cam == null) { return; }
 
         _camPosBefore = _cam.transform.position;
         _camRotBefore = _cam.transform.rotation;
-        _targetScene   = fi.sceneName;
-        _targetObjName = fi.gameObject.name;
+        _targetScene  = fi.sceneName;
+        _currentFI    = fi;
 
         CalcViewPoint(target, out _camPosTarget, out _camRotTarget);
 
-        // VisitRoom + KitchenIsland: EditMode 책상 줌인과 동일한 카메라 설정 적용
-        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom &&
-            _targetObjName.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        // zoomOnlyNoScene 가구: EditMode 책상 줌인과 동일한 카메라 설정 적용
+        if (fi.zoomOnlyNoScene)
         {
             var fec = FurnitureEditController.Instance;
             if (fec != null)
@@ -134,8 +128,6 @@ public class FurnitureFocusController : MonoBehaviour
                 _camRotTarget = Quaternion.LookRotation((deskCenter + fec.deskCamLookOffset) - _camPosTarget);
             }
         }
-
-        Debug.Log($"[Furniture] FocusFurniture({target.name}) → target={_camPosTarget}");
 
         CurrentState = State.ZoomingIn;
         LockPlayer(true);
@@ -148,9 +140,8 @@ public class FurnitureFocusController : MonoBehaviour
 
         if (CurrentState != State.ZoomingIn) yield break;
 
-        // VisitRoom에서 KitchenIsland(큰 책상)는 씬 이동 없이 줌인만
-        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom &&
-            _targetObjName.IndexOf("KitchenIsland", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        // zoomOnlyNoScene: 씬 이동 없이 줌인만
+        if (_currentFI != null && _currentFI.zoomOnlyNoScene)
             yield break;
 
         // TODO: 씬 준비되면 각 가구별 실제 씬 이름으로 교체
@@ -189,14 +180,6 @@ public class FurnitureFocusController : MonoBehaviour
     {
         if (playerMovement != null) playerMovement.enabled = !locked;
         if (joystickObject != null) joystickObject.SetActive(!locked);
-    }
-
-    static GameObject FindIgnoreCase(string name)
-    {
-        foreach (var obj in FindObjectsOfType<GameObject>(true))
-            if (string.Equals(obj.name, name, System.StringComparison.OrdinalIgnoreCase))
-                return obj;
-        return null;
     }
 
     void FitColliderToBounds(GameObject obj, BoxCollider col)

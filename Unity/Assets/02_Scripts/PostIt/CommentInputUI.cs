@@ -56,7 +56,6 @@ public class CommentInputUI : MonoBehaviour
             var t = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
             if (t != null) go.AddComponent(t);
             else           go.AddComponent<StandaloneInputModule>();
-            Debug.Log("[CommentInputUI] EventSystem 자동 생성 — UI 클릭 활성화됨");
         }
 
         // 시작 즉시 패널 숨김 — 사용자가 에디터에서 켜둬도 런타임에선 닫힌 상태로 시작
@@ -92,16 +91,13 @@ public class CommentInputUI : MonoBehaviour
 
         if (_addButton == null)
         {
-            Debug.LogWarning("[CommentInputUI] Sticky_note_yellow 못 찾음 — Inspector의 Add Button Object에 직접 연결하세요");
             return;
         }
-        Debug.Log($"[CommentInputUI] 댓글 버튼 연결됨 — '{_addButton.name}' parent={_addButton.transform.parent?.name}");
 
         // 1) UI Button 클릭 연결 — 사용자가 Sticky_note_yellow 안에 넣은 모든 Button을 TogglePanel에 연결
         var uiButtons = _addButton.GetComponentsInChildren<Button>(true);
         foreach (var b in uiButtons)
             b.onClick.AddListener(TogglePanel);
-        Debug.Log($"[CommentInputUI] 댓글 추가 버튼 UI Button {uiButtons.Length}개 onClick 연결");
 
         // 2) 3D 물리 raycast 감지 — CommentButtonMarker + BoxCollider
         if (_addButton.GetComponent<CommentButtonMarker>() == null)
@@ -131,16 +127,13 @@ public class CommentInputUI : MonoBehaviour
                 for (int i = 1; i < 8; i++) local.Encapsulate(rootT.InverseTransformPoint(corners[i]));
                 bc.center = local.center;
                 bc.size   = local.size;
-                Debug.Log($"[CommentInputUI] '{_addButton.name}' BoxCollider 자동 생성 — center={bc.center} size={bc.size}");
             }
             else
             {
-                Debug.LogWarning($"[CommentInputUI] '{_addButton.name}' Renderer 없음 — Inspector에서 BoxCollider를 직접 추가·조정하세요");
             }
         }
         else
         {
-            Debug.Log($"[CommentInputUI] '{_addButton.name}' 기존 콜라이더 사용");
         }
 
         // 3) 댓글 버튼 위에 포스트잇 안 겹치게 — 버튼 위치를 점유 목록에 등록
@@ -149,10 +142,8 @@ public class CommentInputUI : MonoBehaviour
             var rend = PostItCanvasHelper.FindBodyRenderer(_addButton);
             Vector3 occupiedPos = rend != null ? rend.bounds.center : _addButton.transform.position;
             postItManager.MarkOccupied(occupiedPos);
-            Debug.Log($"[CommentInputUI] 댓글 버튼 위치 점유 등록 — {occupiedPos}");
         }
 
-        Debug.Log($"[CommentInputUI] 댓글 추가 버튼 연결 완료 — {_addButton.name}");
     }
 
     // ── 입력 UI 연결 ───────────────────────────────────────────────────────
@@ -176,25 +167,18 @@ public class CommentInputUI : MonoBehaviour
             backgroundButton = backgroundPanel.GetComponent<Button>();
         if (backgroundButton != null)
             backgroundButton.onClick.AddListener(ClosePanel);
-        else
-            Debug.LogWarning("[CommentInputUI] backgroundButton 미연결 — 배경 패널에 Button 컴포넌트를 추가하고 연결하세요");
 
         // 평소엔 둘 다 꺼둠
         if (postitPanel     != null) postitPanel.SetActive(false);
         if (backgroundPanel != null) backgroundPanel.SetActive(false);
-
-        if (postitPanel == null || inputField == null || registerButton == null)
-            Debug.LogWarning("[CommentInputUI] 입력 UI 미연결 — Inspector에서 " +
-                             "postitPanel / inputField / registerButton 연결 필요");
     }
 
     // UI Button.onClick 또는 CameraController(3D raycast)가 호출 — 토글
     public void TogglePanel()
     {
-        Debug.Log($"[CommentInputUI] TogglePanel 호출 — postitPanel연결={postitPanel != null} 현재상태={(postitPanel != null ? postitPanel.activeSelf.ToString() : "null")}");
+        // Debug.Log($"[CommentInputUI] TogglePanel 호출 — postitPanel연결={postitPanel != null} 현재상태={(postitPanel != null ? postitPanel.activeSelf.ToString() : "null")}");
         if (postitPanel == null)
         {
-            Debug.LogWarning("[CommentInputUI] postitPanel 미연결 — Inspector에서 연결하세요");
             return;
         }
 
@@ -240,7 +224,6 @@ public class CommentInputUI : MonoBehaviour
         if (postItManager != null)
         {
             postItManager.AddComment(currentUsername, text);
-            Debug.Log($"[CommentInputUI] 댓글 등록 완료 — 작성자={currentUsername} 내용={text}");
         }
 
         // ════════════════════════════════════════════════════════════════════

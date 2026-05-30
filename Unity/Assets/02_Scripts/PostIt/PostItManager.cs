@@ -103,7 +103,6 @@ public class PostItManager : MonoBehaviour
     {
         if (postItPrefab == null || board == null || materials == null || materials.Length == 0)
         {
-            Debug.LogWarning("[PostItManager] postItPrefab / board / materials 연결 확인 필요");
             return;
         }
         if (_notes.Count >= maxNotes) RemoveOldest();

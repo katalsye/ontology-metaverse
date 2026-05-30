@@ -50,7 +50,6 @@ public class FrameRateController : MonoBehaviour
         QualitySettings.shadowResolution      = shadowRes;
         QualitySettings.shadows               = shadowQ;
 
-        Debug.Log($"[FrameRateController] 품질: {level} | FPS: {fps} | 해상도: {scale}x | 그림자: {shadowQ}");
     }
 
     // 순환 토글 (버튼 하나로 Low→Medium→High→Low)

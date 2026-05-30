@@ -181,28 +181,15 @@ public class FurnitureEditController : MonoBehaviour
                 if (btn.name.IndexOf("back", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     backToClosetBtn = btn;
-                    Debug.Log($"[FurnitureEditController] backToClosetBtn 자동 탐색 성공: '{btn.name}'");
                     break;
                 }
             }
-            if (backToClosetBtn == null)
-                Debug.LogWarning("[FurnitureEditController] backToClosetBtn을 찾지 못했습니다. " +
-                                 "Inspector에서 'Back To Closet Btn' 필드에 Back 버튼을 직접 연결하세요.");
+            // backToClosetBtn == null 경고 로그 제거됨
         }
 
         // 시작 시 backToClosetBtn은 무조건 숨김 — EnterEditMode()에서만 표시
         if (backToClosetBtn) backToClosetBtn.gameObject.SetActive(false);
 
-        // deskObject 미연결 시 KitchenIsland 자동 탐색
-        if (deskObject == null)
-        {
-            deskObject = GameObject.Find("KitchenIsland")
-                      ?? GameObject.Find("(Prb)KitchenIsland");
-            if (deskObject != null)
-                Debug.Log($"[FurnitureEditController] deskObject 자동 탐색 성공: '{deskObject.name}'");
-            else
-                Debug.LogWarning("[FurnitureEditController] deskObject를 찾지 못했습니다. Inspector에서 직접 연결하세요.");
-        }
 
         // 씬 로드 시점에 미리 한 번 등록 (EnterEditMode 전에도 동작하도록)
         RefreshEditableItems();
@@ -227,7 +214,6 @@ public class FurnitureEditController : MonoBehaviour
                     editableItems ?? new FurnitureEditConfig[0]);
                 l.Add(new FurnitureEditConfig { target = deskObject, canMove = true, canDesign = true });
                 editableItems = l.ToArray();
-                Debug.Log($"[FurnitureEditController] editableItems에 deskObject '{deskObject.name}' 자동 추가");
             }
         }
     }
@@ -274,9 +260,9 @@ public class FurnitureEditController : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogError("[FurnitureEditController] 'Closet' 씬이 Build Settings에 등록되지 않았습니다. " +
-                                   "Unity 메뉴 File > Build Settings > Add Open Scenes 에서 " +
-                                   "Assets/01_Scenes/Closet.unity 를 추가하세요.");
+                    // Debug.LogError("[FurnitureEditController] 'Closet' 씬이 Build Settings에 등록되지 않았습니다. " +
+                    //                "Unity 메뉴 File > Build Settings > Add Open Scenes 에서 " +
+                    //                "Assets/01_Scenes/Closet.unity 를 추가하세요.");
                 }
             });
 
@@ -693,7 +679,6 @@ public class FurnitureEditController : MonoBehaviour
         _selected = null;
 
         RestoreMainButtons();
-        Debug.Log("[FurnitureEditController] 추가 가구 삭제 완료");
     }
 
     void SetMainButtonsVisible(bool visible)
@@ -942,7 +927,7 @@ public class FurnitureEditController : MonoBehaviour
         _savedEditCamPosition = editCamPosition;
         _savedEditCamLookAt   = editCamLookAt;
 
-        // 책상 콜라이더 bounds → 이동 가능 범위
+        // 책상 콜라이더 bounds → 이동 가능 범위 (의자 포함 전체)
         Bounds db = new Bounds(deskObject.transform.position, Vector3.zero);
         bool hasBounds = false;
         foreach (var col in deskObject.GetComponentsInChildren<Collider>())
@@ -957,8 +942,25 @@ public class FurnitureEditController : MonoBehaviour
         roomMinZ = db.min.z; roomMaxZ = db.max.z;
         floorY   = db.max.y; // 책상 윗면 Y를 바닥으로 사용
 
-        // 카메라: offset 기반 로우앵글 (Inspector에서 deskCamOffset / deskCamLookOffset 조정)
-        Vector3 deskCenter = db.center;
+        // 카메라 기준점: deskObject 직계 자식 중 XZ 면적이 가장 큰 자식 = 책상 본체
+        // 이름·Inspector 참조 없이 구조로 식별 (의자보다 책상 본체 면적이 훨씬 큼)
+        Vector3 deskCenter = new Vector3(deskObject.transform.position.x, db.center.y, deskObject.transform.position.z);
+        float maxArea = -1f;
+        foreach (Transform child in deskObject.transform)
+        {
+            if (deskItemParent != null && child == deskItemParent) continue;
+            bool hasB = false;
+            Bounds childBounds = new Bounds(child.position, Vector3.zero);
+            foreach (var col in child.GetComponentsInChildren<Collider>())
+            {
+                if (!col.enabled) continue;
+                if (!hasB) { childBounds = col.bounds; hasB = true; }
+                else childBounds.Encapsulate(col.bounds);
+            }
+            if (!hasB) continue;
+            float area = childBounds.size.x * childBounds.size.z;
+            if (area > maxArea) { maxArea = area; deskCenter = childBounds.center; }
+        }
         editCamPosition = deskCenter + deskCamOffset;
         editCamLookAt   = deskCenter + deskCamLookOffset;
 
@@ -1004,7 +1006,6 @@ public class FurnitureEditController : MonoBehaviour
     {
         if (ceilingItemParent == null)
         {
-            Debug.LogError("[FurnitureEditController] EnterCeilingEditMode: ceilingItemParent가 null입니다. Inspector에서 연결하세요.");
             return;
         }
         // 이미 천장 편집 모드 중이면 재진입 방지 (_ceilingRoomItems 덮어씀 방지)
@@ -1012,7 +1013,6 @@ public class FurnitureEditController : MonoBehaviour
         // → ceilingItemParent 자식 목록을 다시 스캔해 editableItems와 _ceilingActivated를 갱신한 뒤 return
         if (_ceilingEditMode)
         {
-            Debug.Log("[FurnitureEditController] EnterCeilingEditMode: 이미 천장 편집 모드 중 — editableItems 재동기화");
             // ceilingItemParent 현재 자식 전부를 editableItems로 재구성 (새로 추가된 가구 반영)
             var addedSetReenter = new System.Collections.Generic.HashSet<GameObject>();
             if (_ceilingActivated != null)
@@ -1100,7 +1100,6 @@ public class FurnitureEditController : MonoBehaviour
         }
         editableItems    = list.ToArray();
         _ceilingEditMode = true;
-        Debug.Log($"[FurnitureEditController] EnterCeilingEditMode: 진입 성공. 천장 가구 {editableItems.Length}개. ceilingCamPosition={ceilingCamPosition}");
 
         // 조이스틱 끄기
         if (joystickObject != null) joystickObject.SetActive(false);

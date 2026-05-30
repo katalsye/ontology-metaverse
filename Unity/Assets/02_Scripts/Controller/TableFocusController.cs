@@ -46,14 +46,6 @@ public class TableFocusController : MonoBehaviour
         _instance = this;
         _cam = Camera.main;
 
-        // table 미연결 시 KitchenIsland 자동 탐색
-        if (table == null)
-        {
-            var go = GameObject.Find("(Prb)KitchenIsland")
-                  ?? GameObject.Find("KitchenIsland");
-            if (go != null) table = go.transform;
-            else            table = transform;
-        }
 
         // playerMovement / joystickObject 미연결 시 자동 탐색
         if (playerMovement == null)
@@ -101,7 +93,7 @@ public class TableFocusController : MonoBehaviour
         _camPosBefore = _cam.transform.position;
         _camRotBefore = _cam.transform.rotation;
 
-        if (table == null) { Debug.LogWarning("[TableFocusController] table 미연결"); return; }
+        if (table == null) { return; }
 
         Vector3 center = table.position;
         var ren = table.GetComponentInChildren<Renderer>();
@@ -112,7 +104,6 @@ public class TableFocusController : MonoBehaviour
 
         IsZoomed = true;
         LockPlayer(true);
-        Debug.Log($"[Table] 줌인 — target={_camPosTarget}");
     }
 
     public void BackToFree()
@@ -123,7 +114,6 @@ public class TableFocusController : MonoBehaviour
         _camRotTarget = _camRotBefore;
         IsZoomed = false;
         LockPlayer(false);
-        Debug.Log("[Table] 줌아웃");
     }
 
     void LockPlayer(bool locked)

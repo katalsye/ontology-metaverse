@@ -84,7 +84,6 @@ public class PlayerSelfController : MonoBehaviour
 
         // TODO: DB에서 기존 inputField 텍스트 불러오기
         // 예: FirebaseManager.Instance.GetSelfText(userId, text => inputField.text = text);
-        Debug.Log("[PlayerSelf] 줌인 + UI 오픈 — TODO: DB에서 텍스트 불러오기");
 
         LoadBalloonTexts();
     }
@@ -95,7 +94,6 @@ public class PlayerSelfController : MonoBehaviour
 
         // TODO: 현재 inputField.text를 DB에 저장
         // 예: FirebaseManager.Instance.SaveSelfText(userId, inputField.text);
-        Debug.Log($"[PlayerSelf] UI 닫힘 — TODO: DB에 저장 | text={inputField?.text}");
 
         if (selfUI != null) selfUI.SetActive(false);
         if (joystickObject != null) joystickObject.SetActive(true);
@@ -119,7 +117,6 @@ public class PlayerSelfController : MonoBehaviour
         // 예: FirebaseManager.Instance.GetTodayWord2(userId, text => balloonText2.text = string.IsNullOrEmpty(text) ? "..." : text);
         if (balloonText2 != null) balloonText2.text = "...";
 
-        Debug.Log("[PlayerSelf] 말풍선 — TODO: DB에서 오늘의 한마디 불러오기");
     }
 
     void CalcViewPoint(out Vector3 pos, out Quaternion rot)

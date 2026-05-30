@@ -78,21 +78,20 @@ public class ClosetSaveUI : MonoBehaviour
         {
             panel2GoShopBtn.onClick.RemoveAllListeners();
             panel2GoShopBtn.onClick.AddListener(OnGoShopGuarded);
-            Debug.Log($"[ClosetSaveUI] panel2GoShopBtn 리스너 등록 완료 — name='{panel2GoShopBtn.name}', instanceID={panel2GoShopBtn.GetInstanceID()}");
+            // Debug.Log($"[ClosetSaveUI] panel2GoShopBtn 리스너 등록 완료 — name='{panel2GoShopBtn.name}', instanceID={panel2GoShopBtn.GetInstanceID()}");
         }
-        else Debug.LogError("[ClosetSaveUI] panel2GoShopBtn이 Inspector에 연결되지 않았습니다!");
+        else 
 
         if (panel2CancelBtn)
         {
             panel2CancelBtn.onClick.RemoveAllListeners();
             panel2CancelBtn.onClick.AddListener(OnCancelGuarded);
-            Debug.Log($"[ClosetSaveUI] panel2CancelBtn 리스너 등록 완료 — name='{panel2CancelBtn.name}', instanceID={panel2CancelBtn.GetInstanceID()}");
+            // Debug.Log($"[ClosetSaveUI] panel2CancelBtn 리스너 등록 완료 — name='{panel2CancelBtn.name}', instanceID={panel2CancelBtn.GetInstanceID()}");
         }
-        else Debug.LogError("[ClosetSaveUI] panel2CancelBtn이 Inspector에 연결되지 않았습니다!");
+        else 
 
         // 두 버튼이 같은 객체로 잘못 연결된 경우 즉시 감지
         if (panel2GoShopBtn && panel2CancelBtn && panel2GoShopBtn == panel2CancelBtn)
-            Debug.LogError("[ClosetSaveUI] panel2GoShopBtn과 panel2CancelBtn이 동일한 Button입니다! Inspector에서 분리하세요.");
 
         // ── Panel2 버튼 child raycast 봉인 (핵심 버그 수정) ──
         // 두 버튼의 child Graphic이 LocalScale(10,10,1) + stretch anchor로
@@ -126,7 +125,6 @@ public class ClosetSaveUI : MonoBehaviour
                 sealedCount++;
             }
         }
-        Debug.Log($"[ClosetSaveUI] '{btn.name}' child Graphic raycast 봉인 — {sealedCount}개 OFF");
     }
 
     // ── Panel2 버튼 가드 래퍼 ─────────────────────────────────
@@ -135,7 +133,7 @@ public class ClosetSaveUI : MonoBehaviour
     {
         if (_panel2Handled)
         {
-            Debug.LogWarning("[ClosetSaveUI] OnGoShop 중복 호출 차단 (_panel2Handled=true)");
+            // Debug.LogWarning("[ClosetSaveUI] OnGoShop 중복 호출 차단 (_panel2Handled=true)");
             return;
         }
         _panel2Handled = true;
@@ -147,12 +145,12 @@ public class ClosetSaveUI : MonoBehaviour
     {
         if (_panel2Handled)
         {
-            Debug.LogWarning("[ClosetSaveUI] OnCancel 중복 호출 차단 (_panel2Handled=true)");
+            // Debug.LogWarning("[ClosetSaveUI] OnCancel 중복 호출 차단 (_panel2Handled=true)");
             return;
         }
         _panel2Handled = true;
         LockPanel2Buttons();
-        Debug.Log("[ClosetSaveUI] 아니오(Cancel) 클릭");
+        // Debug.Log("[ClosetSaveUI] 아니오(Cancel) 클릭");
         ClosePanel(panel2);
     }
 
@@ -218,7 +216,6 @@ public class ClosetSaveUI : MonoBehaviour
         _playerDirty    = false;
         // TODO: DB에 선택 가구/variant/색상 저장
         // TODO: DB에 캐릭터 색상/모자 저장
-        Debug.Log("[ClosetSaveUI] 저장 완료");
     }
 
     // ── 미구매 체크 ───────────────────────────────────────────
@@ -233,7 +230,6 @@ public class ClosetSaveUI : MonoBehaviour
             var variants = furnitureCarousel.data.furnitures[fi].variants;
             if (variants != null && vi < variants.Length && !variants[vi].isPurchased)
             {
-                Debug.Log("[ClosetSaveUI] 미구매 가구 감지");
                 return true;
             }
         }
@@ -241,11 +237,9 @@ public class ClosetSaveUI : MonoBehaviour
         // 모자 미구매 체크
         if (hatSelectionUI == null)
         {
-            Debug.LogWarning("[ClosetSaveUI] hatSelectionUI 연결 안됨 — Inspector에서 연결 필요");
         }
         else if (!hatSelectionUI.IsCurrentHatPurchased())
         {
-            Debug.Log("[ClosetSaveUI] 미구매 모자 감지");
             return true;
         }
 
@@ -256,7 +250,7 @@ public class ClosetSaveUI : MonoBehaviour
 
     public void OnGoShop()
     {
-        Debug.Log($"<color=lime>[ClosetSaveUI] OnGoShop() 호출됨!</color> 현재 씬='{SceneManager.GetActiveScene().name}', 이동 대상='{shopSceneName}'");
+        // Debug.Log($"<color=lime>[ClosetSaveUI] OnGoShop() 호출됨!</color> 현재 씬='{SceneManager.GetActiveScene().name}', 이동 대상='{shopSceneName}'");
         ClosePanel(panel2);
 
         // ── 씬 이동 가능 여부 체크 ──────────────────────────────
@@ -266,12 +260,10 @@ public class ClosetSaveUI : MonoBehaviour
 
         if (canLoad)
         {
-            Debug.Log($"[ClosetSaveUI] '{shopSceneName}' 씬으로 이동합니다.");
             SceneManager.LoadScene(shopSceneName);
             return;
         }
 
-        Debug.LogWarning($"[ClosetSaveUI] '{shopSceneName}' 씬을 Build Settings에서 찾을 수 없습니다. 폴백 실행.");
 
         // ── 폴백 1: Build Settings의 첫 번째 씬으로 이동 (현재 씬이 아니면) ──
         if (SceneManager.sceneCountInBuildSettings > 0)
@@ -280,14 +272,12 @@ public class ClosetSaveUI : MonoBehaviour
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
                 if (i == activeIdx) continue;
-                Debug.Log($"[ClosetSaveUI] 폴백 — Build Settings index {i} 씬으로 이동");
                 SceneManager.LoadScene(i);
                 return;
             }
         }
 
         // ── 폴백 2: 씬 이동 불가 → 사용자에게 시각적으로 OnGoShop이 실행됐음을 알림 ──
-        Debug.LogError("[ClosetSaveUI] 이동할 씬이 없습니다! 시각적 피드백만 표시합니다.");
         StartCoroutine(FlashGoShopFeedback());
     }
 

@@ -123,7 +123,6 @@ public class DiaryWindowUI : MonoBehaviour
     {
         if (viewPanel  != null) viewPanel.SetActive(false);
         if (writePanel != null) writePanel.SetActive(false);
-        Debug.Log("[DiaryWindowUI] CloseAll 호출됨");
     }
 
     // 배경 패널(반투명 오버레이) 클릭용 — Inspector에서 연결하거나 버튼 onClick에 추가
@@ -182,12 +181,10 @@ public class DiaryWindowUI : MonoBehaviour
 
         if (string.IsNullOrEmpty(content))
         {
-            Debug.Log("[DiaryWindowUI] 완료 눌림 — 내용 없음, 그냥 닫기");
             CloseAll();
             return;
         }
 
-        Debug.Log($"[DiaryWindowUI] 완료 눌림 — 저장할 내용: \"{content}\" / 날짜: {_today}");
 
         // TODO: diaryManager 연결 후 저장
         // diaryManager.SaveDiary(content, onSuccess: () => { diaryManager.ClaimDiaryReward(_today); CloseAll(); });

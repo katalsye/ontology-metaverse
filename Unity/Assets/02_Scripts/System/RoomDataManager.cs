@@ -18,7 +18,6 @@ public class RoomDataManager : MonoBehaviour
     public void Load(RoomData data)
     {
         CurrentRoom = data ?? new RoomData();
-        Debug.Log($"[RoomDataManager] 방 데이터 로드 — 가구 {CurrentRoom.furnitures.Count}개");
 
         // TODO: DB 연동 시 주석 해제
         // FirebaseManager.Instance?.FetchRoomData(onSuccess: Load);
@@ -29,6 +28,6 @@ public class RoomDataManager : MonoBehaviour
     {
         // TODO: DB 연동 시 주석 해제
         // FirebaseManager.Instance?.UploadRoomData(CurrentRoom);
-        Debug.Log("[RoomDataManager] Save() 호출됨 (DB 연동 전)");
+        // Debug.Log("[RoomDataManager] Save() 호출됨 (DB 연동 전)");
     }
 }

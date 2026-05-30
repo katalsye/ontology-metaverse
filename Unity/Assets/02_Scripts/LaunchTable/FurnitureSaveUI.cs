@@ -82,7 +82,6 @@ public class FurnitureSaveUI : MonoBehaviour
         _playerDirty    = false;
         // TODO: DB에 선택 가구/variant/색상 저장
         // TODO: DB에 캐릭터 색상/모자 저장
-        Debug.Log("[FurnitureSaveUI] 저장 완료");
     }
 
     // ── 미구매 체크 ───────────────────────────────────────────

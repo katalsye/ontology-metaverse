@@ -9,7 +9,6 @@ public class CommentButtonMarker : MonoBehaviour
     {
         var bfc = BoardFocusController.Instance;
         if (bfc == null || bfc.State != BoardFocusController.FocusState.Board) return;
-        Debug.Log("[CommentButtonMarker] OnMouseUpAsButton → TogglePanel");
         CommentInputUI.Instance?.TogglePanel();
     }
 }

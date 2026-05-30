@@ -72,7 +72,6 @@ public class CalendarUI : MonoBehaviour
 
     void LoadPastRoom(string dateStr)
     {
-        Debug.Log($"[CalendarUI] 날짜 선택: {dateStr} — 과거 방 정보 로드 시작");
 
         // TODO: DB에서 해당 날짜의 방 스냅샷 불러오기
         // Firestore 경로: /room_snapshots/{uid}/snapshots/{dateStr}
@@ -81,21 +80,19 @@ public class CalendarUI : MonoBehaviour
         // {
         //     if (snapshot == null)
         //     {
-        //         Debug.Log($"[CalendarUI] {dateStr} 스냅샷 없음");
+        //         
         //         return;
         //     }
-        //     Debug.Log($"[CalendarUI] {dateStr} 스냅샷 로드 완료 — 가구 {snapshot.objects.Count}개");
+        //     
         //     // TODO: 방 오브젝트 상태 적용 (위치, 색상, 종류 등)
         //     // RoomObjectManager.Instance.ApplySnapshot(snapshot);
         // });
 
-        Debug.Log($"[CalendarUI] TODO: {dateStr} 과거 방 DB 연결 필요");
     }
 
     public void Close()
     {
         if (dotPanel != null) dotPanel.SetActive(false);
-        Debug.Log("[CalendarUI] 캘린더 닫힘");
     }
 
     void RefreshDots()
@@ -143,7 +140,7 @@ public class CalendarUI : MonoBehaviour
         public void Show(DateTime initDate, Action<DateTime> callback)
         {
             // 에디터 테스트용 — 오늘 날짜로 바로 선택
-            Debug.Log($"[CalendarUI] 에디터 테스트 — 오늘({DateTime.Now:yyyy-MM-dd}) 선택");
+            // Debug.Log($"[CalendarUI] 에디터 테스트 — 오늘({DateTime.Now:yyyy-MM-dd}) 선택");
             callback?.Invoke(DateTime.Now);
         }
     }

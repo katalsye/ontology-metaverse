@@ -22,18 +22,15 @@ public class RoomCalendarUI : MonoBehaviour
 
     public void Open()
     {
-        Debug.Log("[RoomCalendar] 안드로이드 달력 오픈");
         _datePicker?.Show(DateTime.Now, OnDatePicked);
     }
 
     void OnDatePicked(DateTime date)
     {
         string dateStr = date.ToString("yyyy-MM-dd");
-        Debug.Log($"[RoomCalendar] 선택된 날짜: {dateStr}");
 
         // TODO: 백엔드에서 해당 날짜 방 스냅샷 불러오기
         // RoomSnapshotManager.Instance.LoadSnapshot(dateStr, snapshot => { ... });
-        Debug.Log($"[RoomCalendar] TODO: {dateStr} 백엔드 연결 대기 중");
     }
 
 #if UNITY_EDITOR
@@ -41,7 +38,7 @@ public class RoomCalendarUI : MonoBehaviour
     {
         public void Show(DateTime initDate, Action<DateTime> callback)
         {
-            Debug.Log($"[RoomCalendar] 에디터 테스트 — 오늘({DateTime.Now:yyyy-MM-dd}) 선택");
+            // Debug.Log($"[RoomCalendar] 에디터 테스트 — 오늘({DateTime.Now:yyyy-MM-dd}) 선택");
             callback?.Invoke(DateTime.Now);
         }
     }

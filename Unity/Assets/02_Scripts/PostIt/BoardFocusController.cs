@@ -110,7 +110,7 @@ public class BoardFocusController : MonoBehaviour
         State = FocusState.Table;
         LockPlayer(true);
 
-        if (table == null) { Debug.LogWarning("[BoardFocusController] table 미연결"); return; }
+        if (table == null) { return; }
         Vector3 center = table.position;
         var ren = table.GetComponentInChildren<Renderer>();
         if (ren != null) center = ren.bounds.center;
@@ -131,7 +131,6 @@ public class BoardFocusController : MonoBehaviour
         _camPosTarget = noteCenter - dir * postItViewDist;
         _camRotTarget = Quaternion.LookRotation(dir);
 
-        Debug.Log($"[Board] 포스트잇 열람 — {note.Username}: {note.Comment} / center={noteCenter}");
     }
 
     public void BackToBoard()
@@ -160,7 +159,6 @@ public class BoardFocusController : MonoBehaviour
         {
             pos = _cam.transform.position;
             rot = _cam.transform.rotation;
-            Debug.LogWarning("[BoardFocusController] board 미연결");
             return;
         }
 

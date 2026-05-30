@@ -29,7 +29,6 @@ public class HostFocusController : MonoBehaviour
 
         State = FocusState.Host;
         if (hostUI != null) hostUI.SetActive(true);
-        Debug.Log("[Host] UI 오픈");
     }
 
     public void BackToFree()
@@ -38,7 +37,6 @@ public class HostFocusController : MonoBehaviour
 
         if (hostUI != null) hostUI.SetActive(false);
         State = FocusState.Free;
-        Debug.Log("[Host] UI 닫기");
     }
 
 }

@@ -42,6 +42,5 @@ public class FurnitureAddUI : MonoBehaviour
         }
 
         Close();
-        Debug.Log($"[FurnitureAddUI] 가구 추가: {instance.name}");
     }
 }
