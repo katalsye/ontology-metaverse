@@ -41,8 +41,9 @@ WHERE {
             SELECT ?user (COUNT(?loc) AS ?dayCafCnt)
             WHERE {
                 ?user prod:hasLocation ?loc .
-                ?loc  prod:placeType "cafe" ;
+                ?loc  prod:placeType ?locPt1 ;
                       prod:visitTime  ?vt .
+                FILTER(STR(?locPt1) = "cafe")
                 BIND (HOURS(?vt) AS ?h)
                 FILTER (?h >= 6 && ?h < 22)
             }
@@ -57,8 +58,9 @@ WHERE {
             SELECT ?user (COUNT(?loc) AS ?nightCafCnt)
             WHERE {
                 ?user prod:hasLocation ?loc .
-                ?loc  prod:placeType "cafe" ;
+                ?loc  prod:placeType ?locPt2 ;
                       prod:visitTime  ?vt .
+                FILTER(STR(?locPt2) = "cafe")
                 BIND (HOURS(?vt) AS ?h)
                 FILTER (?h >= 22)
             }
@@ -166,19 +168,20 @@ WHERE {
     }
     FILTER (?visitCnt >= 3)
 
+    BIND(STR(?pt) AS ?ptStr)
     BIND(
-        IF(?pt = "cafe",    "coffee_cup",
-        IF(?pt = "gym",     "dumbbell",
-        IF(?pt = "library", "bookshelf",
-        IF(?pt = "park",    "tree_pot",
+        IF(?ptStr = "cafe",    "coffee_cup",
+        IF(?ptStr = "gym",     "dumbbell",
+        IF(?ptStr = "library", "bookshelf",
+        IF(?ptStr = "park",    "tree_pot",
         "generic_marker")))) AS ?objType
     )
     BIND(CONCAT("PlaceHabit:", STR(?pt)) AS ?inferredLabel)
     BIND(
-        IF(?pt = "cafe",    "desk",
-        IF(?pt = "gym",     "floor",
-        IF(?pt = "library", "wall",
-        IF(?pt = "park",    "floor",
+        IF(?ptStr = "cafe",    "desk",
+        IF(?ptStr = "gym",     "floor",
+        IF(?ptStr = "library", "wall",
+        IF(?ptStr = "park",    "floor",
         "floor")))) AS ?zone
     )
 }
@@ -207,8 +210,9 @@ WHERE {
 
     # 오후 6시(18:00) 이후 카페 방문 기록
     ?user prod:hasLocation ?loc .
-    ?loc  prod:placeType  "cafe" ;
+    ?loc  prod:placeType  ?latePt ;
           prod:visitTime  ?vt .
+    FILTER(STR(?latePt) = "cafe")
     BIND(HOURS(?vt) AS ?h)
     FILTER (?h >= 18)
 }
@@ -568,8 +572,9 @@ WHERE {
 
     # 오후 6시 이후 카페 방문 (카페인 섭취 프록시)
     ?user prod:hasLocation ?loc .
-    ?loc  prod:placeType  "cafe" ;
+    ?loc  prod:placeType  ?causalPt ;
           prod:visitTime  ?vt .
+    FILTER(STR(?causalPt) = "cafe")
     BIND(HOURS(?vt) AS ?h)
     FILTER (?h >= 18)
 
