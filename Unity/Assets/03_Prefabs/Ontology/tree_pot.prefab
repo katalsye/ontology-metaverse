@@ -235,6 +235,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5207805029763446815}
+  - component: {fileID: 524861820706650357}
   m_Layer: 0
   m_Name: tree_pot
   m_TagString: Untagged
@@ -258,6 +259,19 @@ Transform:
   - {fileID: 1469149986792469723}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &524861820706650357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4831807943516791461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0810f72ae110e5c40ac5c2353e97d34b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
+  zone: 1
 --- !u!1 &7735983663287581502
 GameObject:
   m_ObjectHideFlags: 0

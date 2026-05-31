@@ -123,6 +123,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1512299913174406053}
+  - component: {fileID: 2737525410802259039}
   m_Layer: 0
   m_Name: moon_lamp
   m_TagString: Untagged
@@ -146,3 +147,16 @@ Transform:
   - {fileID: 8613691940318055937}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2737525410802259039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2306057726456344195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0810f72ae110e5c40ac5c2353e97d34b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
+  zone: 4

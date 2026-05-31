@@ -66,10 +66,31 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
     - target: {fileID: 919132149155446097, guid: 7b303c953271bb9489d38c8827b5ce03, type: 3}
       propertyPath: m_Name
-      value: slipper
+      value: cozy_blanket
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7b303c953271bb9489d38c8827b5ce03, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -2307221328326753722}
   m_SourcePrefab: {fileID: 100100000, guid: 7b303c953271bb9489d38c8827b5ce03, type: 3}
+--- !u!1 &3301397531593993457 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7b303c953271bb9489d38c8827b5ce03, type: 3}
+  m_PrefabInstance: {fileID: 2382828897181880736}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-2307221328326753722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3301397531593993457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0810f72ae110e5c40ac5c2353e97d34b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
+  zone: 0

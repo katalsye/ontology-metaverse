@@ -26,8 +26,12 @@ public class TableFocusController : MonoBehaviour
     [Header("줌인 높이 (테이블 위)")]
     public float viewHeight = 5f;
 
+    [Tooltip("줌인 중심점. 비워두면 table.position 사용.")]
+    public Transform focusCenter;
+
     [Header("카메라 이동 속도")]
     public float moveSpeed = 5f;
+
 
     [Header("플레이어 이동 잠금")]
     public PlayerMovementController playerMovement;
@@ -95,9 +99,7 @@ public class TableFocusController : MonoBehaviour
 
         if (table == null) { return; }
 
-        Vector3 center = table.position;
-        var ren = table.GetComponentInChildren<Renderer>();
-        if (ren != null) center = ren.bounds.center;
+        Vector3 center = focusCenter != null ? focusCenter.position : table.position;
 
         _camPosTarget = center + Vector3.up * viewHeight;
         _camRotTarget = Quaternion.LookRotation(center - _camPosTarget, table.forward);

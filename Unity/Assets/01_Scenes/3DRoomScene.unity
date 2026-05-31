@@ -1216,7 +1216,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8f133aa1928e9f47a418282a459655d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomModeManager
-  _debugMode: 2
+  _debugMode: 0
   ceilingObject: {fileID: 979540144}
   playerObject: {fileID: 1112934377}
   joystickArea: {fileID: 1099573294}
@@ -7812,6 +7812,8 @@ MonoBehaviour:
   viewDist: 7
   moveSpeed: 3
   zoomHoldTime: 0
+  descriptionPanel: {fileID: 1541535148}
+  descriptionText: {fileID: 878214157}
   furnitureEntries:
   - target: {fileID: 1809217883}
     sceneName: 
@@ -8377,6 +8379,61 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1365592099}
   m_CullTransparentMesh: 1
+--- !u!1 &1366827141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1366827142}
+  - component: {fileID: 1366827143}
+  m_Layer: 0
+  m_Name: OntologySpawnManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1366827142
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1366827141}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -47.240326, y: 17.33749, z: -23.912415}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1381463422}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1366827143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1366827141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b665edd7999f4e64ebdb37e361888173, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologySpawnManager
+  overlapRadius: 0.3
+  furnitureParent: {fileID: 600744747}
+  floorMin: {x: -200, y: -100}
+  floorMax: {x: 100, y: 200}
+  tableSpawnPoints:
+  - {fileID: 1027224337}
+  wallSpawnPoints:
+  - {fileID: 841503792}
+  ceilingSpawnPoints:
+  - {fileID: 490175622}
+  maxTries: 20
 --- !u!1 &1381463421
 GameObject:
   m_ObjectHideFlags: 0
@@ -8409,6 +8466,7 @@ Transform:
   - {fileID: 545428446}
   - {fileID: 1181015850}
   - {fileID: 184100813}
+  - {fileID: 1366827142}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1432860758 stripped
@@ -8967,6 +9025,7 @@ GameObject:
   - component: {fileID: 1541535149}
   - component: {fileID: 1541535151}
   - component: {fileID: 1541535150}
+  - component: {fileID: 1541535152}
   m_Layer: 5
   m_Name: Explain UI
   m_TagString: Untagged
@@ -9032,6 +9091,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1541535148}
   m_CullTransparentMesh: 1
+--- !u!114 &1541535152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1541535148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1541535150}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1271280145}
+        m_TargetAssemblyTypeName: FurnitureFocusController, Assembly-CSharp
+        m_MethodName: HideDescription
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &1544920562 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7512409121751825289, guid: c0315d7895a332f4a97c20363090023f, type: 3}
@@ -9475,6 +9590,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TableFocusController
   table: {fileID: 4185114172347016242}
   viewHeight: 5
+  focusCenter: {fileID: 0}
   moveSpeed: 5
   playerMovement: {fileID: 1639255167}
   joystickObject: {fileID: 1227914831}

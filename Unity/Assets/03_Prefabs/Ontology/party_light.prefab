@@ -431,7 +431,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
       propertyPath: m_Name
-      value: Sketchfab_2024_01_09_21_30_56 (1)
+      value: party_light
       objectReference: {fileID: 0}
     - target: {fileID: 1877288881673768433, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
       propertyPath: m_LocalPosition.x
@@ -469,6 +469,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
       insertIndex: -1
       addedObject: {fileID: 596386017797445335}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -2532794598279308346}
   m_SourcePrefab: {fileID: 100100000, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
 --- !u!4 &8234208553792378597 stripped
 Transform:
@@ -494,3 +497,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DiscoBallSetup
   spinSpeed: 45
   discoBallRenderingLayerMask: 3
+--- !u!114 &-2532794598279308346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8722937707912186975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0810f72ae110e5c40ac5c2353e97d34b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
+  zone: 3

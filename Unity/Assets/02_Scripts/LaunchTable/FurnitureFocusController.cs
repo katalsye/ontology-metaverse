@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class FurnitureFocusController : MonoBehaviour
 {
@@ -17,6 +18,12 @@ public class FurnitureFocusController : MonoBehaviour
 
     [Header("씬 전환")]
     public float zoomHoldTime = 1f;
+
+    [Header("설명 UI (VisitRoom 줌인 후 표시)")]
+    [Tooltip("줌인 후 표시할 패널 — Inspector에서 연결. 패널 안의 Button onClick → HideDescription() 연결.")]
+    public GameObject descriptionPanel;
+    [Tooltip("설명 텍스트 컴포넌트 — Inspector에서 연결.")]
+    public TMP_Text descriptionText;
 
     [System.Serializable]
     public class FurnitureEntry
@@ -99,8 +106,9 @@ public class FurnitureFocusController : MonoBehaviour
 
         var fi = target.GetComponent<FurnitureInteraction>()
                ?? target.GetComponentInParent<FurnitureInteraction>();
-        if (fi == null || string.IsNullOrEmpty(fi.sceneName))
-        { return; }
+        if (fi == null) { return; }
+        // zoomOnlyNoScene이면 sceneName 없어도 줌인 허용 (설명 패널만 표시하는 Ontology 아이템)
+        if (!fi.zoomOnlyNoScene && string.IsNullOrEmpty(fi.sceneName)) { return; }
 
         // VisitRoom: allowInVisitRoom이 켜진 가구만 허용
         if (RoomModeManager.CurrentMode == RoomMode.VisitRoom && !fi.allowInVisitRoom)
@@ -122,8 +130,15 @@ public class FurnitureFocusController : MonoBehaviour
             var fec = FurnitureEditController.Instance;
             if (fec != null)
             {
-                var ren = target.GetComponentInChildren<Renderer>();
-                Vector3 deskCenter = ren != null ? ren.bounds.center : target.transform.position;
+                // 모든 하위 Renderer bounds 합산 → 정확한 중심
+                var rens = target.GetComponentsInChildren<Renderer>();
+                Vector3 deskCenter = target.transform.position;
+                if (rens.Length > 0)
+                {
+                    Bounds b = rens[0].bounds;
+                    for (int i = 1; i < rens.Length; i++) b.Encapsulate(rens[i].bounds);
+                    deskCenter = b.center;
+                }
                 _camPosTarget = deskCenter + fec.deskCamOffset;
                 _camRotTarget = Quaternion.LookRotation((deskCenter + fec.deskCamLookOffset) - _camPosTarget);
             }
@@ -140,12 +155,36 @@ public class FurnitureFocusController : MonoBehaviour
 
         if (CurrentState != State.ZoomingIn) yield break;
 
-        // zoomOnlyNoScene: 씬 이동 없이 줌인만
+        // zoomOnlyNoScene: 씬 이동 없이 줌인 후 설명 패널 표시
         if (_currentFI != null && _currentFI.zoomOnlyNoScene)
+        {
+            ShowDescription(_currentFI.message);
             yield break;
+        }
 
         // TODO: 씬 준비되면 각 가구별 실제 씬 이름으로 교체
         SceneManager.LoadScene(_targetScene);
+    }
+
+    /// <summary>줌인 후 설명 패널을 열고 텍스트를 세팅한다.</summary>
+    void ShowDescription(string msg)
+    {
+        if (descriptionPanel == null) return;
+        if (descriptionText != null)
+            descriptionText.text = msg ?? "";
+        descriptionPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// 설명 패널을 닫고 카메라를 원래 위치로 복귀시킨다.
+    /// 패널의 Button onClick → 이 메서드를 Inspector에서 연결할 것.
+    /// 백엔드에서 호출해도 됨.
+    /// </summary>
+    public void HideDescription()
+    {
+        if (descriptionPanel != null)
+            descriptionPanel.SetActive(false);
+        BackToFree();
     }
 
     public void BackToFree()

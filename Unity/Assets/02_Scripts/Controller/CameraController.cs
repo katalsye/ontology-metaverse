@@ -345,6 +345,9 @@ public class CameraController : MonoBehaviour
             // VisitRoom: 작은책상 상호작용 차단
             if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
             { return; }
+            SaveState();
+            ltfc2.FocusTable();
+            return;
         }
 
         if (ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Table)
