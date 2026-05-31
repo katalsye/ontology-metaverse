@@ -2727,8 +2727,9 @@ MonoBehaviour:
   maxPitch: 80
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 4294967295
   collisionRadius: 0.3
+  collisionPullback: 0.5
   joystickArea: {fileID: 1099573295}
   clickMaxDragPx: 15
 --- !u!1 &472538178
@@ -8425,14 +8426,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OntologySpawnManager
   overlapRadius: 0.3
   furnitureParent: {fileID: 600744747}
-  floorMin: {x: -200, y: -100}
-  floorMax: {x: 100, y: 200}
-  tableSpawnPoints:
-  - {fileID: 1027224337}
-  wallSpawnPoints:
-  - {fileID: 841503792}
-  ceilingSpawnPoints:
-  - {fileID: 490175622}
   maxTries: 20
 --- !u!1 &1381463421
 GameObject:
