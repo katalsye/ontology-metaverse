@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -94.13467
+      value: -97.39215
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.8
+      value: 4.956051
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 27.36964
+      value: 37.581703
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
       propertyPath: m_LocalRotation.w
@@ -71,6 +71,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
       insertIndex: -1
       addedObject: {fileID: -1457150915198377339}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6751156922955534648}
   m_SourcePrefab: {fileID: 100100000, guid: 2c18b83516ef7224a9a6948f4f604bcd, type: 3}
 --- !u!1 &1193346018881060259 stripped
 GameObject:
@@ -90,3 +93,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
   zone: 0
+  cameraViewPoint: {fileID: 0}
+  viewDistance: 30
+  message: 
+--- !u!114 &6751156922955534648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193346018881060259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c005bf12419a7fd499cb238f2087e6f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureInteraction
+  sceneName: 
+  allowInVisitRoom: 0
+  zoomOnlyNoScene: 0
+  message: 

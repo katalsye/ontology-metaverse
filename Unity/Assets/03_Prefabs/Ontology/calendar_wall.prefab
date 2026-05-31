@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3550579845867709340}
   - component: {fileID: 66119616613403796}
   - component: {fileID: -2170547068949957517}
+  - component: {fileID: 7976511362841026945}
   m_Layer: 0
   m_Name: calendar_wall
   m_TagString: Untagged
@@ -126,3 +127,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
   zone: 2
+  cameraViewPoint: {fileID: 0}
+  viewDistance: 20
+  message: 
+--- !u!114 &7976511362841026945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5143120940934504627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c005bf12419a7fd499cb238f2087e6f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureInteraction
+  sceneName: 
+  allowInVisitRoom: 0
+  zoomOnlyNoScene: 0
+  message: 

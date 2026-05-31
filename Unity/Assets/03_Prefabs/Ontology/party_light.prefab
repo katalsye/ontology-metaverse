@@ -472,6 +472,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
       insertIndex: -1
       addedObject: {fileID: -2532794598279308346}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4645167805151703868}
   m_SourcePrefab: {fileID: 100100000, guid: aa28235f389f84e49bd7b080dd713455, type: 3}
 --- !u!4 &8234208553792378597 stripped
 Transform:
@@ -510,3 +513,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OntologyItem
   zone: 3
+  cameraViewPoint: {fileID: 0}
+  viewDistance: 20
+  message: 
+--- !u!114 &4645167805151703868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8722937707912186975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c005bf12419a7fd499cb238f2087e6f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureInteraction
+  sceneName: 
+  allowInVisitRoom: 0
+  zoomOnlyNoScene: 0
+  message: 

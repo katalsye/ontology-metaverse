@@ -47,8 +47,6 @@ public class FurnitureFocusController : MonoBehaviour
     private Quaternion          _camRotBefore;
     private string              _targetScene;
     private FurnitureInteraction _currentFI;
-    private bool                _descriptionOverlay; // 데스크 줌인 중 UI만 띄운 경우
-    public  FurnitureInteraction CurrentFI => _currentFI; // 현재 줌인된 오브젝트의 FI
 
     void Awake()
     {
@@ -142,10 +140,7 @@ public class FurnitureFocusController : MonoBehaviour
                 }
                 else
                 {
-                    float prevDist = viewDist;
-                    if (oi.viewDistance > 0f) viewDist = oi.viewDistance;
                     CalcViewPoint(target, out _camPosTarget, out _camRotTarget);
-                    viewDist = prevDist;
                 }
             }
             else
@@ -194,14 +189,12 @@ public class FurnitureFocusController : MonoBehaviour
     }
 
     /// <summary>줌인 후 설명 패널을 열고 텍스트를 세팅한다.</summary>
-    /// <param name="overlay">true = 이미 줌인된 상태에서 UI만 띄움 (닫을 때 BackToFree 안 함)</param>
-    public void ShowDescription(string msg, bool overlay = false)
+    public void ShowDescription(string msg)
     {
         if (descriptionPanel == null) return;
         if (descriptionText != null)
             descriptionText.text = msg ?? "";
         descriptionPanel.SetActive(true);
-        _descriptionOverlay = overlay;
     }
 
     /// <summary>
@@ -213,12 +206,6 @@ public class FurnitureFocusController : MonoBehaviour
     {
         if (descriptionPanel != null)
             descriptionPanel.SetActive(false);
-
-        if (_descriptionOverlay)
-        {
-            _descriptionOverlay = false; // 패널만 닫고 줌인 유지
-            return;
-        }
         BackToFree();
     }
 

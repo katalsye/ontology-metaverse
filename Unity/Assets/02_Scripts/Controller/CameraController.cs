@@ -217,10 +217,49 @@ public class CameraController : MonoBehaviour
         var tfc = TableFocusController.Instance;
         if (tfc != null && tfc.IsZoomed) { tfc.BackToFree(); return; }
 
+        // FurnitureFocusController 줌인 중 클릭
+        var ffcBack = FurnitureFocusController.Instance;
+        if (ffcBack != null && ffcBack.CurrentState != FurnitureFocusController.State.Free)
+        {
+            RaycastHit[] ffcHits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
+            foreach (var h in ffcHits)
+            {
+                // Ontology 아이템 클릭 → UI 표시 (줌아웃 안 함)
+                var oi = h.collider.GetComponent<OntologyItem>()
+                      ?? h.collider.GetComponentInParent<OntologyItem>();
+                if (oi != null) { ffcBack.ShowDescription(oi.message, overlay: true); return; }
+
+                // 현재 줌인된 오브젝트 자체 클릭 → 줌인 유지
+                var fi = h.collider.GetComponent<FurnitureInteraction>()
+                      ?? h.collider.GetComponentInParent<FurnitureInteraction>();
+                if (fi != null && fi == ffcBack.CurrentFI) return;
+            }
+            // 그 외 → 줌아웃
+            ffcBack.HideDescription();
+            return;
+        }
+
         RaycastHit[] hits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
 
         var bfc = BoardFocusController.Instance;
         if (bfc == null) return;
+
+        // VisitRoom: OntologyProxy 우선 체크 (침대 등에 가려진 Ontology 아이템)
+        if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
+        {
+            var ffc0 = FurnitureFocusController.Instance;
+            if (ffc0 != null && ffc0.CurrentState == FurnitureFocusController.State.Free)
+            {
+                foreach (var h in hits)
+                {
+                    var proxy = h.collider.GetComponent<OntologyProxy>()
+                             ?? h.collider.GetComponentInParent<OntologyProxy>();
+                    if (proxy == null || proxy.target == null) continue;
+                    var fi = proxy.target.GetComponent<FurnitureInteraction>();
+                    if (fi != null) { SaveState(); ffc0.FocusFurniture(fi.gameObject); return; }
+                }
+            }
+        }
 
         RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null, hHost = null, hSelf = null;
         foreach (var h in hits)
@@ -240,8 +279,6 @@ public class CameraController : MonoBehaviour
                              || h.collider.GetComponentInParent<HostInteraction>() != null;
             bool hasSelf      = h.collider.GetComponent<PlayerSelfInteraction>() != null
                              || h.collider.GetComponentInParent<PlayerSelfInteraction>() != null;
-
-
             if      (hCommentBtn == null && hasMarker)    hCommentBtn = h;
             else if (hPostIt     == null && hasNote)      hPostIt     = h;
             else if (hBoard      == null && hasBoard)     hBoard      = h;
@@ -340,6 +377,7 @@ public class CameraController : MonoBehaviour
             if (fi != null) { SaveState(); ffc.FocusFurniture(fi.gameObject); return; }
         }
 
+
         var ltfc2 = LaunchTableFocusController.Instance;
         if (hTable.HasValue && bfc.State == BoardFocusController.FocusState.Free
             && ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Free)
@@ -354,6 +392,20 @@ public class CameraController : MonoBehaviour
 
         if (ltfc2 != null && ltfc2.State == LaunchTableFocusController.FocusState.Table)
         {
+            // 테이블 줌인 상태에서 Ontology 아이템 클릭 → 줌인 없이 UI만
+            var ffc2 = FurnitureFocusController.Instance;
+            if (ffc2 != null)
+            {
+                foreach (var h in hits)
+                {
+                    var oi = h.collider.GetComponent<OntologyItem>()
+                          ?? h.collider.GetComponentInParent<OntologyItem>();
+                    if (oi == null) continue;
+                    ffc2.ShowDescription(oi.message);
+                    return;
+                }
+            }
+
             var dui = DiaryWindowUI.Instance;
             if (dui != null && dui.IsAnyPanelOpen) { dui.CloseAll(); return; }
 
