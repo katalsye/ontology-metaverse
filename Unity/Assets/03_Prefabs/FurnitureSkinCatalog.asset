@@ -1,0 +1,435 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 977ac17a9efe3564d9d11d543318cfac, type: 3}
+  m_Name: FurnitureSkinCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureSkinCatalog
+  furnitures:
+  - displayName: BigTable
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 6501780917558537703, guid: 3dc1456e4327059439ec4010c81c6d2e, type: 3}
+      colorChildren:
+      - rendererPath: kitchenIsland/kitchenIsland_body
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: kitchenIsland/kitchenIsland_body
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+    - displayName: Desk
+      modelPrefab: {fileID: 1191928105526345561, guid: 75dabb33cebbd424f8c06abb63a2674c, type: 3}
+      colorChildren:
+      - rendererPath: desk/desk_body
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_body
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+      - rendererPath: desk/desk_body
+        materialIndex: 2
+        materials:
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer1
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer1
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer2
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer3
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer4
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer5
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer6
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: desk/desk_drawer2
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer3
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer4
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer5
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: desk/desk_drawer6
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+    - displayName: BedsideTable
+      modelPrefab: {fileID: 1546514036729566298, guid: 7cf75ec5567b6d94a92a0fdc015a3cfd, type: 3}
+      colorChildren:
+      - rendererPath: bedsideTable
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+      - rendererPath: bedsideTable
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+  - displayName: Chair
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 9209881214405786709, guid: 0b4cf2d1a37fb7841ade88b6890d420c, type: 3}
+      colorChildren:
+      - rendererPath: chair2
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      - rendererPath: chair2
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: chair2
+        materialIndex: 2
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+    - displayName: Ver2
+      modelPrefab: {fileID: 5112759952953022982, guid: 9c5b5115319fb914a9fa49d3fbd16884, type: 3}
+      colorChildren:
+      - rendererPath: chair1
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: fac6997ebfb39364db1173ae4a1c49e6, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      - rendererPath: chair1
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+  - displayName: SmallTable
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 2220833432495993289, guid: acb2ea1cf4e234844bf018b996e9d9bc, type: 3}
+      colorChildren:
+      - rendererPath: launchTable
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+      - rendererPath: launchTable
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+  - displayName: Closet
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 9139096150820365523, guid: 3ff831104a1e93d48b4f722917991708, type: 3}
+      colorChildren:
+      - rendererPath: drawer1/drawer1_body
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+      - rendererPath: drawer1/drawer1_leftDoor
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      - rendererPath: drawer1/drawer1_leftDoor
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      - rendererPath: drawer1/drawer1_rightDoor
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+      - rendererPath: drawer1/drawer1_rightDoor
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+  - displayName: Bed
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 6924963577230815179, guid: db42fa62a88f2794284de626c316600d, type: 3}
+      colorChildren:
+      - rendererPath: singleBed/singleBed_frame
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+      - rendererPath: singleBed/singleBed_blanket1
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 11ed21415b661da499e94e4e9e5c47f4, type: 2}
+      - rendererPath: singleBed/singleBed_blanket2
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+  - displayName: Door
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 4779522178244316326, guid: 8077d7aa5e7746a4db33648662c9379c, type: 3}
+      colorChildren:
+      - rendererPath: door/door_body
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+      - rendererPath: door/door_body
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+      - rendererPath: door/door_frame
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+      - rendererPath: door/door_frame
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+  - displayName: BedLight
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 1418227108731564910, guid: c74f70a062724444fbe723b589b9950e, type: 3}
+      colorChildren:
+      - rendererPath: bedsideLight
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+      - rendererPath: bedsideLight
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      - rendererPath: bedsideLight
+        materialIndex: 2
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+  - displayName: CeilingLight
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 3218277883501970448, guid: 48cb0268761300b4b81313926c6ea525, type: 3}
+      colorChildren:
+      - rendererPath: ceilingLight
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: fac6997ebfb39364db1173ae4a1c49e6, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+  - displayName: CornerLight
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 6220971790411534669, guid: 3cc4ccbf583ac4248862a653d8395d32, type: 3}
+      colorChildren:
+      - rendererPath: cornerLight
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+      - rendererPath: cornerLight
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+  - displayName: Lamp
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 4317971134679920598, guid: 1115c535fac3ebb4f958b6a0ff4d7336, type: 3}
+      colorChildren:
+      - rendererPath: lamp
+        materialIndex: 1
+        materials:
+        - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+  - displayName: RoomLight
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 6744469760663577686, guid: 47228b40fca6fdc458b415d58677c665, type: 3}
+      colorChildren:
+      - rendererPath: roomLight
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+        - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+  - displayName: Toilet
+    variants:
+    - displayName: Original
+      modelPrefab: {fileID: 1324519608821053205, guid: 1f04c37d0acfb7440b98dbb44ceeb9ba, type: 3}
+      colorChildren:
+      - rendererPath: toilet/toilet_body
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+      - rendererPath: toilet/toilet_lid
+        materialIndex: 0
+        materials:
+        - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}

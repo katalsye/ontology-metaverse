@@ -1221,7 +1221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8f133aa1928e9f47a418282a459655d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomModeManager
-  _debugMode: 1
+  _debugMode: 2
   ceilingObject: {fileID: 979540144}
   playerObject: {fileID: 1112934377}
   joystickArea: {fileID: 1099573294}
@@ -3835,6 +3835,11 @@ RectTransform:
   m_AnchoredPosition: {x: 100, y: 0}
   m_SizeDelta: {x: 150, y: 150}
   m_Pivot: {x: 0, y: 1}
+--- !u!1 &673457478 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2220833432495993289, guid: acb2ea1cf4e234844bf018b996e9d9bc, type: 3}
+  m_PrefabInstance: {fileID: 9053003111231930690}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &731217153
 GameObject:
   m_ObjectHideFlags: 0
@@ -7860,6 +7865,76 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1817827258}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1287878711
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1287878713}
+  - component: {fileID: 1287878712}
+  m_Layer: 0
+  m_Name: RoomFurnitureCustomizer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1287878712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1287878711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17bd13c02cd630d44abdebeed925854f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomFurnitureCustomizer
+  catalog: {fileID: 11400000, guid: 79b3ca796c8a61342844e1593463e4b3, type: 2}
+  entries:
+  - target: {fileID: 1031763574}
+    furnitureId: 0
+    modelIndex: 0
+    colorIndex: 0
+  - target: {fileID: 1520578635}
+    furnitureId: 1
+    modelIndex: 0
+    colorIndex: 0
+  - target: {fileID: 673457478}
+    furnitureId: 2
+    modelIndex: 0
+    colorIndex: 0
+  - target: {fileID: 1809217883}
+    furnitureId: 3
+    modelIndex: 0
+    colorIndex: 0
+  - target: {fileID: 1002906947}
+    furnitureId: 4
+    modelIndex: 0
+    colorIndex: 0
+  - target: {fileID: 923807856}
+    furnitureId: 2
+    modelIndex: 0
+    colorIndex: 0
+--- !u!4 &1287878713
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1287878711}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -74.84966, y: 15.06803, z: 62.40594}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1312420080
 GameObject:
   m_ObjectHideFlags: 0
@@ -8951,6 +9026,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1514695771}
   m_CullTransparentMesh: 1
+--- !u!1 &1520578635 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9209881214405786709, guid: 0b4cf2d1a37fb7841ade88b6890d420c, type: 3}
+  m_PrefabInstance: {fileID: 5188498827399864858}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1541535148
 GameObject:
   m_ObjectHideFlags: 0
@@ -14413,15 +14493,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2847088695598790010, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -106.26
+      value: -101
       objectReference: {fileID: 0}
     - target: {fileID: 2847088695598790010, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 44.22608
+      value: 44.24353
       objectReference: {fileID: 0}
     - target: {fileID: 2847088695598790010, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 134.97958
+      value: 128
       objectReference: {fileID: 0}
     - target: {fileID: 2847088695598790010, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
       propertyPath: m_LocalRotation.w
@@ -15517,3 +15597,4 @@ SceneRoots:
   - {fileID: 908433506}
   - {fileID: 1817827258}
   - {fileID: 1381463422}
+  - {fileID: 1287878713}
