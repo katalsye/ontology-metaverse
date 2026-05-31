@@ -1221,7 +1221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8f133aa1928e9f47a418282a459655d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomModeManager
-  _debugMode: 0
+  _debugMode: 1
   ceilingObject: {fileID: 979540144}
   playerObject: {fileID: 1112934377}
   joystickArea: {fileID: 1099573294}
@@ -7359,7 +7359,7 @@ MonoBehaviour:
   deskObject: {fileID: 1031763574}
   deskItemParent: {fileID: 1027224337}
   deskCamOffset: {x: 20, y: 45, z: 0}
-  deskCamLookOffset: {x: 0, y: 20, z: 0}
+  deskCamLookOffset: {x: 0, y: 0, z: 0}
   ceilingItemParent: {fileID: 490175622}
   ceilingCamPosition: {x: -50, y: -40, z: 50}
   floorObject: {fileID: 1905968208}
@@ -11231,7 +11231,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.4, y: 0.4, z: 0.1}
+  m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1866149918
 GameObject:
@@ -13840,9 +13840,45 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1027224337}
     m_Modifications:
+    - target: {fileID: 36609894207424483, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 36609894207424483, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 36609894207424483, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 3279682344379845159, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 3279682344379845159, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 3279682344379845159, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 200
+      objectReference: {fileID: 0}
     - target: {fileID: 6948561911740905896, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
       propertyPath: m_Name
       value: Headphones
+      objectReference: {fileID: 0}
+    - target: {fileID: 7720736097156752146, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7720736097156752146, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7720736097156752146, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7720736097156752146, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
       propertyPath: m_LocalPosition.x

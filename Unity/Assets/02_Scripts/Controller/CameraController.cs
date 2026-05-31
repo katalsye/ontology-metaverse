@@ -193,6 +193,15 @@ public class CameraController : MonoBehaviour
 
     void CheckBoardClick(Vector2 screenPos)
     {
+        // === 진단 로그 ===
+        var _tfcDbg = TableFocusController.Instance;
+        var _ffcDbg = FurnitureFocusController.Instance;
+        var _ltfcDbg = LaunchTableFocusController.Instance;
+        Debug.Log($"[ClickDBG] mode={RoomModeManager.CurrentMode} " +
+                  $"tfc.IsZoomed={(_tfcDbg ? _tfcDbg.IsZoomed.ToString() : "null")} " +
+                  $"ffc.State={(_ffcDbg ? _ffcDbg.CurrentState.ToString() : "null")} " +
+                  $"ltfc.State={(_ltfcDbg ? _ltfcDbg.State.ToString() : "null")}");
+
         // EditMode: FurnitureEditController로 라우팅
         if (RoomModeManager.CurrentMode == RoomMode.EditMode)
         {
@@ -242,10 +251,13 @@ public class CameraController : MonoBehaviour
 
             // OntologyItem 클릭 → UI 표시 (책상 자식만)
             Transform deskRoot = ffcBack.CurrentFI != null ? ffcBack.CurrentFI.transform : null;
+            Debug.Log($"[OntologyDBG] zoom-click: hits={ffcHits.Length}, deskRoot={(deskRoot ? deskRoot.name : "null")}");
             foreach (var h in ffcHits)
             {
                 var oi = h.collider.GetComponent<OntologyItem>()
                       ?? h.collider.GetComponentInParent<OntologyItem>();
+                Debug.Log($"[OntologyDBG]  hit collider='{h.collider.name}' oi={(oi ? oi.name : "null")} " +
+                          $"childOfDesk={(oi != null && deskRoot != null ? oi.transform.IsChildOf(deskRoot).ToString() : "-")}");
                 if (oi == null) continue;
                 // 현재 줌인된 오브젝트의 자식인지 체크
                 if (deskRoot != null && !oi.transform.IsChildOf(deskRoot)) continue;
@@ -263,6 +275,15 @@ public class CameraController : MonoBehaviour
         }
 
         RaycastHit[] hits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
+
+        // === 진단: 레이에 잡힌 모든 collider 덤프 ===
+        Debug.Log($"[ClickDBG] hits.Length={hits.Length}");
+        foreach (var h in hits)
+        {
+            var oiDbg = h.collider.GetComponent<OntologyItem>() ?? h.collider.GetComponentInParent<OntologyItem>();
+            Debug.Log($"[ClickDBG]   collider='{h.collider.name}' layer={h.collider.gameObject.layer} " +
+                      $"enabled={h.collider.enabled} isTrigger={h.collider.isTrigger} oi={(oiDbg ? oiDbg.name : "null")}");
+        }
 
         var bfc = BoardFocusController.Instance;
         if (bfc == null) return;
