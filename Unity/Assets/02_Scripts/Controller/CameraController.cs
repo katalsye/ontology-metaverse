@@ -222,18 +222,23 @@ public class CameraController : MonoBehaviour
         if (ffcBack != null && ffcBack.CurrentState != FurnitureFocusController.State.Free)
         {
             RaycastHit[] ffcHits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
+
+            // 1순위: OntologyItem 클릭 → UI 표시
             foreach (var h in ffcHits)
             {
-                // Ontology 아이템 클릭 → UI 표시 (줌아웃 안 함)
                 var oi = h.collider.GetComponent<OntologyItem>()
                       ?? h.collider.GetComponentInParent<OntologyItem>();
                 if (oi != null) { ffcBack.ShowDescription(oi.message, overlay: true); return; }
+            }
 
-                // 현재 줌인된 오브젝트 자체 클릭 → 줌인 유지
+            // 2순위: 현재 줌인된 오브젝트 자체 클릭 → 줌인 유지
+            foreach (var h in ffcHits)
+            {
                 var fi = h.collider.GetComponent<FurnitureInteraction>()
                       ?? h.collider.GetComponentInParent<FurnitureInteraction>();
                 if (fi != null && fi == ffcBack.CurrentFI) return;
             }
+
             // 그 외 → 줌아웃
             ffcBack.HideDescription();
             return;

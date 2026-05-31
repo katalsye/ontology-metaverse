@@ -41,7 +41,7 @@ public class OntologyItem : MonoBehaviour
         // Collider 없으면 자동 추가 (raycast 감지용)
         if (GetComponentInChildren<Collider>() == null)
         {
-            var col = gameObject.AddComponent<BoxCollider>();
+            var col  = gameObject.AddComponent<BoxCollider>();
             var rens = GetComponentsInChildren<Renderer>();
             if (rens.Length > 0)
             {
@@ -52,6 +52,10 @@ public class OntologyItem : MonoBehaviour
                     b.size.x / transform.lossyScale.x,
                     b.size.y / transform.lossyScale.y,
                     b.size.z / transform.lossyScale.z);
+            }
+            else
+            {
+                col.size = Vector3.one; // Renderer 없을 때 기본 1×1×1
             }
         }
     }

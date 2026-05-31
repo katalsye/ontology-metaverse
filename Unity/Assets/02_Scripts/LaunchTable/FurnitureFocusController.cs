@@ -180,9 +180,9 @@ public class FurnitureFocusController : MonoBehaviour
         if (CurrentState != State.ZoomingIn) yield break;
 
         // zoomOnlyNoScene: 씬 이동 없이 줌인만
+        // OntologyItem 있는 경우만 UI 표시, 데스크 등은 줌인만 하고 끝
         if (_currentFI != null && _currentFI.zoomOnlyNoScene)
         {
-            // Ontology 아이템일 때만 UI 표시 (데스크 등은 줌인만)
             var oi = _currentFI.GetComponent<OntologyItem>()
                   ?? _currentFI.GetComponentInParent<OntologyItem>();
             if (oi != null) ShowDescription(oi.message);
