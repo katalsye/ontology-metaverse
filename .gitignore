@@ -9,27 +9,20 @@ Unity/[Bb]uilds/
 Unity/[Ll]ogs/
 Unity/[Uu]ser[Ss]ettings/
 *.log
-
 # Blender temp files
 *.blend1
 *.blend1.meta
-
 # MemoryCaptures
 Unity/[Mm]emoryCaptures/
-
 # Recordings
 Unity/[Rr]ecordings/
-
 # Jetbrains Rider
 Unity/[Aa]ssets/Plugins/Editor/JetBrains*
 *.DotSettings.user
-
 # Visual Studio
 .vs/
-
 # Gradle
 .gradle/
-
 # Solution and project files
 ExportedObj/
 .consulo/
@@ -47,53 +40,42 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
-
 # Unity3D generated meta files
 *.pidb.meta
 *.pdb.meta
 *.mdb.meta
-
 # Unity3D crash reports
 sysinfo.txt
-
 # Mono auto generated files
 mono_crash.*
-
 # Builds
 *.apk
 *.aab
 *.unitypackage
 *.unitypackage.meta
 *.app
-
 # Unity Burst compiler generated files
 *_BurstDebugInformation_DoNotShip*
 *_BackUpThisFolder_ButDontShipItWithYourGame*
 lib_burst_generated*.txt
 *.burst.cs
-
 # Crashlytics
 crashlytics-build.properties
-
 # TestRunner
 InitTestScene*.unity*
-
 # Addressables
 Unity/ServerData
 Unity/[Aa]ssets/StreamingAssets/aa*
 Unity/[Aa]ssets/AddressableAssetsData/link.xml*
 Unity/[Aa]ssets/Addressables_Temp*
 Unity/[Aa]ssets/AddressableAssetsData/*/*.bin*
-
 # Visual Scripting
 Unity/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
 Unity/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
 Unity/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
 Unity/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
-
 # Auto-generated test scenes
 Unity/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
-
 # Gemma 3n model files (too large for git)
 Unity/[Aa]ssets/StreamingAssets/*.bin
 Unity/[Aa]ssets/StreamingAssets/*.gguf
@@ -103,7 +85,6 @@ Unity/[Aa]ssets/StreamingAssets/*.bin.meta
 Unity/[Aa]ssets/StreamingAssets/*.gguf.meta
 Unity/[Aa]ssets/StreamingAssets/*.task.meta
 Unity/[Aa]ssets/StreamingAssets/*.tflite.meta
-
 # Python / Cloud Functions
 __pycache__/
 *.py[cod]
@@ -116,23 +97,20 @@ venv/
 *.egg-info/
 dist/
 build/
-
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-
 # OS
 .DS_Store
 Thumbs.db
-
 # AuthConfig
 Unity/Assets/02_Scripts/Config/AuthConfig.asset
 Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
 # OMC 세션 기록
 .omc/
-
 # Firebase 서비스 계정 키 (절대 git에 올리면 안 됨)
 serviceAccountKey.json
 *serviceAccountKey*.json
+Functions/.env
