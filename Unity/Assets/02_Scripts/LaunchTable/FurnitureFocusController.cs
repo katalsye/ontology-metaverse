@@ -65,6 +65,10 @@ public class FurnitureFocusController : MonoBehaviour
 
     void Start()
     {
+        // 설명 패널 시작 시 반드시 비활성화 (활성 상태면 클릭을 가로챔)
+        if (descriptionPanel != null)
+            descriptionPanel.SetActive(false);
+
         if (furnitureEntries == null) return;
 
         foreach (var entry in furnitureEntries)
@@ -220,6 +224,15 @@ public class FurnitureFocusController : MonoBehaviour
             return;
         }
         BackToFree();
+    }
+
+    /// <summary>카메라 이동 없이 즉시 Free 상태로 전환 (다른 컨트롤러로 전환할 때 사용)</summary>
+    public void ForceSetFree()
+    {
+        StopAllCoroutines();
+        CurrentState = State.Free;
+        _descriptionOverlay = false;
+        LockPlayer(false);
     }
 
     public void BackToFree()

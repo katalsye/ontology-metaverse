@@ -223,24 +223,42 @@ public class CameraController : MonoBehaviour
         {
             RaycastHit[] ffcHits = Physics.RaycastAll(Camera.main.ScreenPointToRay(screenPos), 500f);
 
-            // 1순위: OntologyItem 클릭 → UI 표시
+            // 달력 클릭은 책상 줌인 중에도 허용 — 책상 줌인 즉시 해제 후 달력 전환
+            var cfc2 = CalendarFocusController.Instance;
+            foreach (var h in ffcHits)
+            {
+                var cal = h.collider.GetComponent<CalendarInteraction>()
+                       ?? h.collider.GetComponentInParent<CalendarInteraction>();
+                if (cal != null && cfc2 != null)
+                {
+                    if (ffcBack.descriptionPanel != null) ffcBack.descriptionPanel.SetActive(false);
+                    // 즉시 Free로 전환 (카메라 이동 없이)
+                    ffcBack.StopAllCoroutines();
+                    ffcBack.ForceSetFree();
+                    cfc2.FocusCalendar();
+                    return;
+                }
+            }
+
+            // OntologyItem 클릭 → UI 표시 (책상 자식만)
+            Transform deskRoot = ffcBack.CurrentFI != null ? ffcBack.CurrentFI.transform : null;
             foreach (var h in ffcHits)
             {
                 var oi = h.collider.GetComponent<OntologyItem>()
                       ?? h.collider.GetComponentInParent<OntologyItem>();
-                if (oi != null) { ffcBack.ShowDescription(oi.message, overlay: true); return; }
+                if (oi == null) continue;
+                // 현재 줌인된 오브젝트의 자식인지 체크
+                if (deskRoot != null && !oi.transform.IsChildOf(deskRoot)) continue;
+                Debug.Log($"[OntologyUI] {oi.gameObject.name} msg=\"{oi.message}\"");
+                ffcBack.ShowDescription(oi.message, overlay: true);
+                return;
             }
 
-            // 2순위: 현재 줌인된 오브젝트 자체 클릭 → 줌인 유지
-            foreach (var h in ffcHits)
-            {
-                var fi = h.collider.GetComponent<FurnitureInteraction>()
-                      ?? h.collider.GetComponentInParent<FurnitureInteraction>();
-                if (fi != null && fi == ffcBack.CurrentFI) return;
-            }
 
-            // 그 외 → 줌아웃
-            ffcBack.HideDescription();
+            // 그 외 → 줌아웃 (overlay 상태여도 강제 줌아웃)
+            if (ffcBack.descriptionPanel != null)
+                ffcBack.descriptionPanel.SetActive(false);
+            ffcBack.BackToFree();
             return;
         }
 
@@ -274,8 +292,11 @@ public class CameraController : MonoBehaviour
             bool hasNote      = h.collider.GetComponent<PostItNote>() != null
                              || h.collider.GetComponentInParent<PostItNote>() != null;
             bool hasBoard     = h.collider.GetComponent<BoardInteraction>() != null;
-            bool hasFurniture = h.collider.GetComponent<FurnitureInteraction>() != null
-                             || h.collider.GetComponentInParent<FurnitureInteraction>() != null;
+            bool hasOntology  = h.collider.GetComponent<OntologyItem>() != null
+                             || h.collider.GetComponentInParent<OntologyItem>() != null;
+            bool hasFurniture = !hasOntology &&
+                               (h.collider.GetComponent<FurnitureInteraction>() != null
+                             || h.collider.GetComponentInParent<FurnitureInteraction>() != null);
             bool hasTable     = h.collider.GetComponent<LaunchTableInteraction>() != null
                              || h.collider.GetComponentInParent<LaunchTableInteraction>() != null;
             bool hasCalendar  = h.collider.GetComponent<CalendarInteraction>() != null
@@ -380,6 +401,20 @@ public class CameraController : MonoBehaviour
             var col = hFurniture.Value.collider;
             var fi  = col.GetComponent<FurnitureInteraction>() ?? col.GetComponentInParent<FurnitureInteraction>();
             if (fi != null) { SaveState(); ffc.FocusFurniture(fi.gameObject); return; }
+        }
+
+        // 책상 밖 OntologyItem 직접 클릭 → 줌인 + UI
+        if (ffc != null && ffc.CurrentState == FurnitureFocusController.State.Free
+            && bfc.State == BoardFocusController.FocusState.Free)
+        {
+            foreach (var h in hits)
+            {
+                var oi = h.collider.GetComponent<OntologyItem>()
+                      ?? h.collider.GetComponentInParent<OntologyItem>();
+                if (oi == null) continue;
+                var fi = oi.GetComponent<FurnitureInteraction>();
+                if (fi != null) { SaveState(); ffc.FocusFurniture(fi.gameObject); return; }
+            }
         }
 
 

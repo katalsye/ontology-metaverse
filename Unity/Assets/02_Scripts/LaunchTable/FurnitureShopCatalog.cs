@@ -20,6 +20,7 @@ public class FurnitureShopCatalog : ScriptableObject
     {
         public string      displayName;
         public ColorData[] colors;
+
     }
 
     [System.Serializable]

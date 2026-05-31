@@ -16,6 +16,7 @@ public class OntologyItem : MonoBehaviour
     [Tooltip("Ignore = 겹침 체크 없이 항상 현재 위치에서 소환 (예: moon_lamp)")]
     public OntologyZone zone = OntologyZone.Floor;
 
+
     [Header("카메라 뷰포인트")]
     [Tooltip("줌인 시 카메라가 위치할 지점. 이 Transform의 position·rotation을 그대로 사용.\n" +
              "오브젝트 자식으로 빈 GameObject를 만들어 원하는 면을 향해 배치 후 연결.\n" +
@@ -38,25 +39,5 @@ public class OntologyItem : MonoBehaviour
         fi.zoomOnlyNoScene  = true;
         fi.allowInVisitRoom = true;
 
-        // Collider 없으면 자동 추가 (raycast 감지용)
-        if (GetComponentInChildren<Collider>() == null)
-        {
-            var col  = gameObject.AddComponent<BoxCollider>();
-            var rens = GetComponentsInChildren<Renderer>();
-            if (rens.Length > 0)
-            {
-                Bounds b = rens[0].bounds;
-                for (int i = 1; i < rens.Length; i++) b.Encapsulate(rens[i].bounds);
-                col.center = transform.InverseTransformPoint(b.center);
-                col.size   = new Vector3(
-                    b.size.x / transform.lossyScale.x,
-                    b.size.y / transform.lossyScale.y,
-                    b.size.z / transform.lossyScale.z);
-            }
-            else
-            {
-                col.size = Vector3.one; // Renderer 없을 때 기본 1×1×1
-            }
-        }
     }
 }
