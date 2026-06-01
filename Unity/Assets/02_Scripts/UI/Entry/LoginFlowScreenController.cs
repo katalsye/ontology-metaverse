@@ -235,16 +235,23 @@ public class LoginFlowScreenController : MonoBehaviour
 
         Debug.Log($"[LoginFlow] 프로필 저장: 닉네임={nickname}, 상태메시지={status}");
 
-        // TODO: Firestore에 유저 프로필 저장
-        // FirestoreManager.Instance.SaveProfile(nickname, status)
-
-        // 로컬 저장
+        // 로컬 저장 (오프라인 폴백용)
         PlayerPrefs.SetString("nickname", nickname);
         PlayerPrefs.SetString("status_message", status);
         PlayerPrefs.SetInt("onboarding_complete", 1);
         PlayerPrefs.Save();
 
-        // 마이룸으로 이동
-        ScreenManager.Instance.GoTo("myroom");
+        btnStart.SetEnabled(false);
+
+        // Firestore에 프로필 저장 후 화면 전환
+        UserManager.Instance.UpdateProfile(nickname, status,
+            onSuccess: () => ScreenManager.Instance.GoTo("myroom"),
+            onFailure: err =>
+            {
+                Debug.LogError($"[LoginFlow] 프로필 저장 실패: {err}");
+                // Firestore 실패해도 로컬 저장 완료됐으므로 진행
+                ScreenManager.Instance.GoTo("myroom");
+            }
+        );
     }
 }

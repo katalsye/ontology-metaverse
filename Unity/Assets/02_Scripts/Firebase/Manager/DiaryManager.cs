@@ -6,11 +6,20 @@ using System.Collections.Generic;
 
 public class DiaryManager : MonoBehaviour
 {
+    public static DiaryManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private RewardManager rewardManager;
 
-    private const int DiaryRewardAmount = 10; // 일기 보상 재화량
+    private const int DiaryRewardAmount = 10;
+
+    void Awake()
+    {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     void Start()
     {
