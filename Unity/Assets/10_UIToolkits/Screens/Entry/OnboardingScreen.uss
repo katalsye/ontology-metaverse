@@ -61,8 +61,8 @@
     font-size: var(--fs-body-sm);
     color: var(--ink-muted);
     -unity-text-align: middle-center;
-    white-space: normal;
-    line-height: 22px;
+    -unity-word-wrap: true;
+    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
 }
 
 /* ── 다운로드 영역 (슬라이드 4) ── */
@@ -137,7 +137,6 @@
     border-width: 0;
     font-size: var(--fs-caption);
     color: var(--ink-faint);
-    cursor: link;
     padding: 8px 16px;
 }
 

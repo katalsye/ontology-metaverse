@@ -26,7 +26,6 @@
     align-items: center;
     justify-content: center;
     margin-left: 8px;
-    cursor: link;
     transition-property: scale, opacity;
     transition-duration: 120ms;
 }
@@ -55,7 +54,6 @@
     font-size: var(--fs-small);
     color: var(--ink-muted);
     margin-right: 8px;
-    cursor: link;
     transition-property: background-color, color;
     transition-duration: 200ms;
 }
@@ -83,7 +81,6 @@
     margin-bottom: 10px;
     border-width: 1px;
     border-color: var(--line-faint);
-    cursor: link;
     transition-property: scale, opacity;
     transition-duration: 120ms;
 }
@@ -132,7 +129,7 @@
     margin-top: 3px;
     -unity-text-overflow-position: end;
     overflow: hidden;
-    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* 업데이트 점 */

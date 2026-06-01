@@ -58,7 +58,6 @@
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     padding: 4px 0;
-    cursor: link;
     position: relative;
 }
 
@@ -164,7 +163,6 @@
     top: 54px;
     left: 14px;
     right: 14px;
-    cursor: link;
 }
 
 .toast-card {

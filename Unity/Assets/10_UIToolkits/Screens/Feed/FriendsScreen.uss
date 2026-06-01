@@ -52,7 +52,7 @@
     -unity-font-style: bold;
     color: var(--ink-muted);
     margin-bottom: 10px;
-    text-transform: uppercase;
+    /* text-transform: C#에서 .ToUpper() 처리 */
     letter-spacing: 0.5px;
 }
 
@@ -102,7 +102,6 @@
     font-size: var(--fs-small);
     -unity-font-style: bold;
     border-width: 0;
-    cursor: link;
     flex-shrink: 0;
     transition-property: scale;
     transition-duration: 120ms;
