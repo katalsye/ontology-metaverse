@@ -7353,6 +7353,7 @@ MonoBehaviour:
   hangerMinY: 10
   hangerMaxY: 60
   postItColliderYOffset: 40
+  overlapShrink: 0.6
   ceilingY: 70
   editCamPosition: {x: -50, y: 150, z: 80}
   editCamLookAt: {x: -50, y: 0, z: 80}
@@ -7895,31 +7896,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomFurnitureCustomizer
   catalog: {fileID: 11400000, guid: 79b3ca796c8a61342844e1593463e4b3, type: 2}
+  shopCatalog: {fileID: 11400000, guid: 25985774eea8b4a478c4cc193e15249f, type: 2}
   entries:
   - target: {fileID: 1031763574}
+    keepVisible:
+    - {fileID: 1027224336}
     furnitureId: 0
-    modelIndex: 0
+    modelIndex: 2
     colorIndex: 0
+    modelOffsets:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 0.45}
+    - {x: 0, y: 0, z: 0.45}
   - target: {fileID: 1520578635}
+    keepVisible: []
     furnitureId: 1
     modelIndex: 0
     colorIndex: 0
+    modelOffsets: []
   - target: {fileID: 673457478}
+    keepVisible: []
     furnitureId: 2
     modelIndex: 0
     colorIndex: 0
+    modelOffsets: []
   - target: {fileID: 1809217883}
+    keepVisible: []
     furnitureId: 3
     modelIndex: 0
     colorIndex: 0
+    modelOffsets: []
   - target: {fileID: 1002906947}
+    keepVisible: []
     furnitureId: 4
     modelIndex: 0
     colorIndex: 0
+    modelOffsets: []
   - target: {fileID: 923807856}
-    furnitureId: 2
+    keepVisible: []
+    furnitureId: 5
     modelIndex: 0
     colorIndex: 0
+    modelOffsets: []
 --- !u!4 &1287878713
 Transform:
   m_ObjectHideFlags: 0
@@ -12822,6 +12840,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1027224337}
     m_Modifications:
+    - target: {fileID: 96053151915238164, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
+      propertyPath: m_Size.x
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 96053151915238164, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
+      propertyPath: m_Size.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 96053151915238164, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
+      propertyPath: m_Size.z
+      value: 0.26
+      objectReference: {fileID: 0}
+    - target: {fileID: 96053151915238164, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
+      propertyPath: m_Center.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5013015304456416618, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
       propertyPath: m_Name
       value: (Prb)DeskLight
@@ -15019,7 +15053,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.6, y: 2.4, z: 3}
+  m_Size: {x: 2.4, y: 2.4, z: 1.5}
   m_Center: {x: -0.00000038146976, y: 1.2, z: 1.3552538e-21}
 --- !u!1 &7480873751178235133
 GameObject:

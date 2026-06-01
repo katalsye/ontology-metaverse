@@ -44,6 +44,11 @@ public class FurnitureEditController : MonoBehaviour
     [Tooltip("PostIt(generic_marker)만 콜라이더(바운더리)를 글로벌 Y축으로 위로 올리는 양 (월드 단위).\n0 = 보정 없음. 본체보다 박스가 아래로 내려가 있을 때 양수로 키워서 맞춤")]
     public float postItColliderYOffset = 0f;
 
+    [Header("겹침 판정 빡빡함 (작을수록 덜 빡빡)")]
+    [Tooltip("가구 겹침 검사 시 콜라이더 크기에 곱하는 배수.\n1 = 콜라이더 그대로(빡빡). 0.7~0.85 권장 = 살짝 겹쳐도 허용.\n드래그 중 빨강 표시·저장 차단 둘 다에 적용됨")]
+    [Range(0.3f, 1f)]
+    public float overlapShrink = 0.8f;
+
 
     [Header("천장 부착 가구 Y (Ceiling 등)")]
     [Tooltip("천장 가구가 이동할 Y 높이 — 실제 천장 내부 표면에 맞게 조정")]
@@ -1679,7 +1684,7 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         {
             if (!col.enabled) continue;
             Vector3 center = col.bounds.center + offset;
-            Vector3 half   = col.bounds.extents * 1.0f;
+            Vector3 half   = col.bounds.extents * overlapShrink;
             half.y = Mathf.Min(half.y, 5f);
             foreach (var ov in Physics.OverlapBox(center, half, col.transform.rotation, ~0, QueryTriggerInteraction.Ignore))
             {
@@ -1733,7 +1738,7 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             foreach (var col in cfg.target.GetComponentsInChildren<Collider>())
             {
                 if (!col.enabled) continue;
-                Vector3 half = col.bounds.extents * 1.0f; // 더 작게 — 오탐 방지
+                Vector3 half = col.bounds.extents * overlapShrink; // overlapShrink로 빡빡함 조절
                 half.y = Mathf.Min(half.y, 5f);
                 foreach (var ov in Physics.OverlapBox(col.bounds.center, half, col.transform.rotation, ~0, QueryTriggerInteraction.Ignore))
                 {

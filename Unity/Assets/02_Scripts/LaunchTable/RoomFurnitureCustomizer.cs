@@ -33,6 +33,11 @@ public class RoomFurnitureCustomizer : MonoBehaviour
         [Tooltip("방에 배치된 실제 가구 GameObject (이 자체가 기본 모델)")]
         public GameObject target;
 
+        [Tooltip("교체 시 끄지 말아야 할 자식 (예: OnTable).\n" +
+                 "모델 교체하면 target 본체 메시를 끄는데, 여기 연결된 오브젝트와 그 자식들은\n" +
+                 "끄지 않고 그대로 둔다. 책상 위에 얹힌 물건(OnTable)이 사라지지 않게 하는 용도.")]
+        public GameObject[] keepVisible;
+
         [Tooltip("FurnitureSkinCatalog.furnitures 의 인덱스 (이 가구가 카탈로그의 몇 번인지)")]
         public int furnitureId;
 
@@ -41,6 +46,12 @@ public class RoomFurnitureCustomizer : MonoBehaviour
 
         [Tooltip("적용할 색상 번호 (colorChildren.materials 의 인덱스)")]
         public int colorIndex;
+
+        [Tooltip("교체 모델 위치 보정 (target 기준 로컬 offset).\n" +
+                 "모델 교체 시 살짝 틀어지는 걸 Inspector에서 미세조정.\n" +
+                 "variant별로 다르면 modelOffsets[variant번호]에 각각 입력.\n" +
+                 "비어있거나 해당 인덱스 없으면 (0,0,0) = 보정 없음.")]
+        public Vector3[] modelOffsets;
     }
 
     [Header("데이터 (모델/색상 카탈로그 — Closet과 공유 에셋)")]
@@ -85,17 +96,22 @@ public class RoomFurnitureCustomizer : MonoBehaviour
     public void ApplyEntry(Entry e)
     {
         if (e == null || e.target == null) return;
-        ApplyModel(e.target, e.furnitureId, e.modelIndex);
+        Vector3 offset = (e.modelOffsets != null && e.modelIndex >= 0 && e.modelIndex < e.modelOffsets.Length)
+            ? e.modelOffsets[e.modelIndex] : Vector3.zero;
+        ApplyModel(e.target, e.keepVisible, e.furnitureId, e.modelIndex, offset);
         ApplyColor(e.target, e.furnitureId, e.modelIndex, e.colorIndex);
     }
 
     // ── 모델 교체 ──────────────────────────────────────────────
 
-    public void ApplyModel(GameObject target, int furnitureId, int variantIndex)
+    /// <param name="keepVisible">교체 시 끄지 말 자식들(예: OnTable). 이들과 그 자식 렌더러는 본체에서 제외.</param>
+    /// <param name="modelOffset">교체 모델 클론의 로컬 위치 보정.</param>
+    public void ApplyModel(GameObject target, GameObject[] keepVisible, int furnitureId, int variantIndex,
+                           Vector3 modelOffset = default)
     {
         if (target == null) return;
 
-        CacheBodyRenderers(target);
+        CacheBodyRenderers(target, keepVisible);
 
         // 기존 클론 제거
         var existing = target.transform.Find(SpawnName);
@@ -116,9 +132,20 @@ public class RoomFurnitureCustomizer : MonoBehaviour
 
         var clone = Instantiate(prefab, target.transform);
         clone.name = SpawnName;
-        clone.transform.localPosition = Vector3.zero;
+        clone.transform.localPosition = modelOffset;   // 위치 보정 (Inspector 노브)
         clone.transform.localRotation = Quaternion.identity;
-        clone.transform.localScale    = Vector3.one;
+
+        // 프리팹 원본의 localScale을 그대로 사용 (부모로 나누는 보정 없음).
+        // Instantiate가 이미 원본 localScale로 생성하지만, 명시적으로 한 번 더 박아
+        // 의도를 분명히 한다. 크기 조절은 프리팹 자체 스케일로 하면 그대로 반영됨.
+        clone.transform.localScale = prefab.transform.localScale;
+
+        // 런타임 생성 클론은 Static이면 안 된다.
+        // Static 오브젝트는 시작 시 위치가 batching으로 구워져, 런타임 Instantiate한 것은
+        // 메시가 안 보이거나 엉뚱한 위치에 고정된다. 클론과 모든 자식의 static flag 해제.
+        foreach (var t in clone.GetComponentsInChildren<Transform>(true))
+            t.gameObject.isStatic = false;
+
         clone.SetActive(true);
     }
 
@@ -255,7 +282,9 @@ public class RoomFurnitureCustomizer : MonoBehaviour
 
     // ── 내부 유틸 ──────────────────────────────────────────────
 
-    void CacheBodyRenderers(GameObject target)
+    // target 하위 렌더러를 "본체"로 캐시하되, keepVisible(예: OnTable)과 그 자식은 제외한다.
+    // → 모델 교체로 본체를 꺼도 OnTable 위 물건은 그대로 보인다.
+    void CacheBodyRenderers(GameObject target, GameObject[] keepVisible)
     {
         if (_bodyRenderers.ContainsKey(target)) return;
 
@@ -265,9 +294,22 @@ public class RoomFurnitureCustomizer : MonoBehaviour
         foreach (var r in all)
         {
             if (spawn != null && r.transform.IsChildOf(spawn)) continue; // 클론 하위 제외
+            if (IsUnderAny(r.transform, keepVisible)) continue;          // OnTable 등 보존 대상 제외
             body.Add(r);
         }
         _bodyRenderers[target] = body.ToArray();
+    }
+
+    // t가 keepVisible 중 하나(또는 그 자식)인지
+    static bool IsUnderAny(Transform t, GameObject[] keepVisible)
+    {
+        if (keepVisible == null) return false;
+        foreach (var k in keepVisible)
+        {
+            if (k == null) continue;
+            if (t == k.transform || t.IsChildOf(k.transform)) return true;
+        }
+        return false;
     }
 
     void SetBodyRenderers(GameObject target, bool enabled)
