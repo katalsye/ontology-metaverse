@@ -276,6 +276,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 314546953}
+  - component: {fileID: 314546955}
   - component: {fileID: 314546954}
   m_Layer: 0
   m_Name: SleepScreen
@@ -311,7 +312,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc14367f83381ce4d815a3377f52b177, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SleepScreenController
-  uiDocument: {fileID: 0}
+  uiDocument: {fileID: 314546955}
+--- !u!114 &314546955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 314546952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 4f627d33d9cba154d88d7d2bf109fff8, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &349180351
 GameObject:
   m_ObjectHideFlags: 0
@@ -390,6 +414,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 362092223}
+  - component: {fileID: 362092225}
   - component: {fileID: 362092224}
   m_Layer: 0
   m_Name: CalendarScreen
@@ -425,7 +450,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8d5c74c4133042459f5607971f14194, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CalendarScreenController
-  uiDocument: {fileID: 0}
+  uiDocument: {fileID: 362092225}
+--- !u!114 &362092225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362092222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 1552e34a0ed0ee64e8da15d214a18aa1, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &381303873
 GameObject:
   m_ObjectHideFlags: 0
@@ -544,6 +592,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 461695270}
+  - component: {fileID: 461695272}
   - component: {fileID: 461695271}
   m_Layer: 0
   m_Name: BoardScreen
@@ -579,7 +628,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 869a831c566bc6f419d2b0bf76da8dde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardScreenController
-  uiDocument: {fileID: 0}
+  uiDocument: {fileID: 461695272}
+--- !u!114 &461695272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461695269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 6db5971a8b42b514b8c9b4999b5a3c54, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &549469956
 GameObject:
   m_ObjectHideFlags: 0
@@ -713,6 +785,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 631082436}
+  - component: {fileID: 631082438}
   - component: {fileID: 631082437}
   m_Layer: 0
   m_Name: QuestScreen
@@ -748,8 +821,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86ca5f13d428d54458c995aa5788b86e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestScreenController
-  uiDocument: {fileID: 0}
-  rewardPopup: {fileID: 0}
+  uiDocument: {fileID: 631082438}
+  rewardPopup: {fileID: 1850901947}
+--- !u!114 &631082438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 631082435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 5135242e3ad90ea4a960733baffaca9c, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &692974600
 GameObject:
   m_ObjectHideFlags: 0
@@ -828,7 +924,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DiaryScreenController
   uiDocument: {fileID: 849794335}
-  rewardPopup: {fileID: 0}
+  rewardPopup: {fileID: 1850901947}
 --- !u!114 &849794335
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -930,6 +1026,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 891785897}
+  - component: {fileID: 891785899}
   - component: {fileID: 891785898}
   m_Layer: 0
   m_Name: ShopScreen
@@ -965,8 +1062,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab02ded3bfe88804cb02e38680bdbb1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopScreenController
-  uiDocument: {fileID: 0}
-  rewardPopup: {fileID: 0}
+  uiDocument: {fileID: 891785899}
+  rewardPopup: {fileID: 1850901947}
+--- !u!114 &891785899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891785896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 8775097402850204bbad7455b708612f, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &919370171
 GameObject:
   m_ObjectHideFlags: 0
@@ -1308,6 +1428,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1554997851}
+  - component: {fileID: 1554997853}
   - component: {fileID: 1554997852}
   m_Layer: 0
   m_Name: DiaryHistoryScreen
@@ -1343,7 +1464,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6d6cd0dd082e4946974fd11bcfb6804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DiaryHistoryScreenController
-  uiDocument: {fileID: 0}
+  uiDocument: {fileID: 1554997853}
+--- !u!114 &1554997853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554997850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 5942dddafe6611642912a577b94a26d5, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1684701183
 GameObject:
   m_ObjectHideFlags: 0
@@ -1496,6 +1640,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2028554412}
+  - component: {fileID: 2028554414}
   - component: {fileID: 2028554413}
   m_Layer: 0
   m_Name: SettingsScreen
@@ -1531,7 +1676,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d484879336dc75840b11fabfbfa936a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SettingsScreenController
-  uiDocument: {fileID: 0}
+  uiDocument: {fileID: 2028554414}
+--- !u!114 &2028554414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2028554411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 5782cc0b3c08bf644acceb1d2a213b65, type: 3}
+  m_SortingOrder: 10
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &2060126629
 GameObject:
   m_ObjectHideFlags: 0
