@@ -1,9 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Firebase;
 
 /// <summary>
 /// BootManager — 앱 최초 실행 시 초기화 처리
-/// BootScene에 배치. 초기화 완료 후 MainScene으로 전환.
+/// BootScene에 배치. Firebase 초기화 완료 후 MainScene으로 전환.
 /// </summary>
 public class BootManager : MonoBehaviour
 {
@@ -19,17 +20,16 @@ public class BootManager : MonoBehaviour
     {
         Debug.Log("[Boot] 앱 초기화 시작");
 
-        // 1) Firebase 초기화
-        // TODO: Firebase SDK 연동 시 아래 주석 해제
-        // var dependencyStatus = await Firebase.FirebaseApp.CheckAndFixDependenciesAsync();
-        // if (dependencyStatus != Firebase.DependencyStatus.Available)
-        // {
-        //     Debug.LogError($"[Boot] Firebase 초기화 실패: {dependencyStatus}");
-        //     return;
-        // }
-        // Debug.Log("[Boot] Firebase 초기화 완료");
+        // 1) Firebase 초기화 — 완료 전까지 씬 전환 금지
+        var dependencyStatus = await FirebaseApp.CheckAndFixDependenciesAsync();
+        if (dependencyStatus != DependencyStatus.Available)
+        {
+            Debug.LogError($"[Boot] Firebase 초기화 실패: {dependencyStatus}");
+            return;
+        }
+        Debug.Log("[Boot] Firebase 초기화 완료");
 
-        // 2) 로컬 데이터 로드 (PlayerPrefs 등)
+        // 2) 로컬 데이터 로드
         LoadLocalData();
 
         // 3) MainScene 로드
@@ -39,7 +39,6 @@ public class BootManager : MonoBehaviour
 
     private void LoadLocalData()
     {
-        // 온보딩 완료 여부, 닉네임 등 기본 데이터 확인
         bool onboardingDone = PlayerPrefs.HasKey("onboarding_complete");
         Debug.Log($"[Boot] 온보딩 완료: {onboardingDone}");
     }

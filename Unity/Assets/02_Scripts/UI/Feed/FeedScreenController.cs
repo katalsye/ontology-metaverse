@@ -58,23 +58,48 @@ public class FeedScreenController : MonoBehaviour
     }
 
     /// <summary>
-    /// 피드 데이터 로드 (Firestore 연동 포인트)
+    /// 피드 데이터 로드 — 팔로잉 목록 → 각 유저 프로필 순차 조회
     /// </summary>
     private void LoadFeedData()
     {
-        // TODO: Firestore에서 팔로워 목록 + 최근 업데이트 가져오기
-        // var snapshot = await FirestoreManager.Instance.GetFeed(userId);
+        feedData.Clear();
+        RenderCards(); // 로딩 중 빈 상태 표시
 
-        // 테스트 데이터
-        feedData = new List<FeedCardData>
-        {
-            new FeedCardData("user1", "김민수", "오늘 카페에서 공부 중 ☕", "3분 전", true),
-            new FeedCardData("user2", "이지은", "퇴근하고 러닝 완료 🏃", "1시간 전", true),
-            new FeedCardData("user3", "박서준", "주말 요리 도전!", "3시간 전", false),
-            new FeedCardData("user4", "최유진", "도서관에서 독서 중 📚", "5시간 전", false),
-        };
+        FollowManager.Instance.GetFollowings(
+            onSuccess: followings =>
+            {
+                if (followings.Count == 0)
+                {
+                    RenderCards();
+                    return;
+                }
 
-        RenderCards();
+                int remaining = followings.Count;
+                foreach (var relation in followings)
+                {
+                    UserManager.Instance.GetUserProfileForFollow(relation.ToUid,
+                        onSuccess: profile =>
+                        {
+                            feedData.Add(new FeedCardData(
+                                profile.Uid,
+                                profile.Nickname,
+                                string.IsNullOrEmpty(profile.StatusMessage) ? "..." : profile.StatusMessage,
+                                "",
+                                false
+                            ));
+                            remaining--;
+                            if (remaining == 0) RenderCards();
+                        },
+                        onFailure: _ =>
+                        {
+                            remaining--;
+                            if (remaining == 0) RenderCards();
+                        }
+                    );
+                }
+            },
+            onFailure: err => Debug.LogError($"[Feed] 팔로잉 목록 로드 실패: {err}")
+        );
     }
 
     /// <summary>

@@ -154,6 +154,30 @@ public class UserManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
+    // 팔로우 관계 기반 프로필 읽기 (비공개 계정도 허용)
+    // ───────────────────────────────────────
+    public void GetUserProfileForFollow(string uid, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    {
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("유저 프로필 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            if (!task.Result.Exists)
+            {
+                onFailure?.Invoke("유저 없음");
+                return;
+            }
+
+            onSuccess?.Invoke(task.Result.ConvertTo<UserProfile>());
+        });
+    }
+
+    // ───────────────────────────────────────
     // 닉네임 기반 유저 검색
     // ───────────────────────────────────────
     public void SearchUserByNickname(string nickname, System.Action<List<UserProfile>> onSuccess, System.Action<string> onFailure = null)

@@ -66,28 +66,35 @@ public class QuestScreenController : MonoBehaviour
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         btnClaim.clicked += OnClaimReward;
 
-        LoadQuests();
+        QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
+        QuestManager.Instance.StartQuestListener();
     }
 
-    private void LoadQuests()
+    private void OnDisable()
     {
-        // TODO: Firestore에서 퀘스트 목록 가져오기
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.OnQuestsChanged -= OnQuestsUpdated;
+    }
 
-        allQuests = new List<QuestData>
-        {
-            new QuestData("q1", "카페 사진 3장 촬영", "갤러리에 카페 관련 사진을 3장 찍어보세요",
-                          QuestType.DataFill, QuestStatus.Active, 0.66f, 30),
-            new QuestData("q2", "오늘 2km 걷기", "건강한 하루를 위해 산책해보세요",
-                          QuestType.LifeImprove, QuestStatus.Active, 0.4f, 20),
-            new QuestData("q3", "수면 데이터 연동", "Health Connect에서 수면 기록을 가져오세요",
-                          QuestType.DataFill, QuestStatus.Done, 1f, 50),
-            new QuestData("q4", "한줄일기 작성", "오늘 하루를 한 줄로 기록해보세요",
-                          QuestType.Daily, QuestStatus.Active, 0f, 10),
-            new QuestData("q5", "물 8잔 마시기", "수분 섭취 목표를 달성해보세요",
-                          QuestType.LifeImprove, QuestStatus.Done, 1f, 15),
-        };
-
+    private void OnQuestsUpdated(System.Collections.Generic.List<Quest> quests)
+    {
+        allQuests = quests.ConvertAll(MapToQuestData);
         RenderQuests();
+    }
+
+    private QuestData MapToQuestData(Quest q)
+    {
+        var type = q.QuestType switch
+        {
+            "보완형" => QuestType.DataFill,
+            "개선형" => QuestType.LifeImprove,
+            "일일"  => QuestType.Daily,
+            _       => QuestType.DataFill,
+        };
+        var status = q.IsCompleted ? QuestStatus.Done : QuestStatus.Active;
+        float progress = q.IsCompleted ? 1f : 0f;
+
+        return new QuestData(q.QuestId, q.Title, "", type, status, progress, q.RewardAmount);
     }
 
     private void SetTab(string tab)
@@ -255,16 +262,21 @@ public class QuestScreenController : MonoBehaviour
     {
         if (selectedQuest == null) return;
 
-        Debug.Log($"[Quest] 보상 수령: {selectedQuest.title}, 코인 +{selectedQuest.rewardCoins}");
+        btnClaim.SetEnabled(false);
 
-        // TODO: Firestore 보상 처리
-
-        CloseDetail();
-
-        if (rewardPopup != null)
-        {
-            rewardPopup.Show("코인", selectedQuest.rewardCoins, null);
-        }
+        QuestManager.Instance.ClaimReward(selectedQuest.id, selectedQuest.rewardCoins,
+            onSuccess: () =>
+            {
+                int coins = selectedQuest.rewardCoins;
+                CloseDetail();
+                rewardPopup?.Show("코인", coins, null);
+            },
+            onFailure: err =>
+            {
+                Debug.LogError($"[Quest] 보상 수령 실패: {err}");
+                btnClaim.SetEnabled(true);
+            }
+        );
     }
 }
 
