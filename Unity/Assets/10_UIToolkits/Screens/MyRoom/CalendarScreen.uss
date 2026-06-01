@@ -1,0 +1,180 @@
+/* ============================================
+ * CalendarScreen.uss
+ * ============================================ */
+
+#calendar-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 월 네비게이션 ── */
+.month-nav {
+    padding: 8px 20px 16px;
+    justify-content: center;
+    align-items: center;
+}
+
+.month-arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    cursor: link;
+}
+
+.month-arrow:active {
+    scale: 0.9;
+}
+
+.month-arrow-text {
+    font-size: 22px;
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+}
+
+.month-title {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin: 0 20px;
+    -unity-text-align: middle-center;
+}
+
+/* ── 요일 헤더 ── */
+.weekday-header {
+    padding: 0 16px 8px;
+}
+
+.weekday-label {
+    flex: 1;
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}
+
+.weekday--sun {
+    color: var(--red);
+}
+
+.weekday--sat {
+    color: var(--sky);
+}
+
+/* ── 캘린더 그리드 ── */
+.calendar-grid {
+    padding: 0 16px;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+/* 날짜 셀 */
+.cal-cell {
+    width: 14.28%; /* 100 / 7 */
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    cursor: link;
+}
+
+.cal-cell-inner {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    align-items: center;
+    justify-content: center;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.cal-day {
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    -unity-text-align: middle-center;
+}
+
+/* 빈 셀 */
+.cal-cell--empty .cal-day {
+    color: rgba(0, 0, 0, 0);
+}
+
+/* 오늘 */
+.cal-cell--today .cal-cell-inner {
+    background-color: var(--rose-soft);
+}
+
+.cal-cell--today .cal-day {
+    color: var(--rose);
+    -unity-font-style: bold;
+}
+
+/* 선택된 날짜 */
+.cal-cell--selected .cal-cell-inner {
+    background-color: var(--rose);
+}
+
+.cal-cell--selected .cal-day {
+    color: var(--white);
+    -unity-font-style: bold;
+}
+
+/* 데이터 있는 날짜의 점 */
+.cal-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 3px;
+    background-color: var(--mint);
+    position: absolute;
+    bottom: 4px;
+}
+
+/* 일요일 */
+.cal-cell--sun .cal-day {
+    color: var(--red);
+}
+
+/* 토요일 */
+.cal-cell--sat .cal-day {
+    color: var(--sky);
+}
+
+/* 비활성 (이전/다음 달) */
+.cal-cell--disabled .cal-day {
+    color: var(--line);
+}
+
+/* ── 선택 정보 ── */
+.selected-info {
+    margin: 16px 20px;
+    padding: 16px;
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    border-width: 1px;
+    border-color: var(--line-faint);
+    display: none;
+}
+
+.selected-info--visible {
+    display: flex;
+}
+
+.selected-date-text {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 4px;
+}
+
+.selected-summary {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+}

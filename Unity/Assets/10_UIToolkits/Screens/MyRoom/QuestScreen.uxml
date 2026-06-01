@@ -1,0 +1,84 @@
+<!-- ============================================
+     4-11. QuestScreen.uxml — 퀘스트 목록 + 상세
+     진행 중 / 완료 / 일일 퀘스트 탭 전환
+     카드에 유형 라벨 (데이터 보완 / 삶 개선)
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="QuestScreen.uss" />
+
+    <ui:VisualElement name="quest-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="퀘스트" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <!-- 탭 바 -->
+        <ui:VisualElement name="tab-bar" class="tab-bar row">
+            <ui:Button name="tab-active" text="진행 중" class="tab-btn tab-btn--active" />
+            <ui:Button name="tab-done" text="완료" class="tab-btn" />
+            <ui:Button name="tab-daily" text="일일" class="tab-btn" />
+        </ui:VisualElement>
+
+        <!-- 퀘스트 리스트 -->
+        <ui:ScrollView name="quest-list" class="quest-list">
+            <!-- C#에서 동적 생성 -->
+        </ui:ScrollView>
+
+        <!-- 빈 상태 -->
+        <ui:VisualElement name="empty-state" class="empty-state center-content col">
+            <ui:Label text="📋" class="empty-emoji" />
+            <ui:Label name="empty-text" text="진행 중인 퀘스트가 없어요" class="empty-title" />
+        </ui:VisualElement>
+
+        <!-- 퀘스트 상세 오버레이 -->
+        <ui:VisualElement name="quest-detail-overlay" class="overlay-bg" style="display: none;">
+            <ui:VisualElement name="quest-detail-sheet" class="detail-sheet col">
+                <ui:Button name="btn-close-detail" class="close-btn">
+                    <ui:Label text="✕" class="close-btn-text" />
+                </ui:Button>
+
+                <ui:VisualElement class="detail-header">
+                    <ui:VisualElement name="detail-type-pill" class="pill pill--sky" />
+                    <ui:Label name="detail-title" text="" class="detail-title" />
+                    <ui:Label name="detail-desc" text="" class="detail-desc" />
+                </ui:VisualElement>
+
+                <!-- 진행 바 -->
+                <ui:VisualElement class="detail-progress col">
+                    <ui:VisualElement class="row" style="justify-content: space-between;">
+                        <ui:Label text="진행률" class="text-caption" />
+                        <ui:Label name="detail-progress-text" text="0%" class="text-caption" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="progress-bg">
+                        <ui:VisualElement name="detail-progress-fill" class="progress-fill" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- 보상 정보 -->
+                <ui:VisualElement class="detail-reward row">
+                    <ui:Label text="보상" class="text-caption" />
+                    <ui:VisualElement class="row">
+                        <ui:Label text="🪙" class="reward-icon" />
+                        <ui:Label name="detail-reward-amount" text="50" class="reward-amount" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- 보상 수령 버튼 (완료된 퀘스트만) -->
+                <ui:Button name="btn-claim" text="보상 수령"
+                           class="btn btn--md btn--rose btn--full" style="display: none;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

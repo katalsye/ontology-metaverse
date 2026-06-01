@@ -1,0 +1,244 @@
+/* ============================================
+ * QuestScreen.uss
+ * ============================================ */
+
+#quest-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 탭 바 ── */
+.tab-bar {
+    padding: 8px 20px 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    height: 38px;
+    border-radius: var(--r-md);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    cursor: link;
+    margin: 0 3px;
+    transition-property: background-color, color;
+    transition-duration: 200ms;
+}
+
+.tab-btn--active {
+    background-color: var(--rose);
+    color: var(--white);
+    -unity-font-style: bold;
+}
+
+.tab-btn:active {
+    scale: 0.96;
+}
+
+/* ── 퀘스트 리스트 ── */
+.quest-list {
+    flex-grow: 1;
+    padding: 0 20px;
+}
+
+/* 퀘스트 카드 */
+.quest-card {
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    margin-bottom: 10px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+    flex-direction: column;
+    cursor: link;
+    transition-property: scale;
+    transition-duration: 120ms;
+}
+
+.quest-card:active {
+    scale: 0.98;
+}
+
+.quest-card-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.quest-card-title {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink);
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+/* 유형 라벨 */
+.quest-type-pill {
+    border-radius: var(--r-full);
+    padding: 2px 8px;
+    font-size: var(--fs-micro);
+    -unity-font-style: bold;
+    flex-shrink: 0;
+}
+
+.quest-type--data {
+    background-color: var(--sky-soft);
+    color: #1E4860;
+}
+
+.quest-type--life {
+    background-color: var(--mint-soft);
+    color: #1E5A3E;
+}
+
+.quest-type--daily {
+    background-color: var(--butter-soft);
+    color: #5A4012;
+}
+
+.quest-card-desc {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+/* 프로그래스 바 */
+.quest-progress-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.progress-bg {
+    flex-grow: 1;
+    height: 6px;
+    border-radius: 3px;
+    background-color: var(--line-faint);
+    overflow: hidden;
+    margin-right: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background-color: var(--rose);
+    transition-property: width;
+    transition-duration: 300ms;
+}
+
+.quest-progress-text {
+    font-size: var(--fs-tiny);
+    color: var(--ink-muted);
+    min-width: 32px;
+    -unity-text-align: middle-right;
+}
+
+/* 보상 미리보기 */
+.quest-reward-preview {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.reward-icon {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+.reward-amount {
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    color: var(--butter);
+}
+
+/* 빈 상태 */
+.empty-state {
+    flex-grow: 1;
+    display: none;
+}
+
+.empty-state--visible {
+    display: flex;
+}
+
+.empty-emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-title {
+    font-size: var(--fs-body);
+    color: var(--ink-faint);
+}
+
+/* ── 퀘스트 상세 오버레이 ── */
+.detail-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--card);
+    border-top-left-radius: var(--r-2xl);
+    border-top-right-radius: var(--r-2xl);
+    padding: 24px 24px 40px;
+    min-height: 320px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    cursor: link;
+}
+
+.close-btn-text {
+    font-size: 14px;
+    color: var(--ink-muted);
+}
+
+.detail-header {
+    margin-bottom: 20px;
+    margin-top: 8px;
+}
+
+.detail-title {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.detail-desc {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    white-space: normal;
+    line-height: 22px;
+}
+
+.detail-progress {
+    margin-bottom: 16px;
+}
+
+.detail-reward {
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-top-width: 1px;
+    border-top-color: var(--line-faint);
+    margin-bottom: 16px;
+}

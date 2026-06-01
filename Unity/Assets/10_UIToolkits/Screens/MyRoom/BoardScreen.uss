@@ -1,0 +1,149 @@
+/* ============================================
+ * BoardScreen.uss
+ * ============================================ */
+
+#board-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 댓글 리스트 ── */
+.comment-list {
+    flex-grow: 1;
+    padding: 8px 20px;
+}
+
+/* 댓글 카드 */
+.comment-card {
+    flex-direction: row;
+    padding: 12px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+}
+
+.comment-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: var(--lav-soft);
+    flex-shrink: 0;
+    margin-right: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.comment-avatar-emoji {
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}
+
+.comment-body {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.comment-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.comment-name {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-right: 8px;
+}
+
+.comment-time {
+    font-size: var(--fs-micro);
+    color: var(--ink-faint);
+}
+
+.comment-text {
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    white-space: normal;
+    line-height: 20px;
+}
+
+/* 빈 상태 */
+.empty-state {
+    flex-grow: 1;
+    display: none;
+}
+
+.empty-state--visible {
+    display: flex;
+}
+
+.empty-emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-title {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+}
+
+.empty-desc {
+    font-size: var(--fs-small);
+    color: var(--ink-faint);
+}
+
+/* ── 입력 바 ── */
+.input-bar {
+    padding: 12px 20px 28px;
+    background-color: var(--card);
+    border-top-width: 1px;
+    border-top-color: var(--line-faint);
+    align-items: center;
+}
+
+.comment-input {
+    flex-grow: 1;
+    height: 42px;
+    border-radius: 21px;
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--bg);
+    padding: 0 16px;
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    margin-right: 8px;
+}
+
+.comment-input:focus {
+    border-color: var(--rose);
+}
+
+.send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 21px;
+    background-color: var(--rose);
+    border-width: 0;
+    flex-shrink: 0;
+    cursor: link;
+    transition-property: scale;
+    transition-duration: 120ms;
+}
+
+.send-btn:active {
+    scale: 0.9;
+}
+
+.send-btn-text {
+    font-size: 18px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}

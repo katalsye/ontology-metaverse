@@ -1,0 +1,196 @@
+/* ============================================
+ * AppComponents.uss — 공유 컴포넌트 스타일
+ * ============================================ */
+
+/* ── 공통 리셋 ── */
+.full-screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.center-content {
+    align-items: center;
+    justify-content: center;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.col {
+    flex-direction: column;
+}
+
+/* ── 카드 ── */
+.card {
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    padding: var(--sp-lg);
+    border-width: 1px;
+    border-color: var(--line-faint);
+}
+
+.card-soft {
+    background-color: var(--card-soft);
+    border-radius: var(--r-xl);
+    padding: var(--sp-lg);
+}
+
+/* ── 필 (Pill) 태그 ── */
+.pill {
+    border-radius: var(--r-full);
+    padding: 3px 10px;
+    -unity-font-style: bold;
+    font-size: var(--fs-tiny);
+}
+
+.pill--rose {
+    background-color: var(--rose-soft);
+    color: #6B2A2A;
+}
+
+.pill--mint {
+    background-color: var(--mint-soft);
+    color: #1E5A3E;
+}
+
+.pill--butter {
+    background-color: var(--butter-soft);
+    color: #5A4012;
+}
+
+.pill--lav {
+    background-color: var(--lav-soft);
+    color: #3C3068;
+}
+
+.pill--sky {
+    background-color: var(--sky-soft);
+    color: #1E4860;
+}
+
+/* ── CTA 버튼 ── */
+.btn {
+    align-items: center;
+    justify-content: center;
+    -unity-font-style: bold;
+    border-width: 0;
+    cursor: link;
+    transition-property: scale, opacity;
+    transition-duration: var(--dur-fast);
+}
+
+.btn:active {
+    scale: 0.97;
+    opacity: 0.85;
+}
+
+.btn--md {
+    height: 48px;
+    font-size: var(--fs-body);
+    padding: 0 18px;
+    border-radius: var(--r-lg);
+}
+
+.btn--sm {
+    height: 36px;
+    font-size: var(--fs-caption);
+    padding: 0 14px;
+    border-radius: var(--r-md);
+}
+
+.btn--lg {
+    height: 54px;
+    font-size: 16px;
+    padding: 0 20px;
+    border-radius: 18px;
+}
+
+.btn--rose {
+    background-color: var(--rose);
+    color: var(--white);
+}
+
+.btn--soft {
+    background-color: var(--card-soft);
+    color: var(--ink);
+}
+
+.btn--ghost {
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--ink);
+    border-width: 1px;
+    border-color: var(--line);
+}
+
+.btn--full {
+    width: 100%;
+}
+
+/* ── 텍스트 스타일 ── */
+.text-hero {
+    font-size: var(--fs-hero);
+    -unity-font-style: bold;
+    color: var(--ink);
+    letter-spacing: -1px;
+}
+
+.text-title {
+    font-size: var(--fs-title);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.text-heading {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.text-subhead {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.text-body {
+    font-size: var(--fs-body);
+    color: var(--ink);
+}
+
+.text-body-sm {
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+}
+
+.text-caption {
+    font-size: var(--fs-caption);
+    color: var(--ink-muted);
+}
+
+.text-small {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+}
+
+.text-tiny {
+    font-size: var(--fs-tiny);
+    color: var(--ink-faint);
+}
+
+/* ── 오버레이 ── */
+.overlay-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--overlay);
+}
+
+/* ── 구분선 ── */
+.divider {
+    height: 1px;
+    background-color: var(--line-faint);
+    width: 100%;
+}

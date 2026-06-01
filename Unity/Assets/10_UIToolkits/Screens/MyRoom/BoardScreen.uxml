@@ -1,0 +1,46 @@
+<!-- ============================================
+     4-7. BoardScreen.uxml — 게시판 (방명록)
+     댓글 리스트 + 입력창
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="BoardScreen.uss" />
+
+    <ui:VisualElement name="board-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="방명록" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <!-- 댓글 리스트 -->
+        <ui:ScrollView name="comment-list" class="comment-list">
+            <!-- C#에서 동적 생성 -->
+        </ui:ScrollView>
+
+        <!-- 빈 상태 -->
+        <ui:VisualElement name="empty-state" class="empty-state center-content col">
+            <ui:Label text="💬" class="empty-emoji" />
+            <ui:Label text="아직 방명록이 비어있어요" class="empty-title" />
+            <ui:Label text="첫 번째 메시지를 남겨보세요" class="empty-desc" />
+        </ui:VisualElement>
+
+        <!-- 입력 영역 -->
+        <ui:VisualElement name="input-bar" class="input-bar row">
+            <ui:TextField name="input-comment" class="comment-input" />
+            <ui:Button name="btn-send" class="send-btn center-content">
+                <ui:Label text="↑" class="send-btn-text" />
+            </ui:Button>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

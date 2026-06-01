@@ -1,0 +1,273 @@
+/* ============================================
+ * SettingsScreen.uss
+ * ============================================ */
+
+#settings-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-scroll {
+    flex-grow: 1;
+    padding: 8px 20px 20px;
+}
+
+/* ── 그룹 ── */
+.settings-group {
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    padding: 4px 16px;
+    margin-bottom: 12px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+}
+
+.group-title {
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    color: var(--ink-muted);
+    padding: 12px 0 4px;
+}
+
+/* ── 프로필 미니 ── */
+.profile-row {
+    padding: 14px 0;
+    align-items: center;
+    cursor: link;
+}
+
+.profile-mini-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    background-color: var(--butter-soft);
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.profile-mini-emoji {
+    font-size: 22px;
+}
+
+.profile-mini-name {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+
+.profile-mini-action {
+    font-size: var(--fs-small);
+    color: var(--rose);
+}
+
+.row-chevron {
+    font-size: 18px;
+    color: var(--ink-faint);
+}
+
+/* ── 설정 행 ── */
+.setting-row {
+    padding: 12px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+}
+
+.setting-row:last-child {
+    border-bottom-width: 0;
+}
+
+.setting-row.row {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-label {
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    margin-bottom: 4px;
+}
+
+/* 토글 */
+.toggle {
+    width: 48px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: var(--line);
+    flex-shrink: 0;
+    cursor: link;
+    transition-property: background-color;
+    transition-duration: 200ms;
+    position: relative;
+}
+
+.toggle--on {
+    background-color: var(--rose);
+}
+
+/* 슬라이더 */
+.setting-slider {
+    margin-top: 4px;
+}
+
+/* 세그먼트 버튼 */
+.segmented {
+    margin-top: 6px;
+    background-color: var(--card-soft);
+    border-radius: var(--r-sm);
+    padding: 3px;
+}
+
+.seg-btn {
+    flex: 1;
+    height: 32px;
+    border-radius: var(--r-xs);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    cursor: link;
+    transition-property: background-color, color;
+    transition-duration: 150ms;
+}
+
+.seg-btn--active {
+    background-color: var(--card);
+    color: var(--ink);
+    -unity-font-style: bold;
+}
+
+/* ── 계정 버튼 ── */
+.account-btn {
+    width: 100%;
+    height: 44px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    -unity-text-align: middle-left;
+    padding: 0;
+    cursor: link;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+}
+
+.account-btn--danger {
+    color: var(--red);
+    border-bottom-width: 0;
+}
+
+/* ── 프로필 편집 시트 ── */
+.detail-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--card);
+    border-top-left-radius: var(--r-2xl);
+    border-top-right-radius: var(--r-2xl);
+    padding: 24px 24px 40px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    cursor: link;
+}
+
+.close-btn-text {
+    font-size: 14px;
+    color: var(--ink-muted);
+}
+
+.sheet-title {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 20px;
+    margin-top: 8px;
+}
+
+.edit-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    background-color: var(--butter-soft);
+    align-self: center;
+    margin-bottom: 24px;
+}
+
+.edit-avatar-emoji {
+    font-size: 40px;
+}
+
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 6px;
+}
+
+.text-input {
+    height: 48px;
+    border-radius: var(--r-md);
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--bg);
+    padding: 0 14px;
+    font-size: var(--fs-body);
+    color: var(--ink);
+}
+
+.text-input:focus {
+    border-color: var(--rose);
+}
+
+/* ── 삭제 확인 팝업 ── */
+.confirm-popup {
+    width: 280px;
+    padding: 28px 24px;
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    align-self: center;
+    margin: auto;
+}
+
+.confirm-title {
+    font-size: var(--fs-heading);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+.confirm-desc {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    margin-bottom: 20px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.confirm-delete-btn {
+    background-color: var(--red);
+    color: var(--white);
+    margin-bottom: 8px;
+}

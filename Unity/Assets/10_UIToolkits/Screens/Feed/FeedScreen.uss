@@ -1,0 +1,190 @@
+/* ============================================
+ * FeedScreen.uss
+ * ============================================ */
+
+#feed-root {
+    background-color: var(--bg);
+}
+
+/* ── 헤더 ── */
+.feed-header {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-right {
+    flex-direction: row;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    cursor: link;
+    transition-property: scale, opacity;
+    transition-duration: 120ms;
+}
+
+.icon-btn:active {
+    scale: 0.93;
+    opacity: 0.8;
+}
+
+.icon-btn-text {
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}
+
+/* ── 정렬 필터 바 ── */
+.sort-bar {
+    padding: 8px 20px 12px;
+}
+
+.sort-chip {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background-color: var(--card-soft);
+    border-width: 0;
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    margin-right: 8px;
+    cursor: link;
+    transition-property: background-color, color;
+    transition-duration: 200ms;
+}
+
+.sort-chip--active {
+    background-color: var(--rose);
+    color: var(--white);
+    -unity-font-style: bold;
+}
+
+.sort-chip:active {
+    scale: 0.95;
+}
+
+/* ── 카드 리스트 ── */
+.feed-scroll {
+    flex-grow: 1;
+    padding: 0 20px;
+}
+
+.feed-card {
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-width: 1px;
+    border-color: var(--line-faint);
+    cursor: link;
+    transition-property: scale, opacity;
+    transition-duration: 120ms;
+}
+
+.feed-card:active {
+    scale: 0.98;
+    opacity: 0.9;
+}
+
+/* 아바타 */
+.feed-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    background-color: var(--butter-soft);
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.feed-avatar-emoji {
+    font-size: 22px;
+    -unity-text-align: middle-center;
+}
+
+/* 카드 텍스트 */
+.feed-card-text {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.feed-card-name {
+    font-size: var(--fs-body-sm);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-right: 8px;
+}
+
+.feed-card-time {
+    font-size: var(--fs-tiny);
+    color: var(--ink-faint);
+}
+
+.feed-card-status {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+    margin-top: 3px;
+    -unity-text-overflow-position: end;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* 업데이트 점 */
+.update-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--red);
+    flex-shrink: 0;
+    margin-left: 8px;
+    align-self: center;
+}
+
+.update-dot--hidden {
+    display: none;
+}
+
+/* ── 빈 상태 ── */
+.empty-state {
+    flex-grow: 1;
+    padding: 40px 24px;
+    display: none; /* C#에서 카드 0개일 때 flex로 변경 */
+}
+
+.empty-state--visible {
+    display: flex;
+}
+
+.empty-illust {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+    background-color: var(--butter-soft);
+    margin-bottom: 20px;
+}
+
+.empty-emoji {
+    font-size: 44px;
+    -unity-text-align: middle-center;
+}
+
+.empty-title {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+.empty-desc {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    margin-bottom: 24px;
+    -unity-text-align: middle-center;
+}

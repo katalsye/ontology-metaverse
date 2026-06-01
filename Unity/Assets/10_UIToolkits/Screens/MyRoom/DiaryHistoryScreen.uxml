@@ -1,0 +1,48 @@
+<!-- ============================================
+     4-4. DiaryHistoryScreen.uxml — 과거 일기 열람
+     월별 그룹 + 일기 카드 리스트
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="DiaryHistoryScreen.uss" />
+
+    <ui:VisualElement name="history-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="일기 모아보기" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <!-- 월 선택 -->
+        <ui:VisualElement name="month-selector" class="month-selector row">
+            <ui:Button name="btn-prev-month" class="month-arrow">
+                <ui:Label text="‹" class="month-arrow-text" />
+            </ui:Button>
+            <ui:Label name="current-month" text="2026년 5월" class="month-label" />
+            <ui:Button name="btn-next-month" class="month-arrow">
+                <ui:Label text="›" class="month-arrow-text" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- 일기 리스트 -->
+        <ui:ScrollView name="diary-list" class="diary-list">
+            <!-- C#에서 동적 생성 -->
+        </ui:ScrollView>
+
+        <!-- 빈 상태 -->
+        <ui:VisualElement name="empty-state" class="empty-state center-content col">
+            <ui:Label text="📝" class="empty-emoji" />
+            <ui:Label text="이 달에 작성한 일기가 없어요" class="empty-title" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

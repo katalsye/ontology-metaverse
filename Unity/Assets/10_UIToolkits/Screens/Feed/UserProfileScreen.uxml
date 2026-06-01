@@ -1,0 +1,62 @@
+<!-- ============================================
+     2-3. UserProfileScreen.uxml — 유저 프로필
+     팔로우/언팔로우, 팔로워·팔로잉 수
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="UserProfileScreen.uss" />
+
+    <ui:VisualElement name="profile-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="프로필" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <!-- 프로필 카드 -->
+        <ui:VisualElement name="profile-card" class="profile-card center-content col">
+
+            <!-- 아바타 -->
+            <ui:VisualElement name="profile-avatar" class="profile-avatar center-content">
+                <ui:Label text="😊" class="profile-avatar-emoji" />
+            </ui:VisualElement>
+
+            <!-- 닉네임 -->
+            <ui:Label name="profile-nickname" text="닉네임" class="profile-nickname" />
+
+            <!-- 상태메시지 -->
+            <ui:Label name="profile-status" text="상태메시지가 여기에 표시돼요"
+                      class="profile-status" />
+
+            <!-- 팔로워 / 팔로잉 통계 -->
+            <ui:VisualElement name="stats-row" class="stats-row row">
+                <ui:VisualElement class="stat-item center-content col">
+                    <ui:Label name="stat-followers-count" text="128" class="stat-count" />
+                    <ui:Label text="팔로워" class="stat-label" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="stat-divider" />
+
+                <ui:VisualElement class="stat-item center-content col">
+                    <ui:Label name="stat-following-count" text="64" class="stat-count" />
+                    <ui:Label text="팔로잉" class="stat-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 팔로우/언팔로우 버튼 -->
+            <ui:Button name="btn-follow" text="팔로우"
+                       class="btn btn--md btn--rose btn--full" />
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

@@ -1,0 +1,125 @@
+/* ============================================
+ * DiaryScreen.uss
+ * ============================================ */
+
+#diary-root {
+    background-color: var(--bg);
+}
+
+/* ── 상단 바 ── */
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 날짜 + 연속 기록 ── */
+.diary-header {
+    padding: 16px 20px 20px;
+}
+
+.diary-date {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+.streak-badge {
+    background-color: var(--butter-soft);
+    border-radius: var(--r-full);
+    padding: 4px 14px;
+    align-items: center;
+}
+
+.streak-icon {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+.streak-text {
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    color: #5A4012;
+}
+
+/* ── 일기 입력 ── */
+.diary-input-area {
+    margin: 0 20px;
+    padding: 20px;
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    border-width: 1px;
+    border-color: var(--line-faint);
+    flex-grow: 1;
+    max-height: 240px;
+}
+
+.diary-prompt {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+}
+
+.diary-input {
+    flex-grow: 1;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    font-size: var(--fs-body);
+    color: var(--ink);
+    white-space: normal;
+    padding: 0;
+    min-height: 80px;
+}
+
+.diary-input:focus {
+    border-width: 0;
+}
+
+.diary-input-footer {
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+/* ── 퀘스트 힌트 ── */
+.quest-hint {
+    margin: 16px 20px;
+    padding: 14px 16px;
+    background-color: var(--mint-soft);
+    border-radius: var(--r-lg);
+    align-items: center;
+}
+
+.quest-hint-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background-color: var(--mint);
+    margin-right: 12px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.quest-hint-emoji {
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}
+
+.quest-hint-title {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: #1E5A3E;
+    margin-bottom: 2px;
+}
+
+.quest-hint-desc {
+    font-size: var(--fs-small);
+    color: #1E5A3E;
+    opacity: 0.8;
+}
+
+/* ── 하단 ── */
+.diary-bottom {
+    padding: 16px 20px 32px;
+}

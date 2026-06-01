@@ -1,0 +1,155 @@
+<!-- ============================================
+     6-1. SettingsScreen.uxml — 설정 메인
+     6-2 프로필 편집은 별도 오버레이로 처리
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="SettingsScreen.uss" />
+
+    <ui:VisualElement name="settings-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="설정" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <ui:ScrollView class="settings-scroll">
+
+            <!-- 프로필 섹션 -->
+            <ui:VisualElement name="profile-section" class="settings-group">
+                <ui:VisualElement name="btn-edit-profile" class="profile-row row">
+                    <ui:VisualElement class="profile-mini-avatar center-content">
+                        <ui:Label text="😊" class="profile-mini-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="col" style="flex-grow: 1;">
+                        <ui:Label name="settings-nickname" text="닉네임" class="profile-mini-name" />
+                        <ui:Label text="프로필 편집" class="profile-mini-action" />
+                    </ui:VisualElement>
+                    <ui:Label text="›" class="row-chevron" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 알림 -->
+            <ui:VisualElement class="settings-group">
+                <ui:Label text="알림" class="group-title" />
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="푸시 알림" class="setting-label" />
+                    <ui:VisualElement name="toggle-push" class="toggle" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 데이터 권한 -->
+            <ui:VisualElement class="settings-group">
+                <ui:Label text="데이터 권한" class="group-title" />
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="갤러리 접근" class="setting-label" />
+                    <ui:VisualElement name="toggle-gallery" class="toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="위치 접근" class="setting-label" />
+                    <ui:VisualElement name="toggle-location" class="toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="Health Connect" class="setting-label" />
+                    <ui:VisualElement name="toggle-health" class="toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="앱 사용시간" class="setting-label" />
+                    <ui:VisualElement name="toggle-usage" class="toggle" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 사운드 -->
+            <ui:VisualElement class="settings-group">
+                <ui:Label text="사운드" class="group-title" />
+                <ui:VisualElement class="setting-row col">
+                    <ui:Label text="BGM" class="setting-label" />
+                    <ui:Slider name="slider-bgm" low-value="0" high-value="100"
+                               value="70" class="setting-slider" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row col">
+                    <ui:Label text="효과음" class="setting-label" />
+                    <ui:Slider name="slider-sfx" low-value="0" high-value="100"
+                               value="80" class="setting-slider" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 그래픽 -->
+            <ui:VisualElement class="settings-group">
+                <ui:Label text="그래픽" class="group-title" />
+                <ui:VisualElement class="setting-row col">
+                    <ui:Label text="해상도" class="setting-label" />
+                    <ui:VisualElement name="seg-resolution" class="segmented row">
+                        <ui:Button name="res-low" text="낮음" class="seg-btn" />
+                        <ui:Button name="res-mid" text="중간" class="seg-btn seg-btn--active" />
+                        <ui:Button name="res-high" text="높음" class="seg-btn" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row col">
+                    <ui:Label text="프레임" class="setting-label" />
+                    <ui:VisualElement name="seg-fps" class="segmented row">
+                        <ui:Button name="fps-30" text="30fps" class="seg-btn seg-btn--active" />
+                        <ui:Button name="fps-60" text="60fps" class="seg-btn" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 계정 -->
+            <ui:VisualElement class="settings-group">
+                <ui:Label text="계정" class="group-title" />
+                <ui:Button name="btn-logout" text="로그아웃" class="account-btn" />
+                <ui:Button name="btn-delete" text="계정 삭제" class="account-btn account-btn--danger" />
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+        <!-- 6-2 프로필 편집 오버레이 -->
+        <ui:VisualElement name="profile-edit-overlay" class="overlay-bg" style="display: none;">
+            <ui:VisualElement name="profile-edit-sheet" class="detail-sheet col">
+                <ui:Button name="btn-close-edit" class="close-btn">
+                    <ui:Label text="✕" class="close-btn-text" />
+                </ui:Button>
+
+                <ui:Label text="프로필 편집" class="sheet-title" />
+
+                <ui:VisualElement class="edit-avatar center-content">
+                    <ui:Label text="😊" class="edit-avatar-emoji" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="input-group col">
+                    <ui:Label text="닉네임" class="input-label" />
+                    <ui:TextField name="edit-nickname" class="text-input" max-length="12" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="input-group col">
+                    <ui:Label text="상태메시지" class="input-label" />
+                    <ui:TextField name="edit-status" class="text-input" max-length="30" />
+                </ui:VisualElement>
+
+                <ui:Button name="btn-save-profile" text="저장"
+                           class="btn btn--md btn--rose btn--full" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 계정 삭제 확인 팝업 -->
+        <ui:VisualElement name="delete-confirm-overlay" class="overlay-bg" style="display: none;">
+            <ui:VisualElement class="confirm-popup center-content col">
+                <ui:Label text="정말 삭제하시겠어요?" class="confirm-title" />
+                <ui:Label text="모든 데이터가 영구적으로 삭제되며&#10;복구할 수 없어요"
+                          class="confirm-desc" />
+                <ui:Button name="btn-confirm-delete" text="삭제하기" class="btn btn--md btn--full confirm-delete-btn" />
+                <ui:Button name="btn-cancel-delete" text="취소" class="btn btn--md btn--ghost btn--full" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

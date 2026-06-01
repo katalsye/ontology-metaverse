@@ -1,0 +1,146 @@
+/* ============================================
+ * OnboardingScreen.uss
+ * ============================================ */
+
+#onboarding-root {
+    background-color: var(--bg);
+}
+
+/* ── 슬라이드 영역 ── */
+.slide-area {
+    flex-grow: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+}
+
+.slide.active {
+    display: flex;
+    opacity: 1;
+}
+
+.slide.hidden {
+    display: none;
+    opacity: 0;
+}
+
+/* 일러스트 플레이스홀더 */
+.slide-illust {
+    width: 200px;
+    height: 200px;
+    border-radius: 40px;
+    background-color: var(--butter-soft);
+    margin-bottom: 32px;
+    /* 실제 구현 시: background-image로 일러스트 Sprite 지정 */
+}
+
+#slide-0-illust { background-color: var(--butter-soft); }
+#slide-1-illust { background-color: var(--mint-soft); }
+#slide-2-illust { background-color: var(--lav-soft); }
+#slide-3-illust { background-color: var(--sky-soft); }
+
+.slide-title {
+    font-size: var(--fs-title);
+    -unity-font-style: bold;
+    color: var(--ink);
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.slide-desc {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    line-height: 22px;
+}
+
+/* ── 다운로드 영역 (슬라이드 4) ── */
+.download-area {
+    margin-top: 24px;
+    width: 100%;
+    max-width: 280px;
+    align-items: center;
+}
+
+.progress-bg {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--line-faint);
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 4px;
+    background-color: var(--sky);
+    transition-property: width;
+    transition-duration: 300ms;
+}
+
+#download-status {
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+    margin-bottom: 4px;
+}
+
+#download-size {
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}
+
+/* ── 하단 컨트롤 ── */
+.bottom-area {
+    padding: 16px 24px 40px;
+    align-items: center;
+}
+
+/* 인디케이터 점 */
+.indicator-row {
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--line);
+    margin: 0 4px;
+    transition-property: width, background-color;
+    transition-duration: 200ms;
+}
+
+.dot--active {
+    width: 24px;
+    background-color: var(--rose);
+    border-radius: 4px;
+}
+
+/* 건너뛰기 */
+.btn-skip {
+    margin-top: 12px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    font-size: var(--fs-caption);
+    color: var(--ink-faint);
+    cursor: link;
+    padding: 8px 16px;
+}
+
+.btn-skip:hover {
+    color: var(--ink-muted);
+}
