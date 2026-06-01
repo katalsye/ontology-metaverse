@@ -78,7 +78,16 @@ public class LoginFlowScreenController : MonoBehaviour
         // 닉네임 유효성 실시간 체크
         inputNickname.RegisterValueChangedCallback(OnNicknameChanged);
 
-        // 초기 상태
+        // 이미 로그인된 상태면 로그인 단계 스킵
+        if (AuthService.Instance != null && AuthService.Instance.IsLoggedIn)
+        {
+            if (PlayerPrefs.HasKey("onboarding_complete"))
+                ScreenManager.Instance.GoTo("myroom");
+            else
+                GoToStep(1); // 권한 요청 단계부터
+            return;
+        }
+
         GoToStep(0);
     }
 
@@ -165,13 +174,24 @@ public class LoginFlowScreenController : MonoBehaviour
     /// </summary>
     private void OnSocialLogin(string provider)
     {
-        Debug.Log($"[LoginFlow] 소셜 로그인: {provider}");
+        if (provider == "kakao")
+        {
+            Debug.Log("[LoginFlow] 카카오 로그인은 아직 준비 중입니다.");
+            return;
+        }
 
-        // TODO: Firebase Auth 연동
-        // FirebaseAuth.DefaultInstance.SignInWithCredentialAsync(credential)
+        btnGoogle.SetEnabled(false);
+        btnKakao.SetEnabled(false);
 
-        // 로그인 성공 가정 → 권한 요청으로
-        GoToStep(1);
+        AuthService.Instance.SignInWithGoogle(
+            onSuccess: () => GoToStep(1),
+            onFailure: err =>
+            {
+                Debug.LogError($"[LoginFlow] 로그인 실패: {err}");
+                btnGoogle.SetEnabled(true);
+                btnKakao.SetEnabled(true);
+            }
+        );
     }
 
     /// <summary>
