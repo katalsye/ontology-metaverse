@@ -38,16 +38,16 @@
     --overlay:      rgba(40, 28, 12, 0.55);
 
     /* ── 타이포 크기 ── */
-    --fs-hero:      28px;
-    --fs-title:     24px;
-    --fs-heading:   20px;
-    --fs-subhead:   18px;
-    --fs-body:      15px;
-    --fs-body-sm:   14px;
-    --fs-caption:   13px;
-    --fs-small:     12px;
-    --fs-tiny:      11px;
-    --fs-micro:     10px;
+    --fs-hero:      40px;
+    --fs-title:     34px;
+    --fs-heading:   28px;
+    --fs-subhead:   24px;
+    --fs-body:      20px;
+    --fs-body-sm:   18px;
+    --fs-caption:   16px;
+    --fs-small:     15px;
+    --fs-tiny:      13px;
+    --fs-micro:     12px;
 
     /* ── 둥글기 ── */
     --r-xs:         6px;

@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using OntologyMetaverse.DataCollection.SQLite;
 using MetadataExtractor;
+using IODirectory = System.IO.Directory;
 using MetadataExtractor.Formats.Exif;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -78,7 +79,7 @@ namespace OntologyMetaverse.DataCollection.Gallery
             }
 
             // 2. 폴더 존재 확인
-            if (!Directory.Exists(cameraFolderPath))
+            if (!IODirectory.Exists(cameraFolderPath))
             {
                 Debug.LogError($"[GalleryEXIFCollector] 폴더 없음: {cameraFolderPath}");
                 return;
@@ -123,7 +124,7 @@ namespace OntologyMetaverse.DataCollection.Gallery
         {
             try
             {
-                return Directory.GetFiles(folder, "*.jpg", SearchOption.TopDirectoryOnly)
+                return IODirectory.GetFiles(folder, "*.jpg", SearchOption.TopDirectoryOnly)
                     .OrderByDescending(f => File.GetLastWriteTime(f))
                     .Take(count)
                     .ToList();
@@ -154,8 +155,8 @@ namespace OntologyMetaverse.DataCollection.Gallery
                 var location = gpsDir.GetGeoLocation();
                 if (location != null)
                 {
-                    lat = (float)location.Latitude;
-                    lng = (float)location.Longitude;
+                    lat = (float)location.Value.Latitude;
+                    lng = (float)location.Value.Longitude;
                 }
             }
 
