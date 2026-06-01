@@ -40,47 +40,74 @@ public class UserProfileScreenController : MonoBehaviour
         LoadUserProfile(viewingUserId);
     }
 
-    /// <summary>
-    /// 유저 프로필 데이터 로드
-    /// </summary>
     private void LoadUserProfile(string userId)
     {
-        // TODO: Firestore에서 유저 프로필 가져오기
-        // var doc = await FirestoreManager.Instance.GetUserProfile(userId);
+        if (string.IsNullOrEmpty(userId)) return;
 
-        // 테스트 데이터
-        nicknameLabel.text = "김민수";
-        statusLabel.text = "오늘도 열심히 살기 🌱";
-        followersCount.text = "128";
-        followingCount.text = "64";
+        UserManager.Instance.GetUserProfile(userId,
+            onSuccess: profile =>
+            {
+                nicknameLabel.text = profile.Nickname;
+                statusLabel.text = string.IsNullOrEmpty(profile.StatusMessage)
+                    ? "" : profile.StatusMessage;
 
-        // 팔로우 상태 확인
-        // TODO: 현재 유저가 이 유저를 팔로우하고 있는지 확인
-        isFollowing = false;
-        UpdateFollowButton();
+                FollowManager.Instance.GetFollowCounts(userId,
+                    onSuccess: (followers, following) =>
+                    {
+                        followersCount.text = followers.ToString();
+                        followingCount.text = following.ToString();
+                    }
+                );
+
+                FollowManager.Instance.CheckIsFollowing(userId,
+                    onResult: following =>
+                    {
+                        isFollowing = following;
+                        UpdateFollowButton();
+                    }
+                );
+            },
+            onFailure: err => Debug.LogError($"[UserProfile] 프로필 로드 실패: {err}")
+        );
     }
 
-    /// <summary>
-    /// 팔로우/언팔로우 토글
-    /// </summary>
     private void OnFollowToggle()
     {
-        isFollowing = !isFollowing;
-        UpdateFollowButton();
+        btnFollow.SetEnabled(false);
 
         if (isFollowing)
         {
-            Debug.Log($"[UserProfile] 팔로우: {viewingUserId}");
-            // TODO: Firestore 팔로우 처리
-            int count = int.Parse(followersCount.text);
-            followersCount.text = (count + 1).ToString();
+            FollowManager.Instance.Unfollow(viewingUserId,
+                onSuccess: () =>
+                {
+                    isFollowing = false;
+                    UpdateFollowButton();
+                    btnFollow.SetEnabled(true);
+                    int count = int.TryParse(followersCount.text, out int c) ? c : 0;
+                    followersCount.text = Mathf.Max(0, count - 1).ToString();
+                },
+                onFailure: err =>
+                {
+                    Debug.LogError($"[UserProfile] 언팔로우 실패: {err}");
+                    btnFollow.SetEnabled(true);
+                }
+            );
         }
         else
         {
-            Debug.Log($"[UserProfile] 언팔로우: {viewingUserId}");
-            // TODO: Firestore 언팔로우 처리
-            int count = int.Parse(followersCount.text);
-            followersCount.text = Mathf.Max(0, count - 1).ToString();
+            FollowManager.Instance.SendFollowRequest(viewingUserId,
+                onSuccess: () =>
+                {
+                    // 요청 상태 — 수락 전까지 pending
+                    btnFollow.text = "요청 중";
+                    btnFollow.SetEnabled(false);
+                },
+                onFailure: err =>
+                {
+                    Debug.LogError($"[UserProfile] 팔로우 요청 실패: {err}");
+                    btnFollow.SetEnabled(true);
+                }
+            );
         }
     }
 

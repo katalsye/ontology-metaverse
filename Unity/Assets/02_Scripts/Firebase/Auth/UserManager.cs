@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 public class UserManager : MonoBehaviour
 {
+    public static UserManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
@@ -15,6 +17,10 @@ public class UserManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         db = FirebaseFirestore.DefaultInstance;
 
         // 오프라인 → 온라인 sync: 앱 재시작 없이 로컬 캐시에서 읽고, 연결 복구 시 Firestore와 자동 동기화
@@ -144,6 +150,30 @@ public class UserManager : MonoBehaviour
             }
 
             onSuccess?.Invoke(profile);
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 팔로우 관계 기반 프로필 읽기 (비공개 계정도 허용)
+    // ───────────────────────────────────────
+    public void GetUserProfileForFollow(string uid, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    {
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("유저 프로필 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            if (!task.Result.Exists)
+            {
+                onFailure?.Invoke("유저 없음");
+                return;
+            }
+
+            onSuccess?.Invoke(task.Result.ConvertTo<UserProfile>());
         });
     }
 

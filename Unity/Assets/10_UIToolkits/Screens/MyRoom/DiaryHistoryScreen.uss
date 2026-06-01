@@ -27,7 +27,6 @@
     border-width: 0;
     align-items: center;
     justify-content: center;
-    cursor: link;
 }
 
 .month-arrow:active {
@@ -74,8 +73,8 @@
 .diary-entry-text {
     font-size: var(--fs-body);
     color: var(--ink);
-    white-space: normal;
-    line-height: 22px;
+    -unity-word-wrap: true;
+    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
 }
 
 /* 빈 상태 */

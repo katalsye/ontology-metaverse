@@ -8,7 +8,7 @@
       "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
     },
     "com.github.homuler.mediapipe": {
-      "version": "file:C:/Users/USER/Downloads/com.github.homuler.mediapipe-0.13.1.tgz",
+      "version": "file:C:/Users/seoyun/Downloads/com.github.homuler.mediapipe-0.16.3.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {

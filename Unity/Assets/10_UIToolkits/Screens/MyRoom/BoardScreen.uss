@@ -68,8 +68,8 @@
 .comment-text {
     font-size: var(--fs-body-sm);
     color: var(--ink);
-    white-space: normal;
-    line-height: 20px;
+    -unity-word-wrap: true;
+    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
 }
 
 /* 빈 상태 */
@@ -132,7 +132,6 @@
     background-color: var(--rose);
     border-width: 0;
     flex-shrink: 0;
-    cursor: link;
     transition-property: scale;
     transition-duration: 120ms;
 }

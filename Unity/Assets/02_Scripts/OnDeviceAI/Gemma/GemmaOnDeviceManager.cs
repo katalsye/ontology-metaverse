@@ -4,24 +4,20 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-using Mediapipe.Tasks.Text.LlmInference;
-#endif
-
 namespace OntologyMetaverse.OnDeviceAI.Gemma
 {
     public class GemmaOnDeviceManager : MonoBehaviour
     {
         [Header("모델 파일 이름")]
         public string modelFileName = "gemma-3n-E2B-it-int4.task";
-        
+
         public bool isModelLoaded = false;
 
-        // 실제 모델 파일 경로 (복사된 위치)
         private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        private LlmInference llmInference;
+        // Kotlin GemmaBridge 인스턴스 (AAR에서 가져옴)
+        private AndroidJavaObject gemmaBridge;
 #endif
 
         void Start()
@@ -39,7 +35,6 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             string sourcePath = Path.Combine(Application.streamingAssetsPath, modelFileName);
             string destPath = Path.Combine(Application.persistentDataPath, modelFileName);
 
-            // 이미 복사된 적 있으면 다시 안 함 (시간 절약)
             if (!File.Exists(destPath))
             {
                 Debug.Log("[GemmaManager] 모델 파일 복사 시작 (시간 걸림)");
@@ -65,13 +60,28 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
 
             modelPath = destPath;
 
-            // 2. MediaPipe로 AI 초기화
+            // 2. Kotlin GemmaBridge 인스턴스 생성 + 모델 초기화
             try
             {
-                LlmInferenceOptions options = new LlmInferenceOptions(modelPath);
-                llmInference = LlmInference.CreateFromOptions(options);
-                isModelLoaded = true;
-                Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
+                // 현재 Activity context 가져오기
+                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+
+                // GemmaBridge 인스턴스 생성 (context 전달)
+                gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
+
+                // 모델 초기화
+                bool success = gemmaBridge.Call<bool>("initialize", modelPath);
+
+                if (success)
+                {
+                    isModelLoaded = true;
+                    Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
+                }
+                else
+                {
+                    Debug.LogError("[GemmaManager] AI 로딩 실패");
+                }
             }
             catch (Exception e)
             {
@@ -87,10 +97,9 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         }
 
         // ─────────────────────────────────────────────────────
-        // 텍스트 입력 → 응답 (기존)
+        // 텍스트 입력 → 응답
         // ─────────────────────────────────────────────────────
 
-        // AI한테 텍스트 질문 던지고 대답 받기
         public string GenerateResponse(string prompt)
         {
             if (isModelLoaded == false)
@@ -102,7 +111,15 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             Debug.Log("[GemmaManager] AI한테 질문 (텍스트): " + prompt);
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            return llmInference.GenerateResponse(prompt);
+            try
+            {
+                return gemmaBridge.Call<string>("generateResponse", prompt);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GemmaManager] 응답 생성 실패: " + e.Message);
+                return "";
+            }
 #else
             // 에디터에서는 명세서 규격 가짜 트리플 응답 (텍스트용 - 위치)
             return @"{""triples"": [
@@ -114,10 +131,9 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         }
 
         // ─────────────────────────────────────────────────────
-        // 이미지 + 텍스트 입력 → 응답 (새로 추가)
+        // 이미지 + 텍스트 입력 → 응답 (멀티모달)
         // ─────────────────────────────────────────────────────
 
-        // AI한테 이미지+질문 같이 던지고 대답 받기 (멀티모달)
         public string GenerateResponseWithImage(string prompt, byte[] imageBytes)
         {
             if (isModelLoaded == false)
@@ -135,11 +151,18 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             Debug.Log($"[GemmaManager] AI한테 질문 (이미지+텍스트): 이미지 크기={imageBytes.Length} bytes, prompt={prompt}");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // 실기기: MediaPipe 멀티모달 호출
-            // TODO: MediaPipe Unity Plugin의 정확한 비전 입력 API 확인 후 구현
-            // 현재는 텍스트만 전달 (비전 API 호환성 확인 후 보강)
+            // 실기기: MediaPipe 멀티모달은 Kotlin Bridge에 별도 메서드 필요
+            // 현재는 텍스트만 전달 (이미지 입력은 추후 Kotlin Bridge 확장)
             Debug.LogWarning("[GemmaManager] 실기기 비전 API 호출 미구현 - 텍스트만 전달");
-            return llmInference.GenerateResponse(prompt);
+            try
+            {
+                return gemmaBridge.Call<string>("generateResponse", prompt);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GemmaManager] 응답 생성 실패: " + e.Message);
+                return "";
+            }
 #else
             // 에디터에서는 명세서 규격 가짜 트리플 응답 (이미지용 - 음식 사진 가정)
             return @"{""triples"": [
@@ -152,18 +175,25 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         }
 
         // ─────────────────────────────────────────────────────
-        // 메모리 정리 (기존)
+        // 메모리 정리
         // ─────────────────────────────────────────────────────
 
-        // 게임오브젝트 사라질 때 AI 정리하기 (메모리 누수 방지)
         void OnDestroy()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (llmInference != null)
+            if (gemmaBridge != null)
             {
-                llmInference.Close();
-                llmInference = null;
-                Debug.Log("[GemmaManager] AI 메모리 해제");
+                try
+                {
+                    gemmaBridge.Call("close");
+                    gemmaBridge.Dispose();
+                    gemmaBridge = null;
+                    Debug.Log("[GemmaManager] AI 메모리 해제");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[GemmaManager] 메모리 해제 실패: " + e.Message);
+                }
             }
 #endif
             isModelLoaded = false;

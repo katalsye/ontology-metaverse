@@ -64,8 +64,8 @@
     font-size: var(--fs-body-sm);
     color: var(--ink-muted);
     margin-bottom: 32px;
-    white-space: normal;
-    line-height: 22px;
+    -unity-word-wrap: true;
+    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
 }
 
 /* ── STEP 1: 소셜 로그인 ── */
@@ -84,7 +84,6 @@
     border-color: var(--line);
     background-color: var(--card);
     margin-bottom: 12px;
-    cursor: link;
     transition-property: scale, opacity;
     transition-duration: 120ms;
 }
@@ -175,7 +174,6 @@
     border-radius: 14px;
     background-color: var(--line);
     flex-shrink: 0;
-    cursor: link;
     transition-property: background-color;
     transition-duration: 200ms;
     /* 토글 내부 원은 C#에서 VisualElement로 추가 */

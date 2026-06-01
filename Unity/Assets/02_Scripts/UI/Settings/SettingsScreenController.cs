@@ -168,26 +168,35 @@ public class SettingsScreenController : MonoBehaviour
         PlayerPrefs.Save();
 
         root.Q<Label>("settings-nickname").text = nickname;
-
-        // TODO: Firestore 프로필 업데이트
-        Debug.Log($"[Settings] 프로필 저장: {nickname}");
-
         CloseProfileEdit();
+
+        UserManager.Instance.UpdateProfile(nickname, status,
+            onFailure: err => Debug.LogError($"[Settings] 프로필 저장 실패: {err}")
+        );
     }
 
     private void OnLogout()
     {
-        Debug.Log("[Settings] 로그아웃");
-        // TODO: Firebase Auth 로그아웃
-        PlayerPrefs.DeleteKey("onboarding_complete");
-        ScreenManager.Instance.GoTo("splash");
+        AuthService.Instance.SignOut(() =>
+        {
+            PlayerPrefs.DeleteKey("onboarding_complete");
+            ScreenManager.Instance.GoTo("splash");
+        });
     }
 
     private void OnDeleteAccount()
     {
-        Debug.Log("[Settings] 계정 삭제");
-        // TODO: Firebase Auth 계정 삭제 + Firestore 데이터 삭제
-        PlayerPrefs.DeleteAll();
-        ScreenManager.Instance.GoTo("splash");
+        AuthService.Instance.DeleteAccount(
+            onSuccess: () =>
+            {
+                PlayerPrefs.DeleteAll();
+                ScreenManager.Instance.GoTo("splash");
+            },
+            onFailure: err =>
+            {
+                Debug.LogError($"[Settings] 계정 삭제 실패: {err}");
+                deleteConfirmOverlay.style.display = DisplayStyle.None;
+            }
+        );
     }
 }

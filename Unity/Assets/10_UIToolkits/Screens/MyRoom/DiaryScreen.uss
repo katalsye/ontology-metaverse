@@ -68,7 +68,7 @@
     background-color: rgba(0, 0, 0, 0);
     font-size: var(--fs-body);
     color: var(--ink);
-    white-space: normal;
+    -unity-word-wrap: true;
     padding: 0;
     min-height: 80px;
 }

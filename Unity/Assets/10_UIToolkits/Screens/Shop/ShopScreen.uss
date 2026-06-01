@@ -23,7 +23,6 @@
     border-width: 0;
     font-size: var(--fs-body-sm);
     color: var(--ink-muted);
-    cursor: link;
     margin: 0 3px;
     transition-property: background-color, color;
     transition-duration: 200ms;
@@ -56,7 +55,6 @@
     border-width: 1px;
     border-color: var(--line-faint);
     align-items: center;
-    cursor: link;
     transition-property: scale;
     transition-duration: 120ms;
 }
@@ -128,7 +126,6 @@
     border-width: 0;
     align-items: center;
     justify-content: center;
-    cursor: link;
 }
 
 .close-btn-text {
@@ -163,7 +160,7 @@
     color: var(--ink-muted);
     -unity-text-align: middle-center;
     margin-bottom: 16px;
-    white-space: normal;
+    -unity-word-wrap: true;
 }
 
 .item-price-row {

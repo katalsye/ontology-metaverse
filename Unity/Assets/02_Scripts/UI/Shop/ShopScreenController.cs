@@ -26,6 +26,7 @@ public class ShopScreenController : MonoBehaviour
     private ShopItemData selectedItem;
 
     private List<ShopItemData> allItems = new List<ShopItemData>();
+    private System.Collections.Generic.HashSet<string> ownedItems = new System.Collections.Generic.HashSet<string>();
 
     private void OnEnable()
     {
@@ -56,7 +57,6 @@ public class ShopScreenController : MonoBehaviour
 
     private void LoadItems()
     {
-        // TODO: Firestore에서 상점 아이템 로드
         allItems = new List<ShopItemData>
         {
             new ShopItemData("f1", "furniture", "원목 책상", "따뜻한 느낌의 원목 책상", "🪑", 100),
@@ -69,7 +69,15 @@ public class ShopScreenController : MonoBehaviour
             new ShopItemData("p2", "pet", "강아지", "충실한 친구", "🐶", 300),
         };
 
-        RenderItems();
+        // 보유 아이템 조회 후 렌더링
+        RewardManager.Instance.GetItems(
+            onSuccess: items =>
+            {
+                ownedItems = new System.Collections.Generic.HashSet<string>(items);
+                RenderItems();
+            },
+            onFailure: _ => RenderItems()
+        );
     }
 
     private void SetCategory(string category)
@@ -129,6 +137,13 @@ public class ShopScreenController : MonoBehaviour
         card.Add(name);
         card.Add(priceRow);
 
+        if (ownedItems.Contains(item.id))
+        {
+            var ownedBadge = new Label("보유 중");
+            ownedBadge.AddToClassList("shop-owned-badge");
+            thumb.Add(ownedBadge);
+        }
+
         card.RegisterCallback<ClickEvent>(evt => ShowDetail(item));
 
         return card;
@@ -153,29 +168,27 @@ public class ShopScreenController : MonoBehaviour
     private void OnBuyClicked()
     {
         if (selectedItem == null) return;
+        if (ownedItems.Contains(selectedItem.id)) return;
 
-        int coins = PlayerPrefs.GetInt("coins", 0);
-        if (coins < selectedItem.price)
-        {
-            Debug.Log("[Shop] 재화 부족");
-            // TODO: 재화 부족 안내
-            return;
-        }
+        var buyBtn = root.Q<Button>("btn-buy");
+        buyBtn.SetEnabled(false);
 
-        coins -= selectedItem.price;
-        PlayerPrefs.SetInt("coins", coins);
-        PlayerPrefs.Save();
-
-        Debug.Log($"[Shop] 구매 완료: {selectedItem.name}, 잔액 {coins}");
-
-        // TODO: Firestore 인벤토리에 아이템 추가
-
-        CloseDetail();
-
-        if (rewardPopup != null)
-        {
-            rewardPopup.Show(selectedItem.name, 1, null);
-        }
+        RewardManager.Instance.PurchaseItem(selectedItem.id, selectedItem.price,
+            onSuccess: () =>
+            {
+                ownedItems.Add(selectedItem.id);
+                string name = selectedItem.name;
+                CloseDetail();
+                RenderItems();
+                rewardPopup?.Show(name, 1, null);
+            },
+            onFailure: err =>
+            {
+                buyBtn.SetEnabled(true);
+                Debug.LogError($"[Shop] 구매 실패: {err}");
+                // err == "재화 부족" 일 때 토스트 등 안내 가능
+            }
+        );
     }
 }
 

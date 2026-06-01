@@ -50,16 +50,18 @@ public class DiaryScreenController : MonoBehaviour
             ? $"{streak}일 연속 기록 중!"
             : "오늘 첫 기록을 남겨보세요!";
 
-        // 오늘 이미 작성했는지 확인
-        string today = DateTime.Now.ToString("yyyyMMdd");
-        string lastDate = PlayerPrefs.GetString("diary_last_date", "");
-        if (lastDate == today)
-        {
-            btnSave.SetEnabled(false);
-            btnSave.text = "오늘 이미 작성했어요";
-            inputDiary.value = PlayerPrefs.GetString($"diary_{today}", "");
-            inputDiary.SetEnabled(false);
-        }
+        // Firestore에서 오늘 일기 조회 (작성 여부 확인)
+        string today = DateTime.Now.ToString("yyyy-MM-dd");
+        DiaryManager.Instance.GetDiary(today,
+            onSuccess: entry =>
+            {
+                inputDiary.value = entry.Content;
+                inputDiary.SetEnabled(false);
+                btnSave.SetEnabled(false);
+                btnSave.text = "오늘 이미 작성했어요";
+            },
+            onFailure: _ => { /* 일기 없음 = 정상, 아무것도 하지 않음 */ }
+        );
     }
 
     private void OnTextChanged(ChangeEvent<string> evt)
@@ -84,43 +86,53 @@ public class DiaryScreenController : MonoBehaviour
         string text = inputDiary.value.Trim();
         if (string.IsNullOrEmpty(text)) return;
 
-        string today = DateTime.Now.ToString("yyyyMMdd");
+        string today = DateTime.Now.ToString("yyyy-MM-dd");
 
-        // 로컬 저장
-        PlayerPrefs.SetString($"diary_{today}", text);
-        PlayerPrefs.SetString("diary_last_date", today);
+        btnSave.SetEnabled(false);
+        btnSave.text = "저장 중...";
 
-        // 연속 기록 업데이트
-        string yesterday = DateTime.Now.AddDays(-1).ToString("yyyyMMdd");
+        DiaryManager.Instance.SaveDiary(text,
+            onSuccess: () =>
+            {
+                UpdateStreakLocally(today);
+
+                DiaryManager.Instance.ClaimDiaryReward(today,
+                    onSuccess: () =>
+                    {
+                        if (rewardPopup != null)
+                            rewardPopup.Show("코인", 10, () => ScreenManager.Instance.GoBack());
+                        else
+                            ScreenManager.Instance.GoBack();
+                    },
+                    onFailure: _ =>
+                    {
+                        // 이미 보상 수령한 경우 포함 — 그냥 뒤로
+                        ScreenManager.Instance.GoBack();
+                    }
+                );
+            },
+            onFailure: err =>
+            {
+                Debug.LogError($"[Diary] 저장 실패: {err}");
+                btnSave.SetEnabled(true);
+                btnSave.text = "저장하기";
+            }
+        );
+    }
+
+    private void UpdateStreakLocally(string today)
+    {
+        string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
         string prevDate = PlayerPrefs.GetString("diary_prev_date", "");
         int streak = PlayerPrefs.GetInt("diary_streak", 0);
 
-        if (prevDate == yesterday)
-            streak++;
-        else
-            streak = 1;
+        streak = prevDate == yesterday ? streak + 1 : 1;
 
         PlayerPrefs.SetInt("diary_streak", streak);
         PlayerPrefs.SetString("diary_prev_date", today);
         PlayerPrefs.Save();
 
-        Debug.Log($"[Diary] 저장: {text} (연속 {streak}일)");
-
-        // TODO: Firestore에 일기 저장
-        // FirestoreManager.Instance.SaveDiary(today, text);
-
-        // 보상 팝업 표시
-        if (rewardPopup != null)
-        {
-            rewardPopup.Show("코인", 10, () =>
-            {
-                ScreenManager.Instance.GoBack();
-            });
-        }
-        else
-        {
-            ScreenManager.Instance.GoBack();
-        }
+        streakCount.text = $"{streak}일 연속 기록 중!";
     }
 
     private void OnHistoryClicked()
