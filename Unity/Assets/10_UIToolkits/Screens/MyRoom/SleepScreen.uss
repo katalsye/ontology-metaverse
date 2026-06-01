@@ -135,10 +135,6 @@
     justify-content: space-between;
 }
 
-.detail-row:last-child {
-    border-bottom-width: 0;
-}
-
 .detail-name {
     font-size: var(--fs-body-sm);
     color: var(--ink-muted);
