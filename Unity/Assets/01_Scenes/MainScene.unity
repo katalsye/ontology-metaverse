@@ -163,7 +163,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 856a47d6f71d1374ba30fbcbf096e4ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScreenManager
-  screens: []
+  screens:
+  - key: splash
+    document: {fileID: 381303876}
+    hideBottomNav: 1
+  - key: onboarding
+    document: {fileID: 1474422012}
+    hideBottomNav: 1
+  - key: login
+    document: {fileID: 1126713549}
+    hideBottomNav: 1
+  - key: feed
+    document: {fileID: 282732559}
+    hideBottomNav: 0
+  - key: friends
+    document: {fileID: 349180354}
+    hideBottomNav: 1
+  - key: user_profile
+    document: {fileID: 860493889}
+    hideBottomNav: 1
+  - key: diary
+    document: {fileID: 849794335}
+    hideBottomNav: 1
+  - key: diary_history
+    document: {fileID: 1554997853}
+    hideBottomNav: 1
+  - key: calendar
+    document: {fileID: 362092225}
+    hideBottomNav: 1
+  - key: board
+    document: {fileID: 461695272}
+    hideBottomNav: 1
+  - key: sleep
+    document: {fileID: 314546955}
+    hideBottomNav: 1
+  - key: quest
+    document: {fileID: 631082438}
+    hideBottomNav: 0
+  - key: shop
+    document: {fileID: 891785899}
+    hideBottomNav: 0
+  - key: settings
+    document: {fileID: 2028554414}
+    hideBottomNav: 1
 --- !u!1 &240639916
 GameObject:
   m_ObjectHideFlags: 0
