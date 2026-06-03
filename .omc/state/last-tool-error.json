@@ -1,0 +1,7 @@
+{
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"cd C:\\\\Users\\\\user\\\\Desktop\\\\ontology-metaverse; git add .gitignore \\\"Docs/작업현황.md\\\" 2>&1; git commit -m \\\"$(cat <<'EOF'\\ndocs: 작업현황 업데이트 + serviceAccountKey git 추적 해제 (보안 감사)\\n\\n- service...",
+  "error": "Exit code 1\nAt line:1 char:108\r\n+ ...  git add .gitignore \"Docs/작업현황.md\" 2>&1; git commit -m \"$(cat <<'EOF'\r\n+                                                                    ~\r\nMissing file specification after redirection operator.\r\nAt line:1 char:107\r\n+ ...  git add .gitignore \"Docs/작업현황.md\" 2>&1; git commit -m \"$(cat <<'EOF'\r\n+                                                                   ~\r\nThe '<' operator is reserved for future use.\r\nAt line:1 char:108\r\n+ ...  git add .gitignore \"Do...",
+  "timestamp": "2026-06-03T08:56:07.969Z",
+  "retry_count": 1
+}
