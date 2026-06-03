@@ -117,3 +117,7 @@ Thumbs.db
 
 # OMC 세션 기록
 Functions/.env
+
+# Firebase 서비스 계정 키 (절대 커밋 금지)
+*serviceAccountKey*.json
+serviceAccountKey.json
