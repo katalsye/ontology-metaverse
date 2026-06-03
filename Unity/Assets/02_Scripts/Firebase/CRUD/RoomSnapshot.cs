@@ -10,9 +10,9 @@ public class RoomSnapshot
     [FirestoreProperty]
     public string Date { get; set; } // yyyy-MM-dd
 
-    [FirestoreProperty]
-    public List<RoomObject> Objects { get; set; } // 해당 날짜의 방 오브젝트 목록
+    [FirestoreProperty("objects")]
+    public List<RoomObject> Objects { get; set; }
 
-    [FirestoreProperty]
+    [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }
 }
