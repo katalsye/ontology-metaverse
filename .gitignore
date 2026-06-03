@@ -114,3 +114,7 @@ Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
 serviceAccountKey.json
 *serviceAccountKey*.json
 Functions/.env
+
+# Firebase 서비스 계정 키 (절대 커밋 금지)
+*serviceAccountKey*.json
+serviceAccountKey.json
