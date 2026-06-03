@@ -393,6 +393,31 @@ def _collect_new_quests(g: Graph, new_triples: list[tuple]) -> list[URIRef]:
     ]
 
 
+def _clear_existing_room_objects(g: Graph, user_uri: URIRef) -> int:
+    """
+    User에 연결된 모든 RoomObject와 관련 트리플 제거.
+    매 추론마다 RoomObject를 새로 생성하기 위함 (유니티팀 합의 ⑥).
+
+    제거 대상:
+      1. ?obj ?p ?o  (RoomObject의 모든 속성 트리플)
+      2. ?user prod:hasRoomObject ?obj
+
+    Returns: 제거된 트리플 수
+    """
+    removed_count = 0
+    room_objs = list(g.objects(user_uri, PROD.hasRoomObject))
+    for obj in room_objs:
+        for p, o in list(g.predicate_objects(obj)):
+            g.remove((obj, p, o))
+            removed_count += 1
+        g.remove((user_uri, PROD.hasRoomObject, obj))
+        removed_count += 1
+    if removed_count > 0:
+        logger.info("Cleared %d previous RoomObject triples for %s",
+                    removed_count, user_uri)
+    return removed_count
+
+
 def _save_results_to_firestore(
     db: firestore.Client,
     uid: str,
@@ -442,6 +467,31 @@ def _save_results_to_firestore(
             {"objects": room_objs}, merge=True
         )
         logger.info("Saved %d room_objects for uid=%s", len(room_objs), uid)
+
+        # room_snapshots — 추론 완료 시점마다 스냅샷 저장 (유니티팀 합의 ②)
+        # 같은 날 재추론 시 덮어쓰기 (set)
+        snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        db.collection("room_snapshots") \
+            .document(uid) \
+            .collection("snapshots") \
+            .document(snapshot_date) \
+            .set({
+                "objects":   room_objs,
+                "createdAt": datetime.now(timezone.utc),
+            })
+        logger.info("Saved room_snapshot for uid=%s date=%s (%d objects)",
+                    uid, snapshot_date, len(room_objs))
+
+        # 팔로워 방 업데이트 알림 (유니티팀 합의 ④)
+        # FCM 실패는 추론 결과에 영향 없음 — fcm_sender 내부에서 경고만 남김
+        try:
+            from fcm_sender import send_room_updated_to_followers
+            sent = send_room_updated_to_followers(db, messaging, uid)
+            if sent > 0:
+                logger.info("FCM room_updated sent to %d followers for uid=%s",
+                            sent, uid)
+        except Exception as exc:
+            logger.warning("FCM room_updated 전송 실패 (무시): %s", exc)
 
     # persona — 복수 Persona 노드를 순회해 속성 병합 저장
     persona_nodes = list(g.objects(user_uri, PROD.hasPersona))
@@ -584,6 +634,9 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
 
     # 1. Storage에서 그래프 로드
     g = _load_graph_from_storage(bucket_name, uid)
+
+    # 2-a. 이전 추론 RoomObject 정리 (유니티팀 합의 ⑥ — 매 추론마다 전체 재생성)
+    _clear_existing_room_objects(g, URIRef(f"http://7team.dev/ontology#user_{uid}"))
 
     # 2. Firestore temp_triples 확인
     temp_triples = _load_temp_triples(db, uid)
