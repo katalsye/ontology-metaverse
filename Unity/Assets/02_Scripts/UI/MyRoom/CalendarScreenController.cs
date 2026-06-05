@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// 4-6. CalendarScreen 컨트롤러
@@ -23,6 +24,9 @@ public class CalendarScreenController : MonoBehaviour
     private int viewMonth;
     private int selectedDay = -1;
 
+    // 해당 월에 일기가 있는 날 집합 (비동기 로드 후 채워짐)
+    private HashSet<int> daysWithData = new HashSet<int>();
+
     private void OnEnable()
     {
         root = uiDocument.rootVisualElement;
@@ -43,7 +47,7 @@ public class CalendarScreenController : MonoBehaviour
         viewYear = DateTime.Now.Year;
         viewMonth = DateTime.Now.Month;
 
-        RenderCalendar();
+        LoadMonthData();
     }
 
     private void ChangeMonth(int delta)
@@ -53,12 +57,41 @@ public class CalendarScreenController : MonoBehaviour
         if (viewMonth < 1) { viewMonth = 12; viewYear--; }
         selectedDay = -1;
         selectedInfo.RemoveFromClassList("selected-info--visible");
-        RenderCalendar();
+        LoadMonthData();
+    }
+
+    // Firestore에서 해당 월 일기 목록 로드 → 날짜 집합 채운 뒤 캘린더 렌더링
+    private void LoadMonthData()
+    {
+        monthTitle.text = $"{viewYear}년 {viewMonth}월";
+        daysWithData.Clear();
+
+        string yearMonth = $"{viewYear}-{viewMonth:D2}";
+
+        DiaryManager.Instance.GetMonthlyDiaries(yearMonth,
+            onSuccess: entries =>
+            {
+                foreach (var entry in entries)
+                {
+                    // Date 형식: "yyyy-MM-dd"
+                    if (entry.Date != null && entry.Date.Length == 10 &&
+                        int.TryParse(entry.Date.Substring(8, 2), out int day))
+                    {
+                        daysWithData.Add(day);
+                    }
+                }
+                RenderCalendar();
+            },
+            onFailure: err =>
+            {
+                Debug.LogWarning($"[Calendar] 월간 데이터 로드 실패: {err}");
+                RenderCalendar(); // 점 없이라도 캘린더는 표시
+            }
+        );
     }
 
     private void RenderCalendar()
     {
-        monthTitle.text = $"{viewYear}년 {viewMonth}월";
         calendarGrid.Clear();
 
         DateTime firstDay = new DateTime(viewYear, viewMonth, 1);
@@ -78,7 +111,7 @@ public class CalendarScreenController : MonoBehaviour
         {
             int dow = (startDow + d - 1) % 7;
             bool isToday = isCurrentMonth && d == today;
-            bool hasData = CheckHasData(d);
+            bool hasData = daysWithData.Contains(d);
             calendarGrid.Add(CreateCell(d, isToday, hasData, dow));
         }
 
@@ -101,14 +134,11 @@ public class CalendarScreenController : MonoBehaviour
             cell.AddToClassList("cal-cell--empty");
             var inner = new VisualElement();
             inner.AddToClassList("cal-cell-inner");
-            var label = new Label("");
-            label.AddToClassList("cal-day");
-            inner.Add(label);
+            inner.Add(new Label("") { });
             cell.Add(inner);
             return cell;
         }
 
-        // 요일 스타일
         if (dow == 0) cell.AddToClassList("cal-cell--sun");
         if (dow == 6) cell.AddToClassList("cal-cell--sat");
         if (isToday) cell.AddToClassList("cal-cell--today");
@@ -121,7 +151,6 @@ public class CalendarScreenController : MonoBehaviour
         cellInner.Add(dayLabel);
         cell.Add(cellInner);
 
-        // 데이터 점
         if (hasData)
         {
             var dot = new VisualElement();
@@ -129,7 +158,6 @@ public class CalendarScreenController : MonoBehaviour
             cell.Add(dot);
         }
 
-        // 클릭 이벤트
         int capturedDay = day;
         cell.RegisterCallback<ClickEvent>(evt => OnDayClicked(capturedDay));
 
@@ -138,34 +166,21 @@ public class CalendarScreenController : MonoBehaviour
 
     private void OnDayClicked(int day)
     {
-        // 이전 선택 해제
         calendarGrid.Query(className: "cal-cell--selected").ForEach(el =>
             el.RemoveFromClassList("cal-cell--selected"));
 
         selectedDay = day;
 
-        // 선택 표시 (해당 셀 찾기)
         int index = (int)new DateTime(viewYear, viewMonth, 1).DayOfWeek + day - 1;
         if (index < calendarGrid.childCount)
-        {
             calendarGrid[index].AddToClassList("cal-cell--selected");
-        }
 
-        // 하단 정보 표시
         var dt = new DateTime(viewYear, viewMonth, day);
         selectedDateLabel.text = dt.ToString("M월 d일 dddd");
 
-        bool hasData = CheckHasData(day);
-        if (hasData)
-        {
-            selectedSummary.text = "이 날의 방 기록이 있어요";
-            btnViewRoom.SetEnabled(true);
-        }
-        else
-        {
-            selectedSummary.text = "이 날의 기록이 없어요";
-            btnViewRoom.SetEnabled(false);
-        }
+        bool hasData = daysWithData.Contains(day);
+        selectedSummary.text = hasData ? "이 날의 방 기록이 있어요" : "이 날의 기록이 없어요";
+        btnViewRoom.SetEnabled(hasData);
 
         selectedInfo.AddToClassList("selected-info--visible");
     }
@@ -175,17 +190,6 @@ public class CalendarScreenController : MonoBehaviour
         if (selectedDay < 1) return;
         string dateKey = $"{viewYear}{viewMonth:D2}{selectedDay:D2}";
         PlayerPrefs.SetString("viewing_past_date", dateKey);
-        Debug.Log($"[Calendar] 과거 방 보기: {dateKey}");
         ScreenManager.Instance.GoTo("past_room");
-    }
-
-    /// <summary>
-    /// 해당 날짜에 데이터가 있는지 확인
-    /// </summary>
-    private bool CheckHasData(int day)
-    {
-        // TODO: Firestore에서 확인
-        string key = $"diary_{viewYear}{viewMonth:D2}{day:D2}";
-        return PlayerPrefs.HasKey(key);
     }
 }
