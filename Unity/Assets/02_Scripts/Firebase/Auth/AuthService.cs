@@ -59,8 +59,13 @@ public class AuthService : MonoBehaviour
             }
             if (task.IsFaulted)
             {
-                Debug.LogError($"[AuthService] Google 로그인 실패: {task.Exception}");
-                onFailure?.Invoke(task.Exception?.Message ?? "Google 로그인 실패");
+                var inner = task.Exception?.InnerException;
+                var signInEx = inner as GoogleSignIn.SignInException;
+                if (signInEx != null)
+                    Debug.LogError($"[AuthService] Google 로그인 실패 Status={signInEx.Status} ({(int)signInEx.Status}): {signInEx.Message}");
+                else
+                    Debug.LogError($"[AuthService] Google 로그인 실패: {inner ?? task.Exception}");
+                onFailure?.Invoke(inner?.Message ?? task.Exception?.Message ?? "Google 로그인 실패");
                 return;
             }
 
