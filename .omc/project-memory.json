@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780475327151,
+  "lastScanned": 1780643772648,
   "projectRoot": "c:\\Users\\user\\Desktop\\ontology-metaverse",
   "techStack": {
     "languages": [],
@@ -36,7 +36,7 @@
       "path": "Docs",
       "purpose": "Documentation",
       "fileCount": 3,
-      "lastAccessed": 1780475326810,
+      "lastAccessed": 1780643772501,
       "keyFiles": [
         "auto_work_log.md",
         "docs.gitkeep",
@@ -46,21 +46,21 @@
     "Functions": {
       "path": "Functions",
       "purpose": null,
-      "fileCount": 14,
-      "lastAccessed": 1780475326813,
+      "fileCount": 16,
+      "lastAccessed": 1780643772503,
       "keyFiles": [
+        "fcm_sender.py",
         "functions.gitkeep",
         "main.py",
         "ontology_engine.py",
-        "requirements.txt",
-        "serviceAccountKey.json"
+        "requirements.txt"
       ]
     },
     "Unity": {
       "path": "Unity",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1780475326815,
+      "lastAccessed": 1780643772506,
       "keyFiles": [
         "ontology-metaverse.slnx",
         "Unity.slnx"
@@ -70,7 +70,7 @@
       "path": "Functions\\scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 3,
-      "lastAccessed": 1780475326892,
+      "lastAccessed": 1780643772511,
       "keyFiles": [
         "check_inference.py",
         "README.md",
@@ -81,7 +81,7 @@
       "path": "Unity\\Assets",
       "purpose": "Static assets",
       "fileCount": 11,
-      "lastAccessed": 1780475326896,
+      "lastAccessed": 1780643772525,
       "keyFiles": [
         "01_Scenes.meta",
         "02_Scripts.meta",
