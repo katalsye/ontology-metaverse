@@ -1,23 +1,39 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
+using Firebase.Auth;
+using Firebase.Firestore;
+using Firebase.Extensions;
 
 /// <summary>
 /// 4-7. BoardScreen 컨트롤러
 /// 방명록 댓글 목록 + 입력/전송
+/// Firestore: guestbooks/{ownerUid}/comments
 /// </summary>
 public class BoardScreenController : MonoBehaviour
 {
     [Header("UI Document")]
     [SerializeField] private UIDocument uiDocument;
 
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+
     private VisualElement root;
     private ScrollView commentList;
     private VisualElement emptyState;
     private TextField inputComment;
 
+    private string ownerUid;
+
     private void OnEnable()
     {
+        auth = FirebaseAuth.DefaultInstance;
+        db = FirebaseFirestore.DefaultInstance;
+
+        // 방문 중인 방 주인 UID, 없으면 내 방
+        ownerUid = PlayerPrefs.GetString("visiting_user_id",
+            auth?.CurrentUser?.UserId ?? "");
+
         root = uiDocument.rootVisualElement;
 
         root.Q<Button>("btn-back").clicked += () => ScreenManager.Instance.GoBack();
@@ -32,29 +48,107 @@ public class BoardScreenController : MonoBehaviour
 
     private void LoadComments()
     {
-        // TODO: Firestore에서 방명록 댓글 가져오기
+        if (string.IsNullOrEmpty(ownerUid)) return;
 
-        var comments = new List<CommentData>
+        db.Collection("guestbooks")
+            .Document(ownerUid)
+            .Collection("comments")
+            .OrderByDescending("createdAt")
+            .Limit(50)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("[Board] 댓글 로드 실패: " + task.Exception);
+                    return;
+                }
+
+                commentList.contentContainer.Clear();
+
+                var docs = task.Result.Documents;
+
+                if (docs.Count == 0)
+                {
+                    emptyState.AddToClassList("empty-state--visible");
+                    commentList.style.display = DisplayStyle.None;
+                    return;
+                }
+
+                emptyState.RemoveFromClassList("empty-state--visible");
+                commentList.style.display = DisplayStyle.Flex;
+
+                foreach (var doc in docs)
+                {
+                    string nickname = doc.ContainsField("authorNickname")
+                        ? doc.GetValue<string>("authorNickname") : "?";
+                    string text = doc.ContainsField("text")
+                        ? doc.GetValue<string>("text") : "";
+                    string timeAgo = doc.ContainsField("createdAt")
+                        ? FormatTimeAgo(doc.GetValue<Timestamp>("createdAt")) : "";
+
+                    commentList.contentContainer.Add(
+                        CreateCommentCard(new CommentData(nickname, text, timeAgo)));
+                }
+            });
+    }
+
+    private void OnSendClicked()
+    {
+        string text = inputComment.value.Trim();
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(ownerUid)) return;
+
+        var sendBtn = root.Q<Button>("btn-send");
+        sendBtn.SetEnabled(false);
+
+        string myUid = auth?.CurrentUser?.UserId ?? "";
+        string myNickname = PlayerPrefs.GetString("nickname",
+            auth?.CurrentUser?.DisplayName ?? "나");
+
+        var data = new Dictionary<string, object>
         {
-            new CommentData("이지은", "방 너무 예쁘다! 🏠", "10분 전"),
-            new CommentData("박서준", "오늘도 열심히 했네~", "1시간 전"),
-            new CommentData("최유진", "나도 이 가구 갖고 싶어", "3시간 전"),
+            { "authorUid",      myUid },
+            { "authorNickname", myNickname },
+            { "text",           text },
+            { "createdAt",      FieldValue.ServerTimestamp },
         };
 
-        if (comments.Count == 0)
-        {
-            emptyState.AddToClassList("empty-state--visible");
-            commentList.style.display = DisplayStyle.None;
-            return;
-        }
+        db.Collection("guestbooks")
+            .Document(ownerUid)
+            .Collection("comments")
+            .AddAsync(data)
+            .ContinueWithOnMainThread(task =>
+            {
+                sendBtn.SetEnabled(true);
 
-        emptyState.RemoveFromClassList("empty-state--visible");
-        commentList.style.display = DisplayStyle.Flex;
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("[Board] 댓글 저장 실패: " + task.Exception);
+                    return;
+                }
 
-        foreach (var c in comments)
-        {
-            commentList.contentContainer.Add(CreateCommentCard(c));
-        }
+                var card = CreateCommentCard(new CommentData(myNickname, text, "방금 전"));
+
+                if (commentList.contentContainer.childCount > 0)
+                    commentList.contentContainer.Insert(0, card);
+                else
+                    commentList.contentContainer.Add(card);
+
+                emptyState.RemoveFromClassList("empty-state--visible");
+                commentList.style.display = DisplayStyle.Flex;
+
+                inputComment.value = "";
+            });
+    }
+
+    private string FormatTimeAgo(Timestamp ts)
+    {
+        var diff = System.DateTime.UtcNow - ts.ToDateTime();
+
+        if (diff.TotalMinutes < 1)  return "방금 전";
+        if (diff.TotalHours   < 1)  return $"{(int)diff.TotalMinutes}분 전";
+        if (diff.TotalDays    < 1)  return $"{(int)diff.TotalHours}시간 전";
+        return $"{(int)diff.TotalDays}일 전";
     }
 
     private VisualElement CreateCommentCard(CommentData data)
@@ -62,14 +156,12 @@ public class BoardScreenController : MonoBehaviour
         var card = new VisualElement();
         card.AddToClassList("comment-card");
 
-        // 아바타
         var avatar = new VisualElement();
         avatar.AddToClassList("comment-avatar");
         var emoji = new Label("😊");
         emoji.AddToClassList("comment-avatar-emoji");
         avatar.Add(emoji);
 
-        // 본문
         var body = new VisualElement();
         body.AddToClassList("comment-body");
 
@@ -95,34 +187,6 @@ public class BoardScreenController : MonoBehaviour
         card.Add(body);
 
         return card;
-    }
-
-    private void OnSendClicked()
-    {
-        string text = inputComment.value.Trim();
-        if (string.IsNullOrEmpty(text)) return;
-
-        Debug.Log($"[Board] 댓글 전송: {text}");
-
-        // TODO: Firestore에 댓글 저장
-
-        // 즉시 UI에 추가
-        var myNickname = PlayerPrefs.GetString("nickname", "나");
-        var newComment = new CommentData(myNickname, text, "방금 전");
-        var card = CreateCommentCard(newComment);
-
-        // 맨 위에 추가
-        if (commentList.contentContainer.childCount > 0)
-            commentList.contentContainer.Insert(0, card);
-        else
-            commentList.contentContainer.Add(card);
-
-        // 빈 상태 해제
-        emptyState.RemoveFromClassList("empty-state--visible");
-        commentList.style.display = DisplayStyle.Flex;
-
-        // 입력 초기화
-        inputComment.value = "";
     }
 }
 
