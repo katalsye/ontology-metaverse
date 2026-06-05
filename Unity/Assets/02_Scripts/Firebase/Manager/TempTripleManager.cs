@@ -22,6 +22,9 @@ public class TempTripleManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
+    // 온톨로지 base URI (명세서 §2)
+    private const string OntologyBaseUri = "http://7team.dev/ontology#";
+
     void Start()
     {
         auth = FirebaseAuth.DefaultInstance;
@@ -90,6 +93,9 @@ public class TempTripleManager : MonoBehaviour
 
         Debug.Log($"[TempTripleManager] 미전송 트리플 {pendingTriples.Count}개 발견");
 
+        // User 타입 선언 먼저 (추론 규칙 전제조건, 명세 필수 트리플)
+        UploadUserTypeDeclaration(uid);
+
         // Firestore에 업로드
         UploadTriples(uid, pendingTriples, onSuccess, onFailure);
     }
@@ -116,6 +122,7 @@ public class TempTripleManager : MonoBehaviour
     /// 
     /// CreatedAt은 FieldValue.ServerTimestamp로 서버 시간 자동 설정
     /// (Timestamp 기본값이 1970년이라 별도 처리 필요)
+    /// user_* 노드는 NormalizeUserUri로 실제 uid 기준 통일
     /// </summary>
     private void UploadTriples(
         string uid,
@@ -139,11 +146,12 @@ public class TempTripleManager : MonoBehaviour
 
             // Dictionary로 데이터 구성 (ServerTimestamp 사용을 위해)
             // 명세서: Docs/triple-json-spec.md 규격
+            // subject/object의 user_* 노드는 실제 uid로 정규화
             Dictionary<string, object> data = new Dictionary<string, object>
             {
-                { "subject", triple.Subject },
+                { "subject", NormalizeUserUri(triple.Subject, uid) },
                 { "predicate", triple.Predicate },
-                { "object", triple.Object },
+                { "object", NormalizeUserUri(triple.Object, uid) },
                 { "datatype", triple.Datatype },
                 { "CreatedAt", FieldValue.ServerTimestamp }
             };
@@ -178,6 +186,54 @@ public class TempTripleManager : MonoBehaviour
                 }
             });
         }
+    }
+
+    /// <summary>
+    /// user_* 로 시작하는 노드 URI를 실제 로그인 uid 기준으로 통일.
+    /// (추출 단계의 user_001 하드코딩 / 중복 prefix 등을 흡수)
+    /// </summary>
+    private string NormalizeUserUri(string uri, string realUid)
+    {
+        if (!string.IsNullOrEmpty(uri) && uri.StartsWith(OntologyBaseUri + "user_"))
+        {
+            return OntologyBaseUri + "user_" + realUid;
+        }
+        return uri;
+    }
+
+    /// <summary>
+    /// user_{uid}가 prod:User(사람)임을 선언하는 트리플 업로드.
+    /// 무성님 추론 규칙(?user a prod:User)의 전제조건이라 모든 배치에 포함.
+    /// </summary>
+    private void UploadUserTypeDeclaration(string uid)
+    {
+        string userUri = OntologyBaseUri + "user_" + uid;
+
+        DocumentReference docRef = db.Collection("temp_triples")
+            .Document(uid)
+            .Collection("items")
+            .Document();  // auto_id
+
+        Dictionary<string, object> data = new Dictionary<string, object>
+        {
+            { "subject", userUri },
+            { "predicate", "rdf:type" },
+            { "object", OntologyBaseUri + "User" },
+            { "datatype", null },
+            { "CreatedAt", FieldValue.ServerTimestamp }
+        };
+
+        docRef.SetAsync(data).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError($"[TempTripleManager] User 타입 선언 업로드 실패: {task.Exception}");
+            }
+            else
+            {
+                Debug.Log($"[TempTripleManager] User 타입 선언 업로드 성공: {userUri}");
+            }
+        });
     }
 
     /// <summary>
