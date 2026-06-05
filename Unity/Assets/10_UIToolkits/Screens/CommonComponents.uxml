@@ -1,0 +1,87 @@
+<!-- ============================================
+     7. CommonComponents.uxml
+     하단 네비, 보상 팝업, 토스트, 재화 바
+     메인 씬에 항상 배치
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../Styles/AppTokens.uss" />
+    <Style src="../Styles/AppComponents.uss" />
+    <Style src="CommonComponents.uss" />
+
+    <!-- 7-5. 재화 잔액 바 (화면 우상단) -->
+    <ui:VisualElement name="currency-bar" class="currency-bar row">
+        <ui:VisualElement class="currency-item row">
+            <ui:Label text="🪙" class="currency-icon" />
+            <ui:Label name="currency-coins" text="0" class="currency-value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="currency-divider" />
+        <ui:VisualElement class="currency-item row">
+            <ui:Label text="💎" class="currency-icon" />
+            <ui:Label name="currency-gems" text="0" class="currency-value" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <!-- 7-1. 하단 네비게이션 바 -->
+    <ui:VisualElement name="bottom-nav" class="bottom-nav row">
+        <ui:Button name="nav-myroom" class="nav-tab nav-tab--active">
+            <ui:VisualElement class="nav-indicator" />
+            <ui:Label text="🏠" class="nav-icon" />
+            <ui:Label text="마이룸" class="nav-label" />
+            <ui:VisualElement name="badge-myroom" class="nav-badge" style="display: none;" />
+        </ui:Button>
+
+        <ui:Button name="nav-feed" class="nav-tab">
+            <ui:VisualElement class="nav-indicator" />
+            <ui:Label text="🌐" class="nav-icon" />
+            <ui:Label text="피드" class="nav-label" />
+            <ui:VisualElement name="badge-feed" class="nav-badge" style="display: none;" />
+        </ui:Button>
+
+        <ui:Button name="nav-quest" class="nav-tab">
+            <ui:VisualElement class="nav-indicator" />
+            <ui:Label text="📋" class="nav-icon" />
+            <ui:Label text="퀘스트" class="nav-label" />
+            <ui:VisualElement name="badge-quest" class="nav-badge" style="display: none;" />
+        </ui:Button>
+
+        <ui:Button name="nav-shop" class="nav-tab">
+            <ui:VisualElement class="nav-indicator" />
+            <ui:Label text="🛍" class="nav-icon" />
+            <ui:Label text="상점" class="nav-label" />
+            <ui:VisualElement name="badge-shop" class="nav-badge" style="display: none;" />
+        </ui:Button>
+    </ui:VisualElement>
+
+    <!-- 7-4. 보상 팝업 -->
+    <ui:VisualElement name="reward-overlay" class="overlay-bg" style="display: none;">
+        <ui:VisualElement class="reward-popup center-content col">
+            <ui:VisualElement class="reward-ring center-content">
+                <ui:Label text="🎉" class="reward-emoji" />
+            </ui:VisualElement>
+            <ui:Label text="보상 획득!" class="reward-title" />
+            <ui:VisualElement class="reward-item-row row">
+                <ui:Label name="reward-name" text="" class="reward-item-name" />
+                <ui:Label name="reward-amount" text="" class="reward-item-amount" />
+            </ui:VisualElement>
+            <ui:Button name="btn-reward-confirm" text="확인"
+                       class="btn btn--md btn--rose btn--full" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <!-- 7-3. 토스트 알림 -->
+    <ui:VisualElement name="toast-container" class="toast-container" style="display: none;">
+        <ui:VisualElement class="toast-card row">
+            <ui:VisualElement class="toast-icon-area center-content">
+                <ui:Label text="🔔" class="toast-icon-emoji" />
+            </ui:VisualElement>
+            <ui:VisualElement class="toast-text-area col">
+                <ui:Label name="toast-title" text="" class="toast-title" />
+                <ui:Label name="toast-body" text="" class="toast-body" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+</ui:UXML>

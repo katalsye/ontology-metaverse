@@ -1,0 +1,246 @@
+/* ============================================
+ * LoginFlowScreen.uss
+ * ============================================ */
+
+#login-root {
+    background-color: var(--bg);
+}
+
+/* ── 상단 진행 표시 ── */
+.step-header {
+    padding: 16px 24px 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.step-bar-bg {
+    flex-grow: 1;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--line-faint);
+    overflow: hidden;
+    margin-right: 10px;
+}
+
+.step-bar-fill {
+    width: 33%;
+    height: 100%;
+    border-radius: 2px;
+    background-color: var(--rose);
+    transition-property: width;
+    transition-duration: 300ms;
+}
+
+#step-label {
+    color: var(--ink-faint);
+    min-width: 30px;
+    -unity-text-align: middle-right;
+}
+
+/* ── 스텝 공통 ── */
+.step-content {
+    flex-grow: 1;
+    padding: 24px 24px 40px;
+    flex-direction: column;
+}
+
+.step-content.active {
+    display: flex;
+}
+
+.step-content.hidden {
+    display: none;
+}
+
+.step-title {
+    font-size: var(--fs-title);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.step-desc {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+    -unity-word-wrap: true;
+    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
+}
+
+/* ── STEP 1: 소셜 로그인 ── */
+.login-buttons {
+    margin-top: auto;
+    margin-bottom: 40px;
+}
+
+.social-btn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: var(--r-lg);
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--card);
+    margin-bottom: 12px;
+    transition-property: scale, opacity;
+    transition-duration: 120ms;
+}
+
+.social-btn:active {
+    scale: 0.97;
+    opacity: 0.85;
+}
+
+.social-btn--kakao {
+    background-color: #FEE500;
+    border-color: #FEE500;
+}
+
+.social-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    /* background-image: url('아이콘 Sprite 경로'); */
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.social-icon--google {
+    background-color: var(--line-faint); /* 플레이스홀더 */
+    border-radius: 4px;
+}
+
+.social-icon--kakao {
+    background-color: #3C1E1E; /* 플레이스홀더 */
+    border-radius: 4px;
+}
+
+.social-label {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.social-label--kakao {
+    color: #3C1E1E;
+}
+
+/* ── STEP 2: 권한 요청 ── */
+.perm-list {
+    flex-grow: 1;
+}
+
+.perm-row {
+    padding: 14px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+}
+
+.perm-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    margin-right: 14px;
+    flex-shrink: 0;
+    /* 실제 구현 시 아이콘 Sprite 지정 */
+}
+
+.perm-icon--gallery  { background-color: var(--lav-soft); }
+.perm-icon--location { background-color: var(--mint-soft); }
+.perm-icon--health   { background-color: var(--rose-soft); }
+.perm-icon--usage    { background-color: var(--sky-soft); }
+
+.perm-text {
+    flex-grow: 1;
+}
+
+.perm-name {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+
+.perm-desc {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+}
+
+/* 토글 스위치 */
+.toggle {
+    width: 48px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: var(--line);
+    flex-shrink: 0;
+    transition-property: background-color;
+    transition-duration: 200ms;
+    /* 토글 내부 원은 C#에서 VisualElement로 추가 */
+}
+
+.toggle--on {
+    background-color: var(--rose);
+}
+
+.perm-hint {
+    -unity-text-align: middle-center;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    color: var(--ink-faint);
+}
+
+/* ── STEP 3: 프로필 설정 ── */
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+    background-color: var(--butter-soft);
+    align-self: center;
+    margin-bottom: 32px;
+}
+
+.avatar-emoji {
+    font-size: 48px;
+    -unity-text-align: middle-center;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-label {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink);
+    margin-bottom: 6px;
+}
+
+.text-input {
+    height: 48px;
+    border-radius: var(--r-md);
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--card);
+    padding: 0 14px;
+    font-size: var(--fs-body);
+    color: var(--ink);
+}
+
+.text-input:focus {
+    border-color: var(--rose);
+}
+
+.input-hint {
+    font-size: var(--fs-tiny);
+    color: var(--ink-faint);
+    margin-top: 4px;
+}
+
+#btn-start {
+    margin-top: auto;
+}
+
+#btn-perm-next {
+    margin-top: 16px;
+}

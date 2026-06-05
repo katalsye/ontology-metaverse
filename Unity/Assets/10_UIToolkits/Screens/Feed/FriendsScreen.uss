@@ -1,0 +1,132 @@
+/* ============================================
+ * FriendsScreen.uss
+ * ============================================ */
+
+#friends-root {
+    background-color: var(--bg);
+}
+
+/* ── 상단 바 ── */
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── 검색 ── */
+.search-area {
+    flex-direction: row;
+    padding: 8px 20px 16px;
+    align-items: center;
+}
+
+.search-input {
+    flex-grow: 1;
+    height: 42px;
+    border-radius: var(--r-md);
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--card);
+    padding: 0 14px;
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    margin-right: 8px;
+}
+
+.search-input:focus {
+    border-color: var(--rose);
+}
+
+/* ── 섹션 ── */
+.friends-scroll {
+    flex-grow: 1;
+    padding: 0 20px;
+}
+
+.section {
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+    /* text-transform: C#에서 .ToUpper() 처리 */
+    letter-spacing: 0.5px;
+}
+
+/* ── 친구 행 ── */
+.friend-row {
+    padding: 10px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+    align-items: center;
+}
+
+.friend-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: var(--lav-soft);
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.friend-avatar-emoji {
+    font-size: 20px;
+    -unity-text-align: middle-center;
+}
+
+.friend-name {
+    font-size: var(--fs-body-sm);
+    -unity-font-style: bold;
+    color: var(--ink);
+    flex-grow: 1;
+}
+
+/* 요청 액션 버튼 */
+.request-actions {
+    flex-shrink: 0;
+}
+
+.request-actions .btn {
+    margin-left: 6px;
+}
+
+/* 팔로우 상태 버튼 */
+.follow-btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: var(--fs-small);
+    -unity-font-style: bold;
+    border-width: 0;
+    flex-shrink: 0;
+    transition-property: scale;
+    transition-duration: 120ms;
+}
+
+.follow-btn:active {
+    scale: 0.93;
+}
+
+.follow-btn--follow {
+    background-color: var(--rose);
+    color: var(--white);
+}
+
+.follow-btn--following {
+    background-color: var(--card-soft);
+    color: var(--ink-muted);
+    border-width: 1px;
+    border-color: var(--line);
+}
+
+/* 빈 검색 결과 */
+.search-empty {
+    padding: 20px 0;
+    -unity-text-align: middle-center;
+    font-size: var(--fs-body-sm);
+    color: var(--ink-faint);
+}
