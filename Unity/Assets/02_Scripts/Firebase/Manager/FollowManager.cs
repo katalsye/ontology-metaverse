@@ -29,6 +29,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SendFollowRequest(string targetUid, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         string docId = uid + "_" + targetUid;
 
@@ -62,6 +64,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void AcceptFollowRequest(string fromUid, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         string docId = fromUid + "_" + uid;
 
@@ -87,6 +91,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void RejectFollowRequest(string fromUid, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         string docId = fromUid + "_" + uid;
 
@@ -112,6 +118,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void Unfollow(string targetUid, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         string docId = uid + "_" + targetUid;
 
@@ -137,6 +145,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetFollowings(System.Action<List<FollowRelation>> onSuccess, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("follows")
             .WhereEqualTo("FromUid", uid)
@@ -166,6 +176,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetFollowers(System.Action<List<FollowRelation>> onSuccess, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("follows")
             .WhereEqualTo("ToUid", uid)
@@ -195,6 +207,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetPendingRequests(System.Action<List<FollowRelation>> onSuccess, System.Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("follows")
             .WhereEqualTo("ToUid", uid)
@@ -224,6 +238,8 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void CheckIsFollowing(string targetUid, System.Action<bool> onResult)
     {
+        if (auth?.CurrentUser == null) { onResult?.Invoke(false); return; }
+
         string myUid = auth.CurrentUser.UserId;
         string docId = myUid + "_" + targetUid;
         db.Collection("follows").Document(docId).GetSnapshotAsync()
@@ -341,12 +357,11 @@ public class FollowManager : MonoBehaviour
 
     // ───────────────────────────────────────
     // 접근 권한 확인 (내부 헬퍼)
-    //   공개 계정 or 나 자신 → onAllowed
-    //   비공개 + 팔로우 accepted → onAllowed
-    //   그 외 → onDenied
     // ───────────────────────────────────────
     private void CheckFollowAccess(string targetUid, System.Action onAllowed, System.Action onDenied)
     {
+        if (auth?.CurrentUser == null) { onDenied?.Invoke(); return; }
+
         string myUid = auth.CurrentUser.UserId;
 
         if (myUid == targetUid) { onAllowed?.Invoke(); return; }
@@ -359,7 +374,6 @@ public class FollowManager : MonoBehaviour
                 bool isPublic = task.Result.GetValue<bool>("IsPublic");
                 if (isPublic) { onAllowed?.Invoke(); return; }
 
-                // 비공개 계정 → 내가 팔로우(accepted) 중인지 확인
                 string docId = myUid + "_" + targetUid;
                 db.Collection("follows").Document(docId).GetSnapshotAsync()
                     .ContinueWithOnMainThread(followTask =>

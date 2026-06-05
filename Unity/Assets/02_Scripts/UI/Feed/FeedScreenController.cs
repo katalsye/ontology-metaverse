@@ -63,7 +63,13 @@ public class FeedScreenController : MonoBehaviour
     private void LoadFeedData()
     {
         feedData.Clear();
-        RenderCards(); // 로딩 중 빈 상태 표시
+        RenderCards();
+
+        if (FollowManager.Instance == null)
+        {
+            Debug.LogError("[Feed] FollowManager.Instance가 null — MainScene의 Managers 오브젝트에 FollowManager 컴포넌트를 추가하세요.");
+            return;
+        }
 
         FollowManager.Instance.GetFollowings(
             onSuccess: followings =>
@@ -98,7 +104,7 @@ public class FeedScreenController : MonoBehaviour
                     );
                 }
             },
-            onFailure: err => Debug.LogError($"[Feed] 팔로잉 목록 로드 실패: {err}")
+            onFailure: err => Debug.LogWarning($"[Feed] 팔로잉 목록 로드 실패: {err}")
         );
     }
 
