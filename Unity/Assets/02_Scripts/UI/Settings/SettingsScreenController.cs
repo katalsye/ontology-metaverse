@@ -50,7 +50,7 @@ public class SettingsScreenController : MonoBehaviour
         bgmSlider.RegisterValueChangedCallback(evt =>
         {
             PlayerPrefs.SetFloat("bgm_volume", evt.newValue);
-            // TODO: AudioManager.Instance.SetBGMVolume(evt.newValue / 100f);
+            AudioManager.Instance.SetBGMVolume(evt.newValue / 100f);
         });
 
         var sfxSlider = root.Q<Slider>("slider-sfx");
@@ -58,7 +58,7 @@ public class SettingsScreenController : MonoBehaviour
         sfxSlider.RegisterValueChangedCallback(evt =>
         {
             PlayerPrefs.SetFloat("sfx_volume", evt.newValue);
-            // TODO: AudioManager.Instance.SetSFXVolume(evt.newValue / 100f);
+            AudioManager.Instance.SetSFXVolume(evt.newValue / 100f);
         });
 
         // 세그먼트: 해상도
@@ -122,7 +122,6 @@ public class SettingsScreenController : MonoBehaviour
         buttons.Add(root.Q<Button>(btn2Name));
         if (btn3Name != null) buttons.Add(root.Q<Button>(btn3Name));
 
-        // 초기 상태
         for (int i = 0; i < buttons.Count; i++)
         {
             if (values[i] == current)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
+using System.Linq;
 
 /// <summary>
 /// 4-7. BoardScreen 컨트롤러
@@ -66,7 +67,8 @@ public class BoardScreenController : MonoBehaviour
 
                 commentList.contentContainer.Clear();
 
-                var docs = task.Result.Documents;
+                var snapshot = task.Result;  // QuerySnapshot
+                var docs = snapshot.Documents.ToList();  // IEnumerable → List
 
                 if (docs.Count == 0)
                 {
