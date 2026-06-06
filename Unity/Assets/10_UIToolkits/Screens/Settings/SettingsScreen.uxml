@@ -37,6 +37,23 @@
                 </ui:VisualElement>
             </ui:VisualElement>
 
+            <!-- 페르소나 (온톨로지 추론 결과, 데이터 있을 때만 표시) -->
+            <ui:VisualElement name="persona-section" class="settings-group" style="display: none;">
+                <ui:Label text="나의 페르소나" class="group-title" />
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="에너지 유형" class="setting-label" />
+                    <ui:Label name="label-energy-type" text="-" class="setting-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="사회 선호도" class="setting-label" />
+                    <ui:Label name="label-social-pref" text="-" class="setting-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="생활 패턴" class="setting-label" />
+                    <ui:Label name="label-life-pattern" text="-" class="setting-value" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
             <!-- 알림 -->
             <ui:VisualElement class="settings-group">
                 <ui:Label text="알림" class="group-title" />
