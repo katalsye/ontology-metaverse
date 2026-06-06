@@ -15,6 +15,15 @@ public class RoomDataManager : MonoBehaviour
     void Start()
     {
         FetchFromFirestore();
+
+        if (RoomObjectManager.Instance != null)
+            RoomObjectManager.Instance.OnInferredObjectsAdded += HandleInferredObjectsAdded;
+    }
+
+    void OnDestroy()
+    {
+        if (RoomObjectManager.Instance != null)
+            RoomObjectManager.Instance.OnInferredObjectsAdded -= HandleInferredObjectsAdded;
     }
 
     public void Load(RoomData data)
@@ -30,19 +39,38 @@ public class RoomDataManager : MonoBehaviour
             {
                 var data = new RoomData();
                 foreach (var obj in objects)
-                {
-                    data.furnitures.Add(new FurnitureItemData
-                    {
-                        furnitureType = obj.ObjectType,
-                        designIndex   = 0,
-                        position      = new Vector3(obj.PositionX, obj.PositionY, obj.PositionZ),
-                        rotation      = Vector3.zero,
-                    });
-                }
+                    data.furnitures.Add(ToFurnitureItemData(obj));
                 Load(data);
             },
             err => Debug.LogWarning("[RoomDataManager] Firestore 로드 실패: " + err)
         );
+    }
+
+    // 온톨로지가 새 오브젝트를 추론·배치했을 때 토스트 알림
+    private void HandleInferredObjectsAdded(List<RoomObject> inferred)
+    {
+        foreach (var obj in inferred)
+        {
+            string concept = string.IsNullOrEmpty(obj.InferredFromConcept)
+                ? obj.InferredFrom
+                : obj.InferredFromConcept;
+            string msg = $"{concept} 기반으로 {obj.ObjectType}이(가) 방에 추가됐어요!";
+            Debug.Log($"[RoomDataManager] 추론 오브젝트 감지: {msg}");
+
+            if (ToastController != null)
+                ToastController.Show("온톨로지 추천", msg, "myroom");
+        }
+    }
+
+    private ToastController _toastController;
+    private ToastController ToastController
+    {
+        get
+        {
+            if (_toastController == null)
+                _toastController = FindObjectOfType<ToastController>();
+            return _toastController;
+        }
     }
 
     public void Save()
@@ -53,13 +81,25 @@ public class RoomDataManager : MonoBehaviour
         {
             objects.Add(new RoomObject
             {
-                ObjectId   = f.furnitureType,
-                ObjectType = f.furnitureType,
-                PositionX  = f.position.x,
-                PositionY  = f.position.y,
-                PositionZ  = f.position.z,
+                ObjectId            = f.furnitureType,
+                ObjectType          = f.furnitureType,
+                PositionX           = f.position.x,
+                PositionY           = f.position.y,
+                PositionZ           = f.position.z,
+                InferredFrom        = f.inferredFrom,
+                InferredFromConcept = f.inferredFromConcept,
             });
         }
         RoomObjectManager.Instance.SaveCustomLayout(objects);
     }
+
+    private static FurnitureItemData ToFurnitureItemData(RoomObject obj) => new FurnitureItemData
+    {
+        furnitureType       = obj.ObjectType,
+        designIndex         = 0,
+        position            = new Vector3(obj.PositionX, obj.PositionY, obj.PositionZ),
+        rotation            = Vector3.zero,
+        inferredFrom        = obj.InferredFrom,
+        inferredFromConcept = obj.InferredFromConcept,
+    };
 }
