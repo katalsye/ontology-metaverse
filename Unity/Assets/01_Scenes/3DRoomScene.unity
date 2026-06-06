@@ -1221,7 +1221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8f133aa1928e9f47a418282a459655d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomModeManager
-  _debugMode: 1
+  _debugMode: 0
   ceilingObject: {fileID: 979540144}
   playerObject: {fileID: 1112934377}
   joystickArea: {fileID: 1099573294}
@@ -13482,6 +13482,10 @@ PrefabInstance:
     - target: {fileID: 2306057726456344195, guid: 838101f95882d6e4f96b7bab247dd96b, type: 3}
       propertyPath: m_Name
       value: (Prb)MirrorLight
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306057726456344195, guid: 838101f95882d6e4f96b7bab247dd96b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

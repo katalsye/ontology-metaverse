@@ -289,10 +289,18 @@ public class CameraController : MonoBehaviour
         if (bfc == null) return;
 
         // VisitRoom: OntologyProxy 우선 체크 (침대 등에 가려진 Ontology 아이템)
+        // 단, host는 항상 최우선 — hits에 HostInteraction이 있으면 proxy 검사를 건너뛰고
+        // 아래 정상 host 분기로 넘긴다. (침대 위에 host가 겹쳐 있어도 host가 이김)
         if (RoomModeManager.CurrentMode == RoomMode.VisitRoom)
         {
+            bool hostInHits = false;
+            foreach (var h in hits)
+                if (h.collider.GetComponent<HostInteraction>() != null
+                 || h.collider.GetComponentInParent<HostInteraction>() != null)
+                { hostInHits = true; break; }
+
             var ffc0 = FurnitureFocusController.Instance;
-            if (ffc0 != null && ffc0.CurrentState == FurnitureFocusController.State.Free)
+            if (!hostInHits && ffc0 != null && ffc0.CurrentState == FurnitureFocusController.State.Free)
             {
                 foreach (var h in hits)
                 {
