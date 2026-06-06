@@ -51,6 +51,7 @@ public class SettingsScreenController : MonoBehaviour
         {
             PlayerPrefs.SetFloat("bgm_volume", evt.newValue);
             AudioManager.Instance.SetBGMVolume(evt.newValue / 100f);
+            AudioManager.Instance.SaveVolumesToFirestore();
         });
 
         var sfxSlider = root.Q<Slider>("slider-sfx");
@@ -59,6 +60,7 @@ public class SettingsScreenController : MonoBehaviour
         {
             PlayerPrefs.SetFloat("sfx_volume", evt.newValue);
             AudioManager.Instance.SetSFXVolume(evt.newValue / 100f);
+            AudioManager.Instance.SaveVolumesToFirestore();
         });
 
         // 세그먼트: 해상도
