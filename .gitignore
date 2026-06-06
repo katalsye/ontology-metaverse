@@ -136,3 +136,6 @@ Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
 # Firebase 서비스 계정 키 (절대 git에 올리면 안 됨)
 serviceAccountKey.json
 *serviceAccountKey*.json
+# Pretendard SDF asset (Tools/Setup Hangul Font 으로 재생성)
+Unity/Assets/04_Fonts/Pretendard-Regular SDF.asset
+Unity/Assets/04_Fonts/Pretendard-Regular SDF.asset.meta
