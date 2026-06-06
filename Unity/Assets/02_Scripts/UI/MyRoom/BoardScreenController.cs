@@ -31,7 +31,6 @@ public class BoardScreenController : MonoBehaviour
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
 
-        // 방문 중인 방 주인 UID, 없으면 내 방
         ownerUid = PlayerPrefs.GetString("visiting_user_id",
             auth?.CurrentUser?.UserId ?? "");
 
@@ -67,8 +66,8 @@ public class BoardScreenController : MonoBehaviour
 
                 commentList.contentContainer.Clear();
 
-                var snapshot = task.Result;  // QuerySnapshot
-                var docs = snapshot.Documents.ToList();  // IEnumerable → List
+                var snapshot = task.Result;
+                var docs = snapshot.Documents.ToList();
 
                 if (docs.Count == 0)
                 {
@@ -189,19 +188,5 @@ public class BoardScreenController : MonoBehaviour
         card.Add(body);
 
         return card;
-    }
-}
-
-public class CommentData
-{
-    public string nickname;
-    public string text;
-    public string timeAgo;
-
-    public CommentData(string nickname, string text, string timeAgo)
-    {
-        this.nickname = nickname;
-        this.text = text;
-        this.timeAgo = timeAgo;
     }
 }

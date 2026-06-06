@@ -10,7 +10,7 @@ using System.Collections.Generic;
 // PostItNote.Setup이 텍스트 내용과 본체 머티리얼만 채움.
 
 [System.Serializable]
-public class CommentData
+public class PostItCommentData
 {
     public string username;
     public string comment;
@@ -63,11 +63,11 @@ public class PostItManager : MonoBehaviour
     private readonly List<Vector3>    _placedPositions = new List<Vector3>();
 
     // DB 로드 실패 시 사용할 디폴트 댓글 (운영자가 작성한 3개)
-    static readonly CommentData[] _dummyComments = new CommentData[]
+    static readonly PostItCommentData[] _dummyComments = new PostItCommentData[]
     {
-        new CommentData { username = "운영자", comment = "오늘 방의 댓글을 추가해주세요" },
-        new CommentData { username = "운영자", comment = "오늘도 좋은 하루 되세요" },
-        new CommentData { username = "운영자", comment = "어떤 하루를 보내고 있나요?" },
+        new PostItCommentData { username = "운영자", comment = "오늘 방의 댓글을 추가해주세요" },
+        new PostItCommentData { username = "운영자", comment = "오늘도 좋은 하루 되세요" },
+        new PostItCommentData { username = "운영자", comment = "어떤 하루를 보내고 있나요?" },
     };
 
     void Start()
