@@ -3,6 +3,7 @@ using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
 using System.Collections.Generic;
+using OntologyMetaverse.OnDeviceAI.TripleExtraction;
 
 public class DiaryManager : MonoBehaviour
 {
