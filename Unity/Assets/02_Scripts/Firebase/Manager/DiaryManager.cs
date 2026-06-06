@@ -12,6 +12,18 @@ public class DiaryManager : MonoBehaviour
     private FirebaseFirestore db;
     private RewardManager rewardManager;
 
+    // 지연 탐색 — Gemma 미준비 시 ExtractAndSaveTriples가 0 반환하고 조용히 실패
+    private TextTripleExtractor _tripleExtractor;
+    private TextTripleExtractor TripleExtractor
+    {
+        get
+        {
+            if (_tripleExtractor == null)
+                _tripleExtractor = FindObjectOfType<TextTripleExtractor>();
+            return _tripleExtractor;
+        }
+    }
+
     private const int DiaryRewardAmount = 10;
 
     void Awake()
@@ -73,6 +85,7 @@ public class DiaryManager : MonoBehaviour
                 }
 
                 Debug.Log("일기 저장 완료");
+                TripleExtractor?.ExtractAndSaveTriples(content);
                 onSuccess?.Invoke();
             });
         });
