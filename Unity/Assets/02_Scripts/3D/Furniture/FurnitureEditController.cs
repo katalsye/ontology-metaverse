@@ -896,10 +896,24 @@ public class FurnitureEditController : MonoBehaviour
         }
 
 
-        // TODO: DB 저장
-        // 각 editableItems 중 canMove=true인 가구의 position·rotation을 저장
-        // 예) RoomDataManager.Instance?.SaveFurniturePositions(editableItems);
-        // Firebase 사용 시 각 가구 name 또는 id를 key로 position/rotation 직렬화 후 업로드
+        if (RoomObjectManager.Instance != null && editableItems != null)
+        {
+            var objects = new System.Collections.Generic.List<RoomObject>();
+            foreach (var cfg in editableItems)
+            {
+                if (cfg?.target == null) continue;
+                var t = cfg.target.transform;
+                objects.Add(new RoomObject
+                {
+                    ObjectId   = cfg.target.name,
+                    ObjectType = cfg.target.name,
+                    PositionX  = t.position.x,
+                    PositionY  = t.position.y,
+                    PositionZ  = t.position.z,
+                });
+            }
+            RoomObjectManager.Instance.SaveCustomLayout(objects);
+        }
 
         if (_deskEditMode)    RestoreDeskState(lerpCamera: true);
         if (_ceilingEditMode) RestoreCeilingState(deactivateItems: false);

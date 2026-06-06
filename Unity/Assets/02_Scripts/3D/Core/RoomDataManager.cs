@@ -1,8 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 현재 방 데이터를 들고 있는 싱글턴.
-/// </summary>
 public class RoomDataManager : MonoBehaviour
 {
     public static RoomDataManager Instance { get; private set; }
@@ -14,20 +12,54 @@ public class RoomDataManager : MonoBehaviour
         Instance = this;
     }
 
-    /// <summary>불러온 데이터 적용</summary>
+    void Start()
+    {
+        FetchFromFirestore();
+    }
+
     public void Load(RoomData data)
     {
         CurrentRoom = data ?? new RoomData();
-
-        // TODO: DB 연동 시 주석 해제
-        // FirebaseManager.Instance?.FetchRoomData(onSuccess: Load);
     }
 
-    /// <summary>현재 씬 상태를 RoomData에 저장</summary>
+    public void FetchFromFirestore()
+    {
+        if (RoomObjectManager.Instance == null) return;
+        RoomObjectManager.Instance.GetRoomObjects(
+            objects =>
+            {
+                var data = new RoomData();
+                foreach (var obj in objects)
+                {
+                    data.furnitures.Add(new FurnitureItemData
+                    {
+                        furnitureType = obj.ObjectType,
+                        designIndex   = 0,
+                        position      = new Vector3(obj.PositionX, obj.PositionY, obj.PositionZ),
+                        rotation      = Vector3.zero,
+                    });
+                }
+                Load(data);
+            },
+            err => Debug.LogWarning("[RoomDataManager] Firestore 로드 실패: " + err)
+        );
+    }
+
     public void Save()
     {
-        // TODO: DB 연동 시 주석 해제
-        // FirebaseManager.Instance?.UploadRoomData(CurrentRoom);
-        // Debug.Log("[RoomDataManager] Save() 호출됨 (DB 연동 전)");
+        if (RoomObjectManager.Instance == null) return;
+        var objects = new List<RoomObject>();
+        foreach (var f in CurrentRoom.furnitures)
+        {
+            objects.Add(new RoomObject
+            {
+                ObjectId   = f.furnitureType,
+                ObjectType = f.furnitureType,
+                PositionX  = f.position.x,
+                PositionY  = f.position.y,
+                PositionZ  = f.position.z,
+            });
+        }
+        RoomObjectManager.Instance.SaveCustomLayout(objects);
     }
 }
