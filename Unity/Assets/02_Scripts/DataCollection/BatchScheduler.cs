@@ -4,6 +4,7 @@ using OntologyMetaverse.DataCollection.Location;
 using OntologyMetaverse.DataCollection.Step;
 using OntologyMetaverse.DataCollection.AppUsage;
 using OntologyMetaverse.DataCollection.Gallery;
+using OntologyMetaverse.DataCollection.Weather;
 
 namespace OntologyMetaverse.DataCollection
 {
@@ -53,6 +54,14 @@ namespace OntologyMetaverse.DataCollection
         public StepCollector stepCollector;
         public AppUsageCollector appUsageCollector;
         public GalleryEXIFCollector galleryCollector;
+        public WeatherCollector weatherCollector;
+
+        [Header("Weather 수집 주기 (분)")]
+        [Tooltip("기상청 발표 주기와 맞춰 60분이 자연스러움. 0이면 매 collection 사이클마다.")]
+        public int weatherIntervalMinutes = 60;
+
+        // weather 마지막 수집 시각 (수집 주기 조절용)
+        private System.DateTime _lastWeatherCollectedAt = System.DateTime.MinValue;
 
         [Header("변환 + 업로드 (Inspector에서 드래그)")]
         public RawDataToTripleConverter converter;
@@ -155,6 +164,17 @@ namespace OntologyMetaverse.DataCollection
                 if (galleryCollector != null) galleryCollector.CollectRecentPhotos();
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Gallery 수집 실패: {e.Message}"); }
+
+            // Weather는 1시간 간격 (기상청 발표 주기 매칭). 비동기라 코루틴으로 발사.
+            try
+            {
+                if (weatherCollector != null && (System.DateTime.UtcNow - _lastWeatherCollectedAt).TotalMinutes >= weatherIntervalMinutes)
+                {
+                    StartCoroutine(weatherCollector.CollectCurrentWeather());
+                    _lastWeatherCollectedAt = System.DateTime.UtcNow;
+                }
+            }
+            catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Weather 수집 실패: {e.Message}"); }
         }
 
         /// <summary>

@@ -157,6 +157,7 @@ namespace OntologyMetaverse.DataCollection
                 case "app_usage": return ConvertAppUsage(raw);
                 case "sleep":     return ConvertSleep(raw);
                 case "exif":      return ConvertExif(raw);
+                case "weather":   return ConvertWeather(raw);
                 default:
                     Debug.LogWarning($"[RawConverter] 알 수 없는 type: {raw.Type}");
                     return new List<TripleJson>();
@@ -269,6 +270,33 @@ namespace OntologyMetaverse.DataCollection
             };
         }
 
+        /// <summary>
+        /// Weather (기상청 API) → Weather 노드.
+        /// JSON 형식: {"temperature":23.5,"condition":"clear","recordedAt":"2026-06-06T15:00:00"}
+        ///
+        /// 무성님 명세 (core.ttl):
+        ///   prod:Weather, prod:hasWeather, prod:temperature(float), prod:condition(string), prod:recordedAt(dateTime)
+        ///
+        /// 사용 추론 규칙:
+        ///   Rule 7 (IndoorDayPattern): condition CONTAINS "rain" 또는 겨울(12/1/2월)
+        ///                              + 방문 장소 2곳 미만 → 실내 중심 패턴 추론
+        /// </summary>
+        private List<TripleJson> ConvertWeather(RawData raw)
+        {
+            var json = JsonUtility.FromJson<WeatherContent>(raw.Content);
+            string weatherId = $"weather_{raw.Id}";
+            string weatherUri = OntologyBaseUri + weatherId;
+            string userUri = OntologyBaseUri + "user_001";
+
+            return new List<TripleJson>
+            {
+                new TripleJson { s = userUri,    p = OntologyBaseUri + "hasWeather",  o = weatherUri, datatype = null },
+                new TripleJson { s = weatherUri, p = OntologyBaseUri + "temperature", o = json.temperature.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), datatype = "xsd:float" },
+                new TripleJson { s = weatherUri, p = OntologyBaseUri + "condition",   o = json.condition ?? "unknown", datatype = "xsd:string" },
+                new TripleJson { s = weatherUri, p = OntologyBaseUri + "recordedAt",  o = json.recordedAt ?? raw.Timestamp, datatype = "xsd:dateTime" },
+            };
+        }
+
         // ─────────────────────────────────────────────────────
         // URI 정규화 (TextTripleExtractor와 동일 로직 — LLM 노이즈 흡수용이지만
         // 코드 생성 URI에도 안전하게 한 번 통과시킴)
@@ -305,5 +333,6 @@ namespace OntologyMetaverse.DataCollection
         [Serializable] private class AppUsageContent { public string appName; public int usageDuration; public string date; }
         [Serializable] private class SleepContent    { public float duration; public int quality; public float deepSleepRatio; public string timestamp; }
         [Serializable] private class ExifContent     { public string image_path; public float lat; public float lng; public string capture_time; }
+        [Serializable] private class WeatherContent  { public float temperature; public string condition; public string recordedAt; }
     }
 }
