@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Firebase.Extensions;
 
 /// <summary>
 /// Closet 씬 Furniture 탭 — 가구 전체 목록을 그리드로 표시.
@@ -31,9 +32,33 @@ public class FurnitureSelectionUI : MonoBehaviour
 
     void Start()
     {
-        // TODO: DB에서 구매 목록 받아오면 SetPurchased() 호출
         BuildGrid();
         Select(0);
+        LoadPurchasesFromFirestore();
+    }
+
+    void LoadPurchasesFromFirestore()
+    {
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string uid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                if (!task.Result.ContainsField("purchasedFurniture")) return;
+
+                var purchasedNames = task.Result.GetValue<System.Collections.Generic.List<string>>("purchasedFurniture");
+                if (data?.furnitures == null) return;
+                for (int i = 0; i < data.furnitures.Length; i++)
+                {
+                    bool purchased = purchasedNames?.Contains(data.furnitures[i].displayName) ?? false;
+                    SetPurchased(i, purchased);
+                }
+            });
     }
 
     // ── 외부 API ──────────────────────────────────────────────

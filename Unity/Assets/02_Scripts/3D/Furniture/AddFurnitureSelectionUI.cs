@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Firebase.Extensions;
 
 /// <summary>
 /// AddFurniture 패널 안의 ScrollView Content에 FurnitureCatalog 아이템을 그리드로 표시.
@@ -35,9 +36,37 @@ public class AddFurnitureSelectionUI : MonoBehaviour
         InitDefaultPurchased();
     }
 
+    void Start()
+    {
+        LoadPurchasesFromFirestore();
+    }
+
     void OnEnable()
     {
         BuildGrid();
+    }
+
+    void LoadPurchasesFromFirestore()
+    {
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string uid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                if (!task.Result.ContainsField("purchasedFurniture")) return;
+
+                var purchasedNames = task.Result.GetValue<System.Collections.Generic.List<string>>("purchasedFurniture");
+                if (catalog?.furnitures == null) return;
+                var purchased = new bool[catalog.furnitures.Length];
+                for (int i = 0; i < catalog.furnitures.Length; i++)
+                    purchased[i] = purchasedNames?.Contains(catalog.furnitures[i].displayName) ?? false;
+                SetPurchased(purchased);
+            });
     }
 
     /// <summary>

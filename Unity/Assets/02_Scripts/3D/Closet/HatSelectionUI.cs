@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Firebase.Extensions;
 
 public class HatSelectionUI : MonoBehaviour
 {
@@ -24,14 +25,36 @@ public class HatSelectionUI : MonoBehaviour
 
     void Start()
     {
-        // TODO: DB에서 구매 목록 받아오면 SetPurchased() 호출
-        // 현재는 HatCatalog.isPurchased 값 그대로 사용
         _purchased = new bool[catalog.hats.Length];
         for (int i = 0; i < catalog.hats.Length; i++)
             _purchased[i] = catalog.hats[i].isPurchased;
 
         BuildGrid();
         Select(0);
+        LoadPurchasesFromFirestore();
+    }
+
+    void LoadPurchasesFromFirestore()
+    {
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string uid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                if (!task.Result.ContainsField("purchasedHats")) return;
+
+                var purchasedNames = task.Result.GetValue<System.Collections.Generic.List<string>>("purchasedHats");
+                if (catalog?.hats == null) return;
+                var purchased = new bool[catalog.hats.Length];
+                for (int i = 0; i < catalog.hats.Length; i++)
+                    purchased[i] = purchasedNames?.Contains(catalog.hats[i].displayName) ?? false;
+                SetPurchased(purchased);
+            });
     }
 
     public int GetSelectedIndex() => _selected;
