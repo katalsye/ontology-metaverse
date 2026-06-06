@@ -58,6 +58,8 @@ public class GoogleFirebaseLogin : MonoBehaviour
                     userNameTMP.text = "User Name: " + user.DisplayName;
 
                     GetComponent<UserManager>().CreateUserIfNotExists();
+                    FcmManager.Instance?.RegisterToken();
+                    FcmManager.Instance?.StartNotificationListener();
                 }
             }
             else
@@ -118,14 +120,16 @@ public class GoogleFirebaseLogin : MonoBehaviour
                 }
     
                 user = auth.CurrentUser;
-                
+
                 Debug.Log($"UserName: {user.DisplayName}");
                 Debug.Log($"UserEmail: {user.Email}");
-    
+
                 userIdTMP.text = $"Google UserId: {user.UserId}";
                 userNameTMP.text = $"User Name: {user.DisplayName}";
 
                 GetComponent<UserManager>().CreateUserIfNotExists();
+                FcmManager.Instance?.RegisterToken();
+                FcmManager.Instance?.StartNotificationListener();
             });
         }
     }
@@ -154,6 +158,10 @@ public class GoogleFirebaseLogin : MonoBehaviour
 
         var questManager = GetComponent<QuestManager>();
         if (questManager != null) questManager.StopQuestListener();
+
+        // auth.SignOut() 전에 호출해야 CurrentUser가 유효함
+        FcmManager.Instance?.RemoveToken();
+        FcmManager.Instance?.StopNotificationListener();
 
         Debug.Log("모든 리스너 정리 완료");
     }

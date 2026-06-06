@@ -38,6 +38,10 @@ public class BottomNavController : MonoBehaviour
         // 화면 전환 이벤트 구독
         ScreenManager.Instance.OnScreenChanged += OnScreenChanged;
 
+        // FCM 미읽음 수 → feed 뱃지
+        if (FcmManager.Instance != null)
+            FcmManager.Instance.OnUnreadCountChanged += OnUnreadNotificationsChanged;
+
         SetActiveTab(0); // 기본: 마이룸
     }
 
@@ -45,6 +49,14 @@ public class BottomNavController : MonoBehaviour
     {
         if (ScreenManager.Instance != null)
             ScreenManager.Instance.OnScreenChanged -= OnScreenChanged;
+
+        if (FcmManager.Instance != null)
+            FcmManager.Instance.OnUnreadCountChanged -= OnUnreadNotificationsChanged;
+    }
+
+    private void OnUnreadNotificationsChanged(int count)
+    {
+        SetBadge("feed", count > 0);
     }
 
     private void OnScreenChanged(string screen)
