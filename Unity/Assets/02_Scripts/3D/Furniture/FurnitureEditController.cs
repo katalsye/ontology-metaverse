@@ -6,6 +6,7 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using DynamicWeatherSystem;
+using Firebase.Extensions;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 /// <summary>
@@ -131,6 +132,9 @@ public class FurnitureEditController : MonoBehaviour
 
     // EditMode 중 매 프레임 환경 강제 고정에 쓰는 플래그
     private bool _editModeActive = false;
+
+    // ── Firestore 연동: 서버에서 받아온 추가 가구 이름 세트 ──────
+    private readonly System.Collections.Generic.HashSet<string> _serverAddedNames = new();
 
     // ── 상태 ─────────────────────────────────────────────────
     private Camera      _cam;
@@ -276,6 +280,9 @@ public class FurnitureEditController : MonoBehaviour
                 }
             });
 
+        // Firestore에서 추가 가구 목록 + 위치 미리 로드
+        LoadRoomDataFromFirestore();
+
         // 원본 환경 1회 저장 — WeatherController.Start()가 DefaultExecutionOrder(100)이므로
         // 이 시점(기본 0)에는 아직 WeatherController가 Start()를 실행하기 전일 수 있음.
         // 따라서 저장은 1프레임 뒤로 미루고, EditMode가 이미 켜져 있다면 재진입.
@@ -352,8 +359,13 @@ public class FurnitureEditController : MonoBehaviour
     public void EnterEditMode()
     {
         if (_selected != null) { SetHighlight(_selected, false); _selected = null; }
-        // TODO: DB에서 가구 위치·종류 불러오기 (씬 진입 시 서버에서 받아온 데이터로 가구 배치)
         RefreshEditableItems();
+        // Firestore에서 저장된 가구 위치 적용 (비동기 — 완료되면 씬 오브젝트 위치 갱신)
+        if (RoomObjectManager.Instance != null)
+            RoomObjectManager.Instance.GetRoomObjects(
+                ApplyLoadedPositions,
+                err => Debug.LogWarning("[FurnitureEditController] 가구 위치 로드 실패: " + err)
+            );
         if (joystickObject != null) joystickObject.SetActive(false);
         if (_cam == null) _cam = Camera.main;
         // EditMode 진입 시 AddFurniture 패널은 항상 닫힌 상태로 시작
@@ -638,12 +650,13 @@ public class FurnitureEditController : MonoBehaviour
                 // hangerItemParent가 없을 때만 이름 기반 폴백으로 Board 감지
                 bool isWallMounted = hangerItemParent == null &&
                                      child.name.IndexOf("Board", System.StringComparison.OrdinalIgnoreCase) >= 0;
-                // TODO: DB 연동 후 서버에서 받아온 "추가 가구" 목록으로 isAdded 판별할 것
-                // 디폴트: 이름에 "bedlight" 또는 "bedside" 포함된 가구를 추가 가구로 처리 (삭제 버튼 테스트용)
-                bool isAddedDefault = child.name.IndexOf("bedlight", System.StringComparison.OrdinalIgnoreCase) >= 0
-                                   || child.name.IndexOf("bedside",  System.StringComparison.OrdinalIgnoreCase) >= 0;
+                // 서버 데이터 우선, 없으면 이름 기반 폴백으로 isAdded 판별
+                bool isAddedFallback = _serverAddedNames.Count == 0
+                    && (child.name.IndexOf("bedlight", System.StringComparison.OrdinalIgnoreCase) >= 0
+                     || child.name.IndexOf("bedside",  System.StringComparison.OrdinalIgnoreCase) >= 0);
+                bool isAddedServer = _serverAddedNames.Contains(child.name);
                 EnsureCollider(child.gameObject);
-                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = !isDoor, canDesign = true, wallMounted = isWallMounted, ceilingMounted = isCeiling, isAdded = addedSet.Contains(child.gameObject) || isAddedDefault });
+                list.Add(new FurnitureEditConfig { target = child.gameObject, canMove = !isDoor, canDesign = true, wallMounted = isWallMounted, ceilingMounted = isCeiling, isAdded = addedSet.Contains(child.gameObject) || isAddedServer || isAddedFallback });
             }
 
         // hangerItemParent 직계 자식 전부 → wallMounted=true (이름 무관)
@@ -861,7 +874,6 @@ public class FurnitureEditController : MonoBehaviour
 
         try
         {
-            // TODO: DB에 가구 위치·종류 저장 (저장 확인 시 서버로 현재 가구 배치 전송)
             // 현재 선택 아이템이 겹치는 상태면 저장 불가 (천장 모드 포함)
             if (_isDragOverlap)
             {
@@ -898,7 +910,8 @@ public class FurnitureEditController : MonoBehaviour
 
         if (RoomObjectManager.Instance != null && editableItems != null)
         {
-            var objects = new System.Collections.Generic.List<RoomObject>();
+            var objects   = new System.Collections.Generic.List<RoomObject>();
+            var addedNames = new System.Collections.Generic.List<string>();
             foreach (var cfg in editableItems)
             {
                 if (cfg?.target == null) continue;
@@ -911,8 +924,24 @@ public class FurnitureEditController : MonoBehaviour
                     PositionY  = t.position.y,
                     PositionZ  = t.position.z,
                 });
+                if (cfg.isAdded) addedNames.Add(cfg.target.name);
             }
-            RoomObjectManager.Instance.SaveCustomLayout(objects);
+            RoomObjectManager.Instance.SaveCustomLayout(objects, onSuccess: () =>
+            {
+                // 추가 가구 이름 목록도 같은 문서에 병합 저장
+                var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+                if (auth?.CurrentUser == null) return;
+                var extra = new System.Collections.Generic.Dictionary<string, object>
+                {
+                    { "addedFurnitureNames", addedNames }
+                };
+                Firebase.Firestore.FirebaseFirestore.DefaultInstance
+                    .Collection("room_objects").Document(auth.CurrentUser.UserId)
+                    .UpdateAsync(extra);
+                // 세션 내 _serverAddedNames도 동기화
+                _serverAddedNames.Clear();
+                foreach (var n in addedNames) _serverAddedNames.Add(n);
+            });
         }
 
         if (_deskEditMode)    RestoreDeskState(lerpCamera: true);
@@ -1898,6 +1927,47 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             if (go == cfg.target || go.transform.IsChildOf(cfg.target.transform)) return cfg;
         }
         return null;
+    }
+
+    // ── Firestore 연동 ────────────────────────────────────────
+
+    void LoadRoomDataFromFirestore()
+    {
+        if (RoomObjectManager.Instance == null) return;
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string uid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("room_objects").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                if (!task.Result.ContainsField("addedFurnitureNames")) return;
+                var names = task.Result.GetValue<System.Collections.Generic.List<string>>("addedFurnitureNames");
+                if (names == null) return;
+                _serverAddedNames.Clear();
+                foreach (var n in names) _serverAddedNames.Add(n);
+            });
+    }
+
+    void ApplyLoadedPositions(System.Collections.Generic.List<RoomObject> objects)
+    {
+        if (editableItems == null || objects == null) return;
+        foreach (var obj in objects)
+        {
+            if (string.IsNullOrEmpty(obj.ObjectId)) continue;
+            foreach (var cfg in editableItems)
+            {
+                if (cfg?.target == null) continue;
+                if (string.Equals(cfg.target.name, obj.ObjectId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    cfg.target.transform.position = new Vector3(obj.PositionX, obj.PositionY, obj.PositionZ);
+                    break;
+                }
+            }
+        }
     }
 }
 
