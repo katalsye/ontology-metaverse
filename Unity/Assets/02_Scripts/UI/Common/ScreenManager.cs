@@ -105,9 +105,20 @@ public class ScreenManager : MonoBehaviour
     private void SetScreenActive(string key, bool active)
     {
         var entry = screens.Find(s => s.key == key);
-        if (entry != null && entry.document != null)
+        if (active)
         {
-            entry.document.gameObject.SetActive(active);
+            // 씬 초기 상태와 무관하게, 활성화 전 모든 화면 비활성화
+            foreach (var s in screens)
+                if (s.document != null)
+                    s.document.gameObject.SetActive(false);
+
+            if (entry != null && entry.document != null)
+                entry.document.gameObject.SetActive(true);
+        }
+        else
+        {
+            if (entry != null && entry.document != null)
+                entry.document.gameObject.SetActive(false);
         }
     }
 }

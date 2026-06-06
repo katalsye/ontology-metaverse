@@ -66,8 +66,11 @@ public class QuestScreenController : MonoBehaviour
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         btnClaim.clicked += OnClaimReward;
 
-        QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
-        QuestManager.Instance.StartQuestListener();
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
+            QuestManager.Instance.StartQuestListener();
+        }
     }
 
     private void OnDisable()
