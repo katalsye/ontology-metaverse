@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
+using Firebase.Auth;
 
 /// <summary>
 /// 2-1. FeedScreen 컨트롤러
@@ -76,7 +77,7 @@ public class FeedScreenController : MonoBehaviour
             {
                 if (followings.Count == 0)
                 {
-                    RenderCards();
+                    ApplySortAndRender();
                     return;
                 }
 
@@ -86,20 +87,22 @@ public class FeedScreenController : MonoBehaviour
                     UserManager.Instance.GetUserProfileForFollow(relation.ToUid,
                         onSuccess: profile =>
                         {
+                            var lastActive = profile.CreatedAt.ToDateTime().ToLocalTime();
                             feedData.Add(new FeedCardData(
                                 profile.Uid,
                                 profile.Nickname,
                                 string.IsNullOrEmpty(profile.StatusMessage) ? "..." : profile.StatusMessage,
-                                "",
-                                false
+                                ComputeTimeAgo(lastActive),
+                                false,
+                                lastActive
                             ));
                             remaining--;
-                            if (remaining == 0) RenderCards();
+                            if (remaining == 0) ApplySortAndRender();
                         },
                         onFailure: _ =>
                         {
                             remaining--;
-                            if (remaining == 0) RenderCards();
+                            if (remaining == 0) ApplySortAndRender();
                         }
                     );
                 }
@@ -170,7 +173,7 @@ public class FeedScreenController : MonoBehaviour
         var nickname = new Label(data.nickname);
         nickname.AddToClassList("feed-card-name");
 
-        var time = new Label(data.timeAgo);
+        var time = new Label(string.IsNullOrEmpty(data.timeAgo) ? "" : data.timeAgo);
         time.AddToClassList("feed-card-time");
 
         topRow.Add(nickname);
@@ -185,6 +188,18 @@ public class FeedScreenController : MonoBehaviour
         card.Add(avatar);
         card.Add(textArea);
 
+        // 즐겨찾기 버튼
+        var favBtn = new Button();
+        favBtn.AddToClassList("fav-btn");
+        favBtn.text = data.isFavorite ? "★" : "☆";
+        favBtn.clicked += () =>
+        {
+            ToggleFavorite(data);
+            favBtn.text = data.isFavorite ? "★" : "☆";
+            if (currentSort == "favorite") ApplySortAndRender();
+        };
+        card.Add(favBtn);
+
         // 업데이트 점
         if (data.hasUpdate)
         {
@@ -193,11 +208,16 @@ public class FeedScreenController : MonoBehaviour
             card.Add(dot);
         }
 
-        // 카드 클릭 → 남의 방
+        // 카드 클릭 → 남의 방 (방문 횟수 증가)
         card.RegisterCallback<ClickEvent>(evt =>
         {
-            Debug.Log($"[Feed] 카드 탭: {data.nickname} → 남의 방");
-            // TODO: 유저 ID 전달
+            // 즐겨찾기 버튼 클릭이면 방 이동 차단
+            if (evt.target is Button) return;
+
+            int cnt = PlayerPrefs.GetInt($"visit_{data.userId}", 0);
+            PlayerPrefs.SetInt($"visit_{data.userId}", cnt + 1);
+            PlayerPrefs.Save();
+
             PlayerPrefs.SetString("visiting_user_id", data.userId);
             ScreenManager.Instance.GoTo("theirs_room");
         });
@@ -212,26 +232,77 @@ public class FeedScreenController : MonoBehaviour
     {
         currentSort = sort;
 
-        // 칩 스타일 업데이트
         btnSortRecent.RemoveFromClassList("sort-chip--active");
         btnSortFavorite.RemoveFromClassList("sort-chip--active");
         btnSortFrequent.RemoveFromClassList("sort-chip--active");
 
         switch (sort)
         {
+            case "recent":   btnSortRecent.AddToClassList("sort-chip--active");   break;
+            case "favorite": btnSortFavorite.AddToClassList("sort-chip--active"); break;
+            case "frequent": btnSortFrequent.AddToClassList("sort-chip--active"); break;
+        }
+
+        ApplySortAndRender();
+    }
+
+    // ── 정렬 + 렌더 ──────────────────────────────────────────
+
+    /// <summary>즐겨찾기·방문횟수를 PlayerPrefs에서 불러온 뒤 currentSort 기준으로 정렬하고 렌더.</summary>
+    private void ApplySortAndRender()
+    {
+        string myUid = FirebaseAuth.DefaultInstance?.CurrentUser?.UserId ?? "guest";
+        string favStr = PlayerPrefs.GetString($"favs_{myUid}", "");
+        var favSet = new HashSet<string>(
+            favStr.Length > 0 ? favStr.Split(',') : new string[0]);
+
+        foreach (var d in feedData)
+        {
+            d.isFavorite = favSet.Contains(d.userId);
+            d.visitCount = PlayerPrefs.GetInt($"visit_{d.userId}", 0);
+        }
+
+        switch (currentSort)
+        {
             case "recent":
-                btnSortRecent.AddToClassList("sort-chip--active");
+                feedData.Sort((a, b) => b.lastActiveAt.CompareTo(a.lastActiveAt));
                 break;
             case "favorite":
-                btnSortFavorite.AddToClassList("sort-chip--active");
+                feedData.Sort((a, b) =>
+                {
+                    if (a.isFavorite != b.isFavorite) return a.isFavorite ? -1 : 1;
+                    return b.lastActiveAt.CompareTo(a.lastActiveAt);
+                });
                 break;
             case "frequent":
-                btnSortFrequent.AddToClassList("sort-chip--active");
+                feedData.Sort((a, b) => b.visitCount.CompareTo(a.visitCount));
                 break;
         }
 
-        // TODO: 정렬 로직 적용 후 RenderCards() 호출
-        Debug.Log($"[Feed] 정렬 변경: {sort}");
+        RenderCards();
+    }
+
+    /// <summary>즐겨찾기 토글 후 PlayerPrefs에 저장.</summary>
+    private void ToggleFavorite(FeedCardData data)
+    {
+        data.isFavorite = !data.isFavorite;
+        string myUid = FirebaseAuth.DefaultInstance?.CurrentUser?.UserId ?? "guest";
+        var favList = new List<string>();
+        foreach (var d in feedData)
+            if (d.isFavorite) favList.Add(d.userId);
+        PlayerPrefs.SetString($"favs_{myUid}", string.Join(",", favList));
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>DateTime → 한국어 상대 시간 문자열.</summary>
+    private static string ComputeTimeAgo(System.DateTime dt)
+    {
+        var diff = System.DateTime.Now - dt;
+        if (diff.TotalMinutes < 1)  return "방금 전";
+        if (diff.TotalHours  < 1)   return $"{(int)diff.TotalMinutes}분 전";
+        if (diff.TotalDays   < 1)   return $"{(int)diff.TotalHours}시간 전";
+        if (diff.TotalDays   < 7)   return $"{(int)diff.TotalDays}일 전";
+        return dt.ToString("M월 d일");
     }
 
     private void ToggleSortBar()
@@ -258,13 +329,20 @@ public class FeedCardData
     public string timeAgo;
     public bool hasUpdate;
 
+    // 정렬용
+    public System.DateTime lastActiveAt;
+    public bool isFavorite;
+    public int visitCount;
+
     public FeedCardData(string userId, string nickname, string statusMessage,
-                        string timeAgo, bool hasUpdate)
+                        string timeAgo, bool hasUpdate,
+                        System.DateTime lastActiveAt = default)
     {
         this.userId = userId;
         this.nickname = nickname;
         this.statusMessage = statusMessage;
         this.timeAgo = timeAgo;
         this.hasUpdate = hasUpdate;
+        this.lastActiveAt = lastActiveAt;
     }
 }
