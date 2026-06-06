@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
+using Firebase.Extensions;
 
 /// <summary>
 /// Closet 씬 저장 버튼 로직 (가구 + 캐릭터 통합)
@@ -207,8 +208,36 @@ public class ClosetSaveUI : MonoBehaviour
     {
         _furnitureDirty = false;
         _playerDirty    = false;
-        // TODO: DB에 선택 가구/variant/색상 저장
-        // TODO: DB에 캐릭터 색상/모자 저장
+
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        var db   = Firebase.Firestore.FirebaseFirestore.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+
+        string uid = auth.CurrentUser.UserId;
+        var data = new System.Collections.Generic.Dictionary<string, object>();
+
+        if (furnitureCarousel?.data?.furnitures != null)
+        {
+            int fi = furnitureCarousel.CurrentIndex;
+            int vi = furnitureCarousel.CurrentVariant;
+            if (fi < furnitureCarousel.data.furnitures.Length)
+            {
+                data["furnitureIndex"] = fi;
+                data["variantIndex"]   = vi;
+                data["furnitureName"]  = furnitureCarousel.data.furnitures[fi].displayName;
+            }
+        }
+
+        if (hatSelectionUI != null)
+            data["hatIndex"] = hatSelectionUI.GetSelectedIndex();
+
+        db.Collection("users").Document(uid)
+          .UpdateAsync("closetConfig", data)
+          .ContinueWithOnMainThread(t =>
+          {
+              if (t.IsFaulted) Debug.LogError("[ClosetSaveUI] 저장 실패: " + t.Exception);
+              else Debug.Log("[ClosetSaveUI] 저장 완료");
+          });
     }
 
     // ── 미구매 체크 ───────────────────────────────────────────

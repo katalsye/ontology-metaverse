@@ -34,6 +34,8 @@ public class HatSelectionUI : MonoBehaviour
         Select(0);
     }
 
+    public int GetSelectedIndex() => _selected;
+
     /// <summary>현재 선택된 모자가 구매된 것인지 반환 (없음=0번은 항상 true)</summary>
     public bool IsCurrentHatPurchased()
     {
