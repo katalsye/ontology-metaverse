@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Firebase.Extensions;
 
 public class PlayerSelfController : MonoBehaviour
 {
@@ -82,9 +83,7 @@ public class PlayerSelfController : MonoBehaviour
         if (joystickObject != null) joystickObject.SetActive(false);
         if (selfUI != null) selfUI.SetActive(true);
 
-        // TODO: DB에서 기존 inputField 텍스트 불러오기
-        // 예: FirebaseManager.Instance.GetSelfText(userId, text => inputField.text = text);
-
+        LoadStatusText();
         LoadBalloonTexts();
     }
 
@@ -92,8 +91,7 @@ public class PlayerSelfController : MonoBehaviour
     {
         if (!IsOpen) return;
 
-        // TODO: 현재 inputField.text를 DB에 저장
-        // 예: FirebaseManager.Instance.SaveSelfText(userId, inputField.text);
+        SaveStatusText();
 
         if (selfUI != null) selfUI.SetActive(false);
         if (joystickObject != null) joystickObject.SetActive(true);
@@ -107,16 +105,66 @@ public class PlayerSelfController : MonoBehaviour
         CameraController.Instance?.RestoreState();
     }
 
+    void LoadStatusText()
+    {
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string uid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                if (task.Result.ContainsField("StatusMessage") && inputField != null)
+                    inputField.text = task.Result.GetValue<string>("StatusMessage") ?? "";
+            });
+    }
+
+    void SaveStatusText()
+    {
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null || inputField == null) return;
+        string uid  = auth.CurrentUser.UserId;
+        string text = inputField.text?.Trim() ?? "";
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .UpdateAsync("StatusMessage", text)
+            .ContinueWithOnMainThread(t =>
+            {
+                if (t.IsFaulted) Debug.LogError("[PlayerSelfController] 상태 저장 실패: " + t.Exception);
+            });
+    }
+
     void LoadBalloonTexts()
     {
-        // TODO: DB에서 오늘의 한마디 불러와서 balloonText1.text에 넣기
-        // 예: FirebaseManager.Instance.GetTodayWord(userId, text => balloonText1.text = string.IsNullOrEmpty(text) ? "..." : text);
-        if (balloonText1 != null) balloonText1.text = "...";
+        var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null)
+        {
+            if (balloonText1 != null) balloonText1.text = "...";
+            if (balloonText2 != null) balloonText2.text = "...";
+            return;
+        }
+        string uid = auth.CurrentUser.UserId;
 
-        // TODO: DB에서 오늘의 한마디 두 번째 줄 불러와서 balloonText2.text에 넣기
-        // 예: FirebaseManager.Instance.GetTodayWord2(userId, text => balloonText2.text = string.IsNullOrEmpty(text) ? "..." : text);
-        if (balloonText2 != null) balloonText2.text = "...";
-
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                string w1 = "...", w2 = "...";
+                if (!task.IsFaulted && task.Result.Exists)
+                {
+                    if (task.Result.ContainsField("todayWord1"))
+                        w1 = task.Result.GetValue<string>("todayWord1") ?? "...";
+                    if (task.Result.ContainsField("todayWord2"))
+                        w2 = task.Result.GetValue<string>("todayWord2") ?? "...";
+                }
+                if (balloonText1 != null) balloonText1.text = w1;
+                if (balloonText2 != null) balloonText2.text = w2;
+            });
     }
 
     void CalcViewPoint(out Vector3 pos, out Quaternion rot)
