@@ -31,6 +31,7 @@ public class OnboardingScreenController : MonoBehaviour
 
     private bool isDownloading = false;
     private bool downloadComplete = false;
+    private bool _isTransitioning = false;
 
     private void OnEnable()
     {
@@ -98,26 +99,62 @@ public class OnboardingScreenController : MonoBehaviour
     }
 
     /// <summary>
-    /// 특정 슬라이드 표시
+    /// 특정 슬라이드 표시 (초기 호출 또는 전환 중에는 즉시 적용)
     /// </summary>
     private void ShowSlide(int index)
     {
-        // 이전 슬라이드 숨기기
-        if (currentSlide != index)
+        if (_isTransitioning) return;
+
+        if (currentSlide == index)
         {
-            slides[currentSlide].RemoveFromClassList("active");
-            slides[currentSlide].AddToClassList("hidden");
-            dots[currentSlide].RemoveFromClassList("dot--active");
+            // 초기 세팅: 애니메이션 없이 바로 표시
+            slides[index].RemoveFromClassList("hidden");
+            slides[index].AddToClassList("active");
+            dots[index].AddToClassList("dot--active");
+            UpdateButtons();
+            return;
         }
 
-        // 새 슬라이드 표시
-        currentSlide = index;
-        slides[currentSlide].RemoveFromClassList("hidden");
-        slides[currentSlide].AddToClassList("active");
-        dots[currentSlide].AddToClassList("dot--active");
+        StartCoroutine(TransitionSlides(currentSlide, index));
+    }
 
-        // 버튼 텍스트 업데이트
+    private IEnumerator TransitionSlides(int from, int to)
+    {
+        _isTransitioning = true;
+        float half = slideTransitionDuration * 0.5f;
+
+        // 현재 슬라이드 페이드 아웃
+        float elapsed = 0f;
+        while (elapsed < half)
+        {
+            elapsed += Time.deltaTime;
+            slides[from].style.opacity = Mathf.Lerp(1f, 0f, elapsed / half);
+            yield return null;
+        }
+        slides[from].style.opacity = 0f;
+        slides[from].RemoveFromClassList("active");
+        slides[from].AddToClassList("hidden");
+        dots[from].RemoveFromClassList("dot--active");
+
+        // 새 슬라이드 준비 (투명 상태로 표시)
+        slides[to].style.opacity = 0f;
+        slides[to].RemoveFromClassList("hidden");
+        slides[to].AddToClassList("active");
+        dots[to].AddToClassList("dot--active");
+        currentSlide = to;
         UpdateButtons();
+
+        // 새 슬라이드 페이드 인
+        elapsed = 0f;
+        while (elapsed < half)
+        {
+            elapsed += Time.deltaTime;
+            slides[to].style.opacity = Mathf.Lerp(0f, 1f, elapsed / half);
+            yield return null;
+        }
+        slides[to].style.opacity = 1f;
+
+        _isTransitioning = false;
     }
 
     /// <summary>
