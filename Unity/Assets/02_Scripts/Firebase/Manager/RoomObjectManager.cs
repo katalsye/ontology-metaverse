@@ -7,6 +7,8 @@ using Firebase.Extensions;
 
 public class RoomObjectManager : MonoBehaviour
 {
+    public static RoomObjectManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private ListenerRegistration _roomListener;
@@ -14,10 +16,20 @@ public class RoomObjectManager : MonoBehaviour
 
     public event Action<List<RoomObject>> OnRoomObjectsChanged;
 
+    void Awake()
+    {
+        Instance = this;
+    }
+
     void Start()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
+    }
+
+    public void ApplySnapshot(List<RoomObject> objects)
+    {
+        OnRoomObjectsChanged?.Invoke(objects);
     }
 
     void Update()

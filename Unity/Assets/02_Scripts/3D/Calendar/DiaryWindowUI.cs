@@ -26,10 +26,6 @@ public class DiaryWindowUI : MonoBehaviour
     [Header("설정")]
     public int maxCharacters = 500;
 
-    // TODO: DiaryManager 연결 후 실제 데이터 로드
-    [Header("DB 연결 (나중에)")]
-    public MonoBehaviour diaryManager;
-
     public bool IsAnyPanelOpen => (viewPanel  != null && viewPanel.activeSelf)
                                 || (writePanel != null && writePanel.activeSelf);
 
@@ -78,18 +74,36 @@ public class DiaryWindowUI : MonoBehaviour
     public void OpenViewDiary()
     {
         _today = System.DateTime.Now.ToString("yyyy-MM-dd");
+        string yearMonth = System.DateTime.Now.ToString("yyyy-MM");
 
-        // TODO: diaryManager 연결 후 월간 날짜 목록 로드
-        // diaryManager.GetMonthlyDiaries(yearMonth, onSuccess: entries => {
-        //     _diaryDates = entries.ConvertAll(e => e.Date);
-        //     _diaryDates.Sort();
-        //     _currentIndex = _diaryDates.Count - 1;
-        //     LoadCurrentDiary();
-        // });
+        if (DiaryManager.Instance == null)
+        {
+            _diaryDates = new List<string> { _today };
+            _currentIndex = 0;
+            LoadCurrentDiary();
+            return;
+        }
 
-        _diaryDates = new List<string> { _today };
-        _currentIndex = 0;
-        LoadCurrentDiary();
+        DiaryManager.Instance.GetMonthlyDiaries(yearMonth,
+            entries =>
+            {
+                _diaryDates = entries.ConvertAll(e => e.Date);
+                _diaryDates.Sort();
+                if (_diaryDates.Count == 0)
+                {
+                    ShowView("이번 달 일기가 없어요.", _today);
+                    return;
+                }
+                _currentIndex = _diaryDates.Count - 1;
+                LoadCurrentDiary();
+            },
+            err =>
+            {
+                Debug.LogWarning("[DiaryWindowUI] 월간 일기 로드 실패: " + err);
+                _diaryDates = new List<string> { _today };
+                _currentIndex = 0;
+                LoadCurrentDiary();
+            });
     }
 
     // LaunchTable / 펜 / 지우개 / 형광펜 클릭
@@ -97,11 +111,16 @@ public class DiaryWindowUI : MonoBehaviour
     {
         _today = System.DateTime.Now.ToString("yyyy-MM-dd");
 
-        // TODO: diaryManager 연결 후 오늘 일기 존재 여부 확인
-        // diaryManager.GetDiary(_today,
-        //     onSuccess: entry => { _diaryDates = new List<string>{_today}; _currentIndex = 0; ShowView(entry.Content); },
-        //     onFailure: _ => ShowWrite(""));
-        ShowWrite("");
+        if (DiaryManager.Instance == null) { ShowWrite(""); return; }
+
+        DiaryManager.Instance.GetDiary(_today,
+            entry =>
+            {
+                _diaryDates = new List<string> { _today };
+                _currentIndex = 0;
+                ShowView(entry.Content, _today);
+            },
+            _ => ShowWrite(""));
     }
 
     void OpenCalendar()
@@ -114,9 +133,10 @@ public class DiaryWindowUI : MonoBehaviour
 
     void OnCalendarDateSelected(string dateStr)
     {
-        // TODO: DiaryManager 연결 후 실제 로드
-        // _diary.GetDiary(dateStr, onSuccess: entry => ShowView(entry.Content, dateStr), onFailure: _ => ShowView("일기 없음", dateStr));
-        ShowView($"({dateStr} 일기 — DB 연결 후 표시)", dateStr);
+        if (DiaryManager.Instance == null) { ShowView("DB 연결 안 됨", dateStr); return; }
+        DiaryManager.Instance.GetDiary(dateStr,
+            entry => ShowView(entry.Content, dateStr),
+            _ => ShowView("해당 날짜 일기 없음", dateStr));
     }
 
     public void CloseAll()
@@ -148,9 +168,10 @@ public class DiaryWindowUI : MonoBehaviour
 
         string date = _diaryDates[_currentIndex];
 
-        // TODO: diaryManager 연결 후 실제 로드
-        // diaryManager.GetDiary(date, onSuccess: entry => ShowView(entry.Content, date), onFailure: _ => ShowView("-", date));
-        ShowView("(DB 연결 후 표시)", date);
+        if (DiaryManager.Instance == null) { ShowView("-", date); return; }
+        DiaryManager.Instance.GetDiary(date,
+            entry => ShowView(entry.Content, date),
+            _ => ShowView("-", date));
     }
 
     void ShowView(string content, string date = null)
@@ -178,16 +199,17 @@ public class DiaryWindowUI : MonoBehaviour
     void OnSave()
     {
         string content = writeInputField != null ? writeInputField.text.Trim() : "";
+        if (string.IsNullOrEmpty(content)) { CloseAll(); return; }
+        if (DiaryManager.Instance == null) { CloseAll(); return; }
 
-        if (string.IsNullOrEmpty(content))
-        {
-            CloseAll();
-            return;
-        }
-
-
-        // TODO: diaryManager 연결 후 저장
-        // diaryManager.SaveDiary(content, onSuccess: () => { diaryManager.ClaimDiaryReward(_today); CloseAll(); });
-        CloseAll();
+        DiaryManager.Instance.SaveDiary(content,
+            onSuccess: () =>
+            {
+                DiaryManager.Instance.ClaimDiaryReward(_today,
+                    onSuccess: () => Debug.Log("[DiaryWindowUI] 저장 + 보상 완료"),
+                    onFailure: _ => { });
+                CloseAll();
+            },
+            onFailure: err => Debug.LogError("[DiaryWindowUI] 저장 실패: " + err));
     }
 }

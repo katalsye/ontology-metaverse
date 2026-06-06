@@ -28,9 +28,15 @@ public class RoomCalendarUI : MonoBehaviour
     void OnDatePicked(DateTime date)
     {
         string dateStr = date.ToString("yyyy-MM-dd");
-
-        // TODO: 백엔드에서 해당 날짜 방 스냅샷 불러오기
-        // RoomSnapshotManager.Instance.LoadSnapshot(dateStr, snapshot => { ... });
+        if (RoomSnapshotManager.Instance == null) return;
+        RoomSnapshotManager.Instance.GetSnapshotByDate(dateStr,
+            snapshot =>
+            {
+                if (RoomObjectManager.Instance != null)
+                    RoomObjectManager.Instance.ApplySnapshot(snapshot.Objects);
+            },
+            err => Debug.LogWarning($"[RoomCalendarUI] 스냅샷 없음({dateStr}): {err}")
+        );
     }
 
 #if UNITY_EDITOR

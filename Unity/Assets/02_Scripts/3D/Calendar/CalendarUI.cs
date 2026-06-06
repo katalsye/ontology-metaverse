@@ -45,9 +45,9 @@ public class CalendarUI : MonoBehaviour
         _year  = year;
         _month = month;
 
-        // TODO: DiaryManager 연결 후 월간 날짜 로드
-        // diaryManager.GetMonthlyDiaries($"{year:D4}-{month:D2}", entries =>
-        //     SetDiaryDates(entries.ConvertAll(e => e.Date)));
+        if (DiaryManager.Instance != null)
+            DiaryManager.Instance.GetMonthlyDiaries($"{year:D4}-{month:D2}",
+                entries => SetDiaryDates(entries.ConvertAll(e => e.Date)));
 
         RefreshDots();
         if (dotPanel != null) dotPanel.SetActive(true);
@@ -72,22 +72,15 @@ public class CalendarUI : MonoBehaviour
 
     void LoadPastRoom(string dateStr)
     {
-
-        // TODO: DB에서 해당 날짜의 방 스냅샷 불러오기
-        // Firestore 경로: /room_snapshots/{uid}/snapshots/{dateStr}
-        // 예시:
-        // RoomSnapshotManager.Instance.LoadSnapshot(dateStr, snapshot =>
-        // {
-        //     if (snapshot == null)
-        //     {
-        //         
-        //         return;
-        //     }
-        //     
-        //     // TODO: 방 오브젝트 상태 적용 (위치, 색상, 종류 등)
-        //     // RoomObjectManager.Instance.ApplySnapshot(snapshot);
-        // });
-
+        if (RoomSnapshotManager.Instance == null) return;
+        RoomSnapshotManager.Instance.GetSnapshotByDate(dateStr,
+            snapshot =>
+            {
+                if (RoomObjectManager.Instance != null)
+                    RoomObjectManager.Instance.ApplySnapshot(snapshot.Objects);
+            },
+            err => Debug.LogWarning($"[CalendarUI] 스냅샷 없음({dateStr}): {err}")
+        );
     }
 
     public void Close()
