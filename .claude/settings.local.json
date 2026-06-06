@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python Functions/test_rules.py)",
+      "Bash(pip install *)",
+      "Bash(python -m pip install rdflib)",
+      "Bash(python Functions/validate_ontology.py)",
+      "Bash(python Functions/test_triple_validator.py)",
+      "Bash(git -C \"C:\\\\Users\\\\USER\\\\Desktop\\\\ontology-metaverse\" diff --stat Unity/Assets/02_Scripts/Firebase)",
+      "PowerShell($url = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.ttf'; $out = 'C:\\\\Users\\\\USER\\\\Desktop\\\\ontology-metaverse\\\\Unity\\\\Assets\\\\04_Fonts\\\\Pretendard-Regular.ttf'; Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing; \\(Get-Item $out\\).Length)",
+      "PowerShell(gh issue list --repo katalsye/ontology-metaverse --state all --limit 30)",
+      "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/pulls?state=all&per_page=50&sort=updated&direction=desc\")",
+      "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); print\\(f'TOTAL PRs: {len\\(data\\)}'\\); [print\\(f'#{p[\\\\\"number\\\\\"]} [{p[\\\\\"state\\\\\"]}] {p[\\\\\"base\\\\\"][\\\\\"ref\\\\\"]} ← {p[\\\\\"head\\\\\"][\\\\\"ref\\\\\"]} | {p[\\\\\"title\\\\\"]} | {p[\\\\\"user\\\\\"][\\\\\"login\\\\\"]} | merged={p.get\\(\\\\\"merged_at\\\\\"\\) is not None}'\\) for p in data]\")",
+      "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/issues?state=all&per_page=50&sort=updated&direction=desc\")",
+      "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); issues = [i for i in data if 'pull_request' not in i]; print\\(f'TOTAL Issues \\(excluding PRs\\): {len\\(issues\\)}'\\); [print\\(f'#{i[\\\\\"number\\\\\"]} [{i[\\\\\"state\\\\\"]}] {i[\\\\\"title\\\\\"]} | {i[\\\\\"user\\\\\"][\\\\\"login\\\\\"]} | labels={[l[\\\\\"name\\\\\"] for l in i.get\\(\\\\\"labels\\\\\",[]\\)]}'\\) for i in issues]\")"
+    ]
+  }
+}

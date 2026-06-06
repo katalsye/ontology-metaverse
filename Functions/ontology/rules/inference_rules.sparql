@@ -1,0 +1,1017 @@
+
+# inference_rules.sparql
+# SPARQL CONSTRUCT 기반 추론 규칙
+# 실행 순서: ontology_engine.py 에서 순서대로 apply_rule() 호출
+# 네임스페이스: prod: <http://7team.dev/ontology#>
+
+PREFIX prod: <http://7team.dev/ontology#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 1 — FatigueRisk (시간대별 가중치 + 주말 가중치 적용)
+# 수면 6시간 미만 + 카페인 조건:
+#   ① 주간(06~21h): 카페 방문 3회 초과
+#   ② 야간(22h~):   카페 방문 1회 초과 (위험도 ×2 → 임계값 절반)
+#   ③ 주말 카페인: DuckDB 전처리 hasWeekendCaffeineScore ≥ 4.5
+#      (주말 카페 방문 가중치 ×1.5, 3회 × 1.5 = 4.5)
+# ── 주말 가중치: CalendarEvent 공백일 기반 주말 프록시 (DuckDB 전처리)
+# → prod:FatigueRisk 상태 부여
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: fatigue_risk
+CONSTRUCT {
+    ?user prod:hasState prod:FatigueRisk .
+    _:obj_fatigue a prod:RoomObject ;
+        prod:objectType "tired_pillow" ;
+        prod:inferredFrom "FatigueRisk" ;
+        prod:inferredFromConcept prod:FatigueRisk ;
+        prod:placementZone "shelf" .
+    ?user prod:hasRoomObject _:obj_fatigue .
+}
+WHERE {
+    ?user a prod:User .
+
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:duration ?dur .
+    FILTER (?dur < 6.0)
+
+    {
+        # ① 주간 카페인(06~21h): 3회 초과
+        {
+            SELECT ?user (COUNT(?loc) AS ?dayCafCnt)
+            WHERE {
+                ?user prod:hasLocation ?loc .
+                ?loc  prod:placeType "cafe" ;
+                      prod:visitTime  ?vt .
+                BIND (HOURS(?vt) AS ?h)
+                FILTER (?h >= 6 && ?h < 22)
+            }
+            GROUP BY ?user
+        }
+        FILTER (?dayCafCnt > 2)
+    }
+    UNION
+    {
+        # ② 야간 카페인(22h~): 1회 초과 (가중치 2배)
+        {
+            SELECT ?user (COUNT(?loc) AS ?nightCafCnt)
+            WHERE {
+                ?user prod:hasLocation ?loc .
+                ?loc  prod:placeType "cafe" ;
+                      prod:visitTime  ?vt .
+                BIND (HOURS(?vt) AS ?h)
+                FILTER (?h >= 22)
+            }
+            GROUP BY ?user
+        }
+        FILTER (?nightCafCnt > 1)
+    }
+    UNION
+    {
+        # ③ 주말 카페인 가중치: DuckDB 전처리 점수 4.5 이상
+        #    (주말 3회 × 1.5 = 4.5)
+        ?user prod:hasWeekendCaffeineScore ?weekendScore .
+        FILTER (?weekendScore >= 4.5)
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 2 — BurnoutWarning + 삶 개선형 퀘스트
+# prod:FatigueRisk 상태 + 운동 퀘스트 미완료 3일 이상
+# → prod:BurnoutWarning 생성, 스트레칭 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: burnout_warning
+CONSTRUCT {
+    ?user prod:hasState prod:BurnoutWarning .
+    _:q   a prod:Quest ;
+          prod:title "가벼운 스트레칭 10분" ;
+          prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user prod:hasState prod:FatigueRisk .
+
+    # 운동 퀘스트 미완료 3건 이상
+    {
+        SELECT ?user (COUNT(?q) AS ?pendingCnt)
+        WHERE {
+            ?user prod:receivesQuest ?q .
+            ?q    prod:questType "운동" ;
+                  prod:isCompleted false .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?pendingCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 3 — SedentaryPattern + 산책 퀘스트
+# DuckDB 전처리(_aggregate_with_duckdb)가 연속 저보행 일수를
+# prod:hasConsecutiveLowStepDays 트리플로 주입한 뒤 이 규칙이 읽음.
+# → prod:SedentaryPattern, "30분 산책하기" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: sedentary_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:SedentaryPattern .
+    _:q   a prod:Quest ;
+          prod:title "30분 산책하기" ;
+          prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+    _:obj_sedentary a prod:RoomObject ;
+        prod:objectType "running_shoes" ;
+        prod:inferredFrom "SedentaryPattern" ;
+        prod:inferredFromConcept prod:SedentaryPattern ;
+        prod:placementZone "floor" .
+    ?user prod:hasRoomObject _:obj_sedentary .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasConsecutiveLowStepDays ?n .
+    FILTER (?n >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 4 — PlaceHabit + RoomObject 추가
+# 같은 placeType 카테고리 주 3회 이상 방문
+# placeType → objectType 매핑:
+#   cafe → coffee_cup | gym → dumbbell | library → bookshelf
+#   park → tree_pot   | 그 외 → generic_marker
+# placeType 없는 Location은 이 규칙에서 제외 (필수 조건)
+# → prod:PlaceHabit, room_objects에 카테고리별 고정 오브젝트 추가
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: place_habit
+CONSTRUCT {
+    ?user prod:hasState prod:PlaceHabit .
+    _:obj a prod:RoomObject ;
+          prod:objectType ?objType ;
+          prod:inferredFrom ?inferredLabel ;
+          prod:inferredFromConcept prod:PlaceHabit ;
+          prod:placementZone ?zone .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?pt (COUNT(?loc) AS ?visitCnt)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeType   ?pt .
+        }
+        GROUP BY ?user ?pt
+    }
+    FILTER (?visitCnt >= 3)
+
+    BIND(
+        IF(?pt = "cafe",    "coffee_cup",
+        IF(?pt = "gym",     "dumbbell",
+        IF(?pt = "library", "bookshelf",
+        IF(?pt = "park",    "tree_pot",
+        "generic_marker")))) AS ?objType
+    )
+    BIND(CONCAT("PlaceHabit:", STR(?pt)) AS ?inferredLabel)
+    BIND(
+        IF(?pt = "cafe",    "desk",
+        IF(?pt = "gym",     "floor",
+        IF(?pt = "library", "wall",
+        IF(?pt = "park",    "floor",
+        "floor")))) AS ?zone
+    )
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 5 — 카페인 → 수면 질 저하 인과 추론 + 퀘스트
+# 카페인 섭취 오후 6시 이후 + 수면질 60 미만
+# → "오후엔 디카페인 어때요?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: late_caffeine_sleep_quality
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "오후엔 디카페인 어때요?" ;
+        prod:questType "삶 개선형" ;
+        prod:rewardAmount 50 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 수면질 60 미만
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+
+    # 오후 6시(18:00) 이후 카페 방문 기록
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeType  "cafe" ;
+          prod:visitTime  ?vt .
+    BIND(HOURS(?vt) AS ?h)
+    FILTER (?h >= 18)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6 — 빈 노드 감지 → 데이터 보완형 퀘스트
+# 방문 장소는 있는데 동행자(companion) 정보 없음
+# → "오늘 [장소] 누구랑 갔어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_companion
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeName ?place .
+
+    # companion 속성이 없는 위치 노드만 선택
+    FILTER NOT EXISTS { ?loc prod:companion ?anyone }
+
+    BIND(CONCAT("오늘 ", ?place, " 누구랑 갔어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-B — missing_emotion (감정 빈 노드)
+# Activity는 있는데 emotion 속성 없음
+# → "오늘 [activityType] 어떤 기분이었어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_emotion
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # Activity 중 emotion 없는 것만 (장르별로 한 번씩)
+    {
+        SELECT ?user ?atype
+        WHERE {
+            ?user prod:hasActivity ?act .
+            ?act  prod:activityType ?atype .
+            FILTER NOT EXISTS { ?act prod:emotion ?e }
+        }
+        GROUP BY ?user ?atype
+    }
+
+    BIND (CONCAT("오늘 ", STR(?atype), " 어떤 기분이었어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-C — missing_purpose (의도 빈 노드)
+# 같은 장소 3회 이상 방문했는데 purpose 속성 없음
+# → "[장소]에 자주 가는 이유가 있어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_purpose
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 3회 이상 방문한 장소
+    {
+        SELECT ?user ?place (COUNT(?loc) AS ?visitCnt)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:placeName   ?place .
+        }
+        GROUP BY ?user ?place
+    }
+    FILTER (?visitCnt >= 3)
+
+    # 해당 장소의 방문 기록 중 purpose 없는 것이 하나라도 존재
+    FILTER EXISTS {
+        ?user prod:hasLocation ?loc2 .
+        ?loc2 prod:placeName ?place .
+        FILTER NOT EXISTS { ?loc2 prod:purpose ?p }
+    }
+
+    BIND (CONCAT(STR(?place), "에 자주 가는 이유가 있어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-D — missing_music_mood (음악 맥락 빈 노드)
+# MusicListening은 있는데 mood 속성 없음
+# → "요즘 [genre] 음악 자주 듣네, 어떤 기분일 때 들어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_music_mood
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+
+    # mood 없는 MusicListening을 장르별로 한 번만
+    {
+        SELECT ?user ?genre
+        WHERE {
+            ?user prod:listensTo ?ml .
+            ?ml   prod:genre     ?genre .
+            FILTER NOT EXISTS { ?ml prod:mood ?m }
+        }
+        GROUP BY ?user ?genre
+    }
+
+    BIND (CONCAT("요즘 ", STR(?genre), " 음악 자주 듣네, 어떤 기분일 때 들어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-E — missing_sleep_cause (수면 원인 빈 노드)
+# SleepData.quality 60 미만인데 cause 속성 없음
+# → "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" 퀘스트 생성
+# ── 같은 User에서 중복 생성 방지: 미완료 동일 퀘스트가 없는 경우에만
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_sleep_cause
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+    FILTER NOT EXISTS { ?sleep prod:cause ?c }
+
+    # 동일 퀘스트가 이미 미완료 상태로 존재하면 중복 생성 억제
+    FILTER NOT EXISTS {
+        ?user prod:receivesQuest ?existing .
+        ?existing prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
+                  prod:isCompleted false .
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 6-F — missing_event_review (일정 후기 빈 노드)
+# CalendarEvent 종료(endTime < NOW())됐는데 review 속성 없음
+# → "[eventTitle] 어땠어?" 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: missing_event_review
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?questTitle ;
+        prod:questType "데이터 보완형" ;
+        prod:rewardAmount 30 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasCalendarEvent ?evt .
+    ?evt  prod:eventTitle ?evtTitle ;
+          prod:endTime     ?et .
+
+    # 이미 종료된 일정만
+    FILTER (?et < NOW())
+    FILTER NOT EXISTS { ?evt prod:review ?r }
+
+    BIND (CONCAT(STR(?evtTitle), " 어땠어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 7 — IndoorDayPattern (계절/날씨 가중치 반영)
+# 조건 A: 비오는 날(rain 포함) + 외출 2곳 미만
+# 조건 B: 겨울(12·1·2월) + 외출 2곳 미만 (계절 가중치)
+# ── UNION 대신 OPTIONAL + FILTER로 합산: RDFLib UNION Branch에서
+#    triple 없는 FILTER만 쓸 때 outer scope 변수가 전달되지 않는 버그 우회
+# ── 맑은 날 실내 패턴은 Rule 14(sunny_indoor_quest)에서 별도 강화 퀘스트 생성
+# → prod:IndoorDayPattern 상태 부여
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: indoor_day_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:IndoorDayPattern .
+    _:obj_indoor a prod:RoomObject ;
+        prod:objectType "window_rain" ;
+        prod:inferredFrom "IndoorDayPattern" ;
+        prod:inferredFromConcept prod:IndoorDayPattern ;
+        prod:placementZone "window" .
+    ?user prod:hasRoomObject _:obj_indoor .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasWeather ?w .
+    ?w    prod:recordedAt ?recAt .
+
+    # condition은 선택 속성 — OPTIONAL로 읽어 unbound 시 ""로 처리
+    OPTIONAL { ?w prod:condition ?cond }
+
+    # 비 또는 겨울 중 하나라도 충족
+    FILTER (
+        (BOUND(?cond) && CONTAINS(LCASE(STR(?cond)), "rain")) ||
+        MONTH(?recAt) = 12 || MONTH(?recAt) = 1 || MONTH(?recAt) = 2
+    )
+
+    # 집 외 방문 장소 2곳 미만 — FILTER NOT EXISTS로 "2곳 동시 존재 여부" 반전
+    FILTER NOT EXISTS {
+        ?user prod:hasLocation ?loc1 .
+        ?user prod:hasLocation ?loc2 .
+        FILTER (?loc1 != ?loc2)
+        ?loc1 prod:placeName ?p1 .
+        ?loc2 prod:placeName ?p2 .
+        FILTER (
+            !CONTAINS(LCASE(STR(?p1)), "home") &&
+            !CONTAINS(LCASE(STR(?p1)), "집")  &&
+            !CONTAINS(LCASE(STR(?p2)), "home") &&
+            !CONTAINS(LCASE(STR(?p2)), "집")
+        )
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 14 — SunnyIndoorQuest
+# IndoorDayPattern 상태 + 맑은 날씨(sun/clear)
+# → 더 강한 산책 퀘스트 생성
+# ── 맑은 날 실내 패턴은 기회 손실이므로 퀘스트 문구 강화
+# ── Rule 7 이후 실행 필수 (IndoorDayPattern 선행 의존)
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: sunny_indoor_quest
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title "날씨가 맑아요! 지금 딱 산책하기 좋아요" ;
+        prod:questType "삶 개선형" ;
+        prod:rewardAmount 50 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    # Rule 7 결과에 의존 — RULE_ORDER에서 indoor_day_pattern 직후 실행
+    ?user prod:hasState prod:IndoorDayPattern .
+
+    ?user prod:hasWeather ?w .
+    ?w    prod:condition  ?cond .
+    FILTER (
+        CONTAINS(LCASE(STR(?cond)), "sun") ||
+        CONTAINS(LCASE(STR(?cond)), "clear")
+    )
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 8 — Routine
+# 같은 시간대(hour) 일정이 주 3회 이상
+# → prod:Routine 상태 부여, routineHour 기록
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: routine_detection
+CONSTRUCT {
+    ?user prod:hasState prod:Routine .
+    _:r   a prod:Routine ;
+          prod:routineHour ?hour .
+    ?user prod:hasRoomObject _:r .
+    _:obj_routine a prod:RoomObject ;
+        prod:objectType "alarm_clock" ;
+        prod:inferredFrom "Routine" ;
+        prod:inferredFromConcept prod:Routine ;
+        prod:placementZone "desk" .
+    ?user prod:hasRoomObject _:obj_routine .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        # ── GROUP BY 표현식 대신 BIND로 변수화 후 그룹핑 (RDFLib 호환)
+        SELECT ?user ?hour (COUNT(?evt) AS ?evtCnt)
+        WHERE {
+            ?user prod:hasCalendarEvent ?evt .
+            ?evt  prod:startTime        ?st .
+            BIND (HOURS(?st) AS ?hour)
+        }
+        GROUP BY ?user ?hour
+    }
+    FILTER (?evtCnt >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 9 — MusicMood
+# 특정 장르 하루 총 청취 120분(2시간) 이상
+# → prod:MusicMood 상태 부여, moodGenre 기록
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: music_mood
+CONSTRUCT {
+    ?user prod:hasState prod:MusicMood .
+    _:mm  a prod:MusicMood ;
+          prod:moodGenre ?genre .
+    _:obj_music a prod:RoomObject ;
+        prod:objectType "music_speaker" ;
+        prod:inferredFrom "MusicMood" ;
+        prod:inferredFromConcept prod:MusicMood ;
+        prod:placementZone "shelf" .
+    ?user prod:hasRoomObject _:obj_music .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?genre (SUM(?dur) AS ?totalMin)
+        WHERE {
+            ?user prod:listensTo     ?ml .
+            ?ml   prod:genre         ?genre ;
+                  prod:listenDuration ?dur .
+        }
+        GROUP BY ?user ?genre
+    }
+    FILTER (?totalMin >= 120)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── 다단계 인과 추론 체인 (Rules 10–13) ──────────────────────────────────────
+#
+#  [카페인 오후 섭취]
+#       ↓ Rule 10
+#  SleepQualityImpaired
+#       ↓ Rule 11
+#  ExerciseSkipped
+#       ↓ Rule 12
+#  WeeklyActivityLow
+#       ↓ Rule 13
+#  BurnoutWarning + 퀘스트
+#
+# 각 규칙은 이전 단계의 hasState 결과에 의존.
+# RULE_ORDER에서 10→11→12→13 순서 고정 필수.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule 10 — SleepQualityImpaired ───────────────────────────────────────────
+# 카페인 섭취 오후 6시 이후 + 수면 질 60 미만
+# → prod:SleepQualityImpaired (Rule 11의 선행 조건)
+# RULE_ID: causal_sleep_impaired
+CONSTRUCT {
+    ?user prod:hasState prod:SleepQualityImpaired .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 오후 6시 이후 카페 방문 (카페인 섭취 프록시)
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeType  "cafe" ;
+          prod:visitTime  ?vt .
+    BIND(HOURS(?vt) AS ?h)
+    FILTER (?h >= 18)
+
+    # 수면 질 60 미만
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:quality ?qual .
+    FILTER (?qual < 60)
+}
+
+# ── Rule 11 — ExerciseSkipped ─────────────────────────────────────────────────
+# SleepQualityImpaired 상태 + 운동 Activity 기록 없음
+# → prod:ExerciseSkipped (Rule 12의 선행 조건)
+# RULE_ID: causal_exercise_skipped
+CONSTRUCT {
+    ?user prod:hasState prod:ExerciseSkipped .
+}
+WHERE {
+    # Rule 10 결과에 의존
+    ?user prod:hasState prod:SleepQualityImpaired .
+
+    # 운동 Activity 기록이 없는 경우
+    FILTER NOT EXISTS {
+        ?user prod:hasActivity ?act .
+        ?act  prod:activityType ?atype .
+        FILTER (
+            CONTAINS(LCASE(STR(?atype)), "운동") ||
+            CONTAINS(LCASE(STR(?atype)), "exercise") ||
+            CONTAINS(LCASE(STR(?atype)), "workout")
+        )
+    }
+}
+
+# ── Rule 12 — WeeklyActivityLow ──────────────────────────────────────────────
+# ExerciseSkipped 상태 + 걸음수 3000 미만 3일 이상 (주간 활동량 저하 프록시)
+# → prod:WeeklyActivityLow (Rule 13의 선행 조건)
+# RULE_ID: causal_weekly_activity_low
+CONSTRUCT {
+    ?user prod:hasState prod:WeeklyActivityLow .
+}
+WHERE {
+    # Rule 11 결과에 의존
+    ?user prod:hasState prod:ExerciseSkipped .
+
+    {
+        SELECT ?user (COUNT(?s) AS ?lowDayCnt)
+        WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s    prod:count ?cnt .
+            FILTER (?cnt < 3000)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?lowDayCnt >= 3)
+}
+
+# ── Rule 13 — BurnoutWarning (인과 체인 종점) ─────────────────────────────────
+# WeeklyActivityLow 상태
+# → prod:BurnoutWarning + 삶 개선형 퀘스트
+# (Rule 2의 BurnoutWarning과 다른 인과 경로 — 카페인→수면→운동→활동량)
+# RULE_ID: causal_burnout_from_chain
+CONSTRUCT {
+    ?user prod:hasState prod:BurnoutWarning .
+    _:q   a prod:Quest ;
+          prod:title "이번 주 활동량이 많이 줄었어요. 짧은 산책부터 시작해볼까요?" ;
+          prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    # Rule 12 결과에 의존
+    ?user prod:hasState prod:WeeklyActivityLow .
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── 페르소나 자동 생성 규칙 (Rules P1–P6) ─────────────────────────────────────
+#
+# 각 규칙이 독립적으로 prod:Persona 블랭크 노드를 생성 (hasPersona로 연결).
+# 동일 사용자에게 여러 규칙이 발동되면 복수 Persona 노드 생성됨.
+# ontology_engine.py의 _save_results_to_firestore에서 모든 노드를 순회해
+# energyType / socialPreference / lifePattern 을 병합 저장.
+# RULE_ORDER: P1~P6는 indoor_day_pattern·routine_detection 이후 실행.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule P1 — 활동적 페르소나 ─────────────────────────────────────────────────
+# 걸음수 7000보 이상 기록이 4일 이상
+# → energyType = "active"
+# RULE_ID: persona_active
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:energyType "active" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_active a prod:RoomObject ;
+        prod:objectType "sports_trophy" ;
+        prod:inferredFrom "Persona:active" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "shelf" .
+    ?user prod:hasRoomObject _:obj_persona_active .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?s) AS ?activeDays)
+        WHERE {
+            ?user prod:hasStepCount ?s .
+            ?s    prod:count ?c .
+            FILTER (?c >= 7000)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?activeDays >= 4)
+}
+
+# ── Rule P2 — 실내형 페르소나 ─────────────────────────────────────────────────
+# IndoorDayPattern 상태 활성화 (Rule 7 결과 의존)
+# → energyType = "indoor"
+# RULE_ID: persona_indoor
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:energyType "indoor" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_indoor a prod:RoomObject ;
+        prod:objectType "cozy_blanket" ;
+        prod:inferredFrom "Persona:indoor" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "floor" .
+    ?user prod:hasRoomObject _:obj_persona_indoor .
+}
+WHERE {
+    ?user prod:hasState prod:IndoorDayPattern .
+    BIND(NOW() AS ?now)
+}
+
+# ── Rule P3 — 사교적 페르소나 ─────────────────────────────────────────────────
+# companion 속성 있는 방문 기록 3회 이상
+# → socialPreference = "social"
+# RULE_ID: persona_social
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:socialPreference "social" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_social a prod:RoomObject ;
+        prod:objectType "photo_frame_friends" ;
+        prod:inferredFrom "Persona:social" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "wall" .
+    ?user prod:hasRoomObject _:obj_persona_social .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?socialVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:companion   ?anyone .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?socialVisits >= 3)
+}
+
+# ── Rule P4 — 혼자 시간 선호 페르소나 ────────────────────────────────────────
+# companion 없는 방문이 전체 방문의 70% 이상
+# → socialPreference = "solitary"
+# ── 정수 산술로 부동소수점 비교 회피: soloVisits*10 >= totalVisits*7
+# RULE_ID: persona_solitary
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:socialPreference "solitary" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_solitary a prod:RoomObject ;
+        prod:objectType "single_chair" ;
+        prod:inferredFrom "Persona:solitary" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "floor" .
+    ?user prod:hasRoomObject _:obj_persona_solitary .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?totalVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+        }
+        GROUP BY ?user
+    }
+    {
+        SELECT ?user (COUNT(?locS) AS ?soloVisits)
+        WHERE {
+            ?user prod:hasLocation ?locS .
+            FILTER NOT EXISTS { ?locS prod:companion ?c }
+        }
+        GROUP BY ?user
+    }
+    FILTER (?totalVisits > 0 && (?soloVisits * 10 >= ?totalVisits * 7))
+}
+
+# ── Rule P5 — 루틴형 페르소나 ─────────────────────────────────────────────────
+# Routine 노드 2개 이상 (Rule 8 결과 의존)
+# → lifePattern = "routine"
+# RULE_ID: persona_routine
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:lifePattern "routine" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_routine a prod:RoomObject ;
+        prod:objectType "organized_shelf" ;
+        prod:inferredFrom "Persona:routine" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "wall" .
+    ?user prod:hasRoomObject _:obj_persona_routine .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?r) AS ?routineCnt)
+        WHERE {
+            ?user prod:hasRoomObject ?r .
+            ?r    a prod:Routine .
+        }
+        GROUP BY ?user
+    }
+    FILTER (?routineCnt >= 2)
+}
+
+# ── Rule P6 — 야행성 페르소나 ─────────────────────────────────────────────────
+# 밤 11시 이후 ~ 새벽 2시 사이 방문 기록 3회 이상
+# → lifePattern = "night_owl"
+# RULE_ID: persona_night_owl
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:lifePattern "night_owl" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj_persona_night_owl a prod:RoomObject ;
+        prod:objectType "moon_lamp" ;
+        prod:inferredFrom "Persona:night_owl" ;
+        prod:inferredFromConcept prod:Persona ;
+        prod:placementZone "ceiling" .
+    ?user prod:hasRoomObject _:obj_persona_night_owl .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    {
+        SELECT ?user (COUNT(?loc) AS ?lateNightVisits)
+        WHERE {
+            ?user prod:hasLocation ?loc .
+            ?loc  prod:visitTime   ?vt .
+            BIND(HOURS(?vt) AS ?h)
+            FILTER (?h >= 23 || ?h < 2)
+        }
+        GROUP BY ?user
+    }
+    FILTER (?lateNightVisits >= 3)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── Spotify 음악 청취 패턴 기반 감정 상태 추론 규칙 (Rules 26–28) ───────────
+# Issue #16: Spotify 데이터 소스 활용도 증대
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Rule 26 — FocusMode ───────────────────────────────────────────────────────
+# 클래식·Lo-fi 장르 3시간(180분) 이상 연속 청취
+# → prod:FocusMode 상태 + RoomObject 책상 조명 밝기 증가
+# RULE_ID: focus_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:FocusMode .
+    _:obj a prod:RoomObject ;
+          prod:objectType "desk_light_bright" ;
+          prod:inferredFrom "FocusMode" ;
+          prod:inferredFromConcept prod:FocusMode ;
+          prod:placementZone "desk" .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user (SUM(?dur) AS ?totalFocusMin)
+        WHERE {
+            ?user prod:listensTo     ?ml .
+            ?ml   prod:genre         ?genre ;
+                  prod:listenDuration ?dur .
+            FILTER (
+                CONTAINS(LCASE(STR(?genre)), "classic") ||
+                CONTAINS(LCASE(STR(?genre)), "lo-fi") ||
+                CONTAINS(LCASE(STR(?genre)), "lofi") ||
+                CONTAINS(LCASE(STR(?genre)), "클래식") ||
+                CONTAINS(LCASE(STR(?genre)), "로파이")
+            )
+        }
+        GROUP BY ?user
+    }
+    FILTER (?totalFocusMin >= 180)
+}
+
+# ── Rule 27 — StressIndicator ─────────────────────────────────────────────────
+# 헤비메탈·록 장르를 야간(22시 이후) 청취
+# → prod:StressIndicator 상태 + 데이터 보완형 퀘스트
+# RULE_ID: stress_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:StressIndicator .
+    _:q   a prod:Quest ;
+          prod:title "오늘 힘든 일 있었어?" ;
+          prod:questType "데이터 보완형" ;
+          prod:rewardAmount 30 ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+    _:obj_stress a prod:RoomObject ;
+        prod:objectType "stress_ball" ;
+        prod:inferredFrom "StressIndicator" ;
+        prod:inferredFromConcept prod:StressIndicator ;
+        prod:placementZone "desk" .
+    ?user prod:hasRoomObject _:obj_stress .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 야간(22시 이후) 헤비메탈·록 청취 기록
+    ?user prod:listensTo ?ml .
+    ?ml   prod:genre     ?genre ;
+          prod:playedAt  ?playedAt .
+    BIND(HOURS(?playedAt) AS ?h)
+    FILTER (?h >= 22)
+    FILTER (
+        CONTAINS(LCASE(STR(?genre)), "metal") ||
+        CONTAINS(LCASE(STR(?genre)), "rock") ||
+        CONTAINS(LCASE(STR(?genre)), "메탈") ||
+        CONTAINS(LCASE(STR(?genre)), "록")
+    )
+
+    # 동일 퀘스트 중복 생성 방지
+    FILTER NOT EXISTS {
+        ?user prod:receivesQuest ?existing .
+        ?existing prod:title "오늘 힘든 일 있었어?" ;
+                  prod:isCompleted false .
+    }
+}
+
+# ── Rule 28 — SocialActivity ──────────────────────────────────────────────────
+# 댄스·팝 장르 청취 + 외출 위치(집 외) 동시 발생
+# → prod:SocialActivity 상태 + RoomObject 파티 조명 효과
+# ── 시간대 근접 조건:
+#    ① 같은 날짜 (년/월/일 일치)
+#    ② 시간 차이 3시간 이내 (10800초)
+# ── Issue #17: 시간대 근접성 검증 추가 (의미론적 정확성 강화)
+# RULE_ID: social_music_pattern
+CONSTRUCT {
+    ?user prod:hasState prod:SocialActivity .
+    _:obj a prod:RoomObject ;
+          prod:objectType "party_light" ;
+          prod:inferredFrom "SocialActivity" ;
+          prod:inferredFromConcept prod:SocialActivity ;
+          prod:placementZone "ceiling" .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 댄스·팝 장르 청취
+    ?user prod:listensTo ?ml .
+    ?ml   prod:genre     ?genre ;
+          prod:playedAt  ?playedAt .
+    FILTER (
+        CONTAINS(LCASE(STR(?genre)), "dance") ||
+        CONTAINS(LCASE(STR(?genre)), "pop") ||
+        CONTAINS(LCASE(STR(?genre)), "댄스") ||
+        CONTAINS(LCASE(STR(?genre)), "팝")
+    )
+
+    # 외출 위치(집 외) 방문
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeName   ?place ;
+          prod:visitTime   ?visitTime .
+    FILTER (
+        !CONTAINS(LCASE(STR(?place)), "home") &&
+        !CONTAINS(LCASE(STR(?place)), "집")
+    )
+
+    # ① 같은 날짜 내 발생 (년/월/일 일치)
+    FILTER (
+        YEAR(?playedAt) = YEAR(?visitTime) &&
+        MONTH(?playedAt) = MONTH(?visitTime) &&
+        DAY(?playedAt) = DAY(?visitTime)
+    )
+
+    # ② 시간 차이 3시간 이내
+    # RDFLib SPARQL 엔진 호환: HOURS() 함수로 시간대 추출 후 차이 계산
+    BIND(HOURS(?playedAt) AS ?playHour)
+    BIND(HOURS(?visitTime) AS ?visitHour)
+    BIND(MINUTES(?playedAt) AS ?playMin)
+    BIND(MINUTES(?visitTime) AS ?visitMin)
+    # 총 분 단위 차이 계산 (시간×60 + 분)
+    BIND((?playHour * 60 + ?playMin) - (?visitHour * 60 + ?visitMin) AS ?minDiff)
+    # 절댓값 3시간(180분) 이내 확인
+    FILTER (?minDiff >= -180 && ?minDiff <= 180)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 29 — ScheduleOverload + 휴식 권장 퀘스트
+# 같은 날짜에 CalendarEvent 5개 이상
+# → prod:ScheduleOverload 상태 부여 + 보완형 퀘스트 생성
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: schedule_overload
+CONSTRUCT {
+    ?user prod:hasState prod:ScheduleOverload .
+    _:q   a prod:Quest ;
+          prod:title "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?" ;
+          prod:questType "삶 개선형" ;
+          prod:rewardAmount 50 ;
+          prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+    _:obj_calendar a prod:RoomObject ;
+        prod:objectType "calendar_wall" ;
+        prod:inferredFrom "ScheduleOverload" ;
+        prod:inferredFromConcept prod:ScheduleOverload ;
+        prod:placementZone "wall" .
+    ?user prod:hasRoomObject _:obj_calendar .
+}
+WHERE {
+    ?user a prod:User .
+
+    {
+        SELECT ?user ?evtDate (COUNT(?evt) AS ?evtCnt)
+        WHERE {
+            ?user prod:hasCalendarEvent ?evt .
+            ?evt  prod:startTime        ?st .
+            BIND (STRBEFORE(STR(?st), "T") AS ?evtDateRaw)
+            FILTER (STRLEN(?evtDateRaw) = 10)
+            BIND (?evtDateRaw AS ?evtDate)
+        }
+        GROUP BY ?user ?evtDate
+    }
+    FILTER (?evtCnt >= 5)
+}

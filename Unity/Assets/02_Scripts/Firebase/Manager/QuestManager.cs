@@ -26,16 +26,21 @@ public class QuestManager : MonoBehaviour
     public event Action<int> OnUnreadQuestCountChanged;
     // public event Action<string> OnQuestListenerError; // 리스너 에러 알림
 
-    void Start()
+    void Awake()
     {
-        auth = FirebaseAuth.DefaultInstance;
-        db = FirebaseFirestore.DefaultInstance;
         rewardManager = GetComponent<RewardManager>();
-
         if (rewardManager == null)
         {
             Debug.LogError("QuestManager: RewardManager를 같은 GameObject에서 찾을 수 없음. ClaimReward가 작동하지 않습니다.");
         }
+
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
+    {
+        auth = FirebaseAuth.DefaultInstance;
+        db = FirebaseFirestore.DefaultInstance;
     }
 
     void Update()

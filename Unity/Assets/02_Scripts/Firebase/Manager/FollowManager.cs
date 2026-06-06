@@ -6,19 +6,15 @@ using System.Collections.Generic;
 
 public class FollowManager : MonoBehaviour
 {
-    public static FollowManager Instance { get; private set; }
-
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
     void Awake()
     {
-        if (Instance != null) { Destroy(this); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
+        FirebaseBootstrap.RunWhenReady(Init);
     }
 
-    void Start()
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
@@ -216,22 +212,6 @@ public class FollowManager : MonoBehaviour
                 }
 
                 onSuccess?.Invoke(requests);
-            });
-    }
-
-    // ───────────────────────────────────────
-    // 특정 유저 팔로우 여부 확인
-    // ───────────────────────────────────────
-    public void CheckIsFollowing(string targetUid, System.Action<bool> onResult)
-    {
-        string myUid = auth.CurrentUser.UserId;
-        string docId = myUid + "_" + targetUid;
-        db.Collection("follows").Document(docId).GetSnapshotAsync()
-            .ContinueWithOnMainThread(task =>
-            {
-                if (task.IsFaulted || !task.Result.Exists) { onResult?.Invoke(false); return; }
-                string status = task.Result.GetValue<string>("Status");
-                onResult?.Invoke(status == "accepted");
             });
     }
 

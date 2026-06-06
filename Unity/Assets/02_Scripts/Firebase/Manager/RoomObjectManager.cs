@@ -14,7 +14,12 @@ public class RoomObjectManager : MonoBehaviour
 
     public event Action<List<RoomObject>> OnRoomObjectsChanged;
 
-    void Start()
+    void Awake()
+    {
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;

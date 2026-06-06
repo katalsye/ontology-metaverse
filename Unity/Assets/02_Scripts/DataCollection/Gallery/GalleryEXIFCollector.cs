@@ -1,230 +1,151 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using UnityEngine;
-using OntologyMetaverse.DataCollection.SQLite;
-using MetadataExtractor;
-using IODirectory = System.IO.Directory;
-using MetadataExtractor.Formats.Exif;
-
-#if UNITY_ANDROID && !UNITY_EDITOR
 using UnityEngine.Android;
-#endif
+using OntologyMetaverse.DataCollection.SQLite;
 
 namespace OntologyMetaverse.DataCollection.Gallery
 {
     /// <summary>
-    /// 갤러리 사진의 EXIF 메타데이터(위치, 시간)를 추출하여 SQLite에 저장하는 모듈
-    /// 
+    /// 갤러리 사진의 EXIF (위치, 시각) 자동 수집기.
+    ///
     /// 동작:
-    /// - Editor: 더미 데이터 1건 저장
-    /// - 실기기: DCIM/Camera 폴더의 최근 N개 사진 EXIF 추출 후 저장
-    /// 
-    /// EXIF 라이브러리: MetadataExtractor (NuGet)
+    ///   1. READ_MEDIA_IMAGES (Android 13+) 또는 READ_EXTERNAL_STORAGE (12-) 권한 요청
+    ///   2. Plugins/Android/GalleryHelper.java 호출하여 최근 N장 EXIF JSON 수신
+    ///   3. 각 사진을 raw_data (type=exif) 1건씩 저장
+    ///
+    /// RawDataToTripleConverter가 이 raw_data를 photo 노드 트리플로 변환.
+    /// foodType/placeType 같은 의미 정보는 P3b (multimodal Gemma) 후속에서 처리.
     /// </summary>
     public class GalleryEXIFCollector : MonoBehaviour
     {
-        [Header("설정")]
-        [Tooltip("스캔할 최근 사진 개수")]
-        public int recentPhotoCount = 10;
+        [Header("최근 N장 사진 수집")]
+        public int maxPhotos = 5;
 
-        [Tooltip("실기기에서 스캔할 폴더 경로")]
-        public string cameraFolderPath = "/storage/emulated/0/DCIM/Camera";
+        public bool PermissionGranted { get; private set; }
 
         /// <summary>
-        /// 갤러리 EXIF 수집 시작
+        /// 저장소 권한 요청. 한 번 호출하면 사용자 응답 대기 후 결과 반영.
+        /// Android 13+: READ_MEDIA_IMAGES, 12-: READ_EXTERNAL_STORAGE
         /// </summary>
-        public void CollectRecentPhotoEXIF()
+        public System.Collections.IEnumerator RequestPermission()
         {
-            Debug.Log("[GalleryEXIFCollector] 갤러리 EXIF 수집 시작");
+#if UNITY_ANDROID
+            string perm = (Application.platform == RuntimePlatform.Android &&
+                           SystemInfo.operatingSystem.Contains("API-3") /* 13+: 30+ */)
+                ? "android.permission.READ_MEDIA_IMAGES"
+                : Permission.ExternalStorageRead;
 
-#if UNITY_EDITOR
-            CollectInEditor();
-#else
-            CollectInAndroid();
-#endif
-        }
+            // 위 추정이 정확치 않을 수 있어 두 권한 다 시도
+            string[] candidates = new[] { "android.permission.READ_MEDIA_IMAGES", Permission.ExternalStorageRead };
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// Editor 모드: 더미 데이터 1건 저장
-        /// </summary>
-        private void CollectInEditor()
-        {
-            Debug.LogWarning("[GalleryEXIFCollector] Editor에서는 더미 데이터 사용");
-            SaveToSQLite(
-                imagePath: "/storage/emulated/0/DCIM/Camera/dummy_photo.jpg",
-                lat: 35.8868f,
-                lng: 128.6084f,
-                captureTime: DateTime.UtcNow.AddHours(-2).ToString("o")
-            );
-        }
-#else
-        /// <summary>
-        /// 실기기 모드: 폴더 스캔 + 최근 사진 EXIF 추출
-        /// </summary>
-        private void CollectInAndroid()
-        {
-            // 1. 권한 체크
-            if (!HasGalleryPermission())
+            foreach (var p in candidates)
             {
-                RequestGalleryPermission();
-                
-                if (!HasGalleryPermission())
+                if (Permission.HasUserAuthorizedPermission(p))
                 {
-                    Debug.LogWarning("[GalleryEXIFCollector] 갤러리 권한 없음 - 수집 중단");
-                    return;
+                    PermissionGranted = true;
+                    yield break;
                 }
             }
 
-            // 2. 폴더 존재 확인
-            if (!IODirectory.Exists(cameraFolderPath))
+            Debug.Log("[GalleryEXIFCollector] 저장소 권한 요청");
+            Permission.RequestUserPermission(candidates[0]); // 13+ 우선 시도
+            float wait = 0;
+            while (wait < 10f)
             {
-                Debug.LogError($"[GalleryEXIFCollector] 폴더 없음: {cameraFolderPath}");
-                return;
-            }
-
-            // 3. 폴더에서 최근 사진 N개 가져오기
-            List<string> recentPhotos = GetRecentPhotos(cameraFolderPath, recentPhotoCount);
-
-            if (recentPhotos.Count == 0)
-            {
-                Debug.LogWarning("[GalleryEXIFCollector] 폴더에 사진 없음");
-                return;
-            }
-
-            Debug.Log($"[GalleryEXIFCollector] 최근 사진 {recentPhotos.Count}개 발견");
-
-            // 4. 각 사진의 EXIF 추출 + SQLite 저장
-            int savedCount = 0;
-            foreach (string photoPath in recentPhotos)
-            {
-                try
+                yield return new WaitForSeconds(0.5f);
+                wait += 0.5f;
+                foreach (var p in candidates)
                 {
-                    if (ExtractEXIF(photoPath, out float lat, out float lng, out string captureTime))
+                    if (Permission.HasUserAuthorizedPermission(p))
                     {
-                        SaveToSQLite(photoPath, lat, lng, captureTime);
-                        savedCount++;
+                        PermissionGranted = true;
+                        Debug.Log($"[GalleryEXIFCollector] 권한 허용됨: {p}");
+                        yield break;
                     }
                 }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"[GalleryEXIFCollector] EXIF 추출 실패 ({photoPath}): {e.Message}");
-                }
             }
-
-            Debug.Log($"[GalleryEXIFCollector] 수집 완료: {savedCount}/{recentPhotos.Count}건 저장");
+            Debug.LogWarning("[GalleryEXIFCollector] 권한 미허용 → 갤러리 수집 비활성");
+            PermissionGranted = false;
+#else
+            PermissionGranted = true;
+            yield break;
+#endif
         }
 
         /// <summary>
-        /// 폴더에서 .jpg 파일 중 최근 N개 가져오기 (수정 시간 기준)
+        /// 최근 N장 사진의 EXIF를 SQLite raw_data 에 저장.
+        /// BatchScheduler가 주기적으로 호출.
         /// </summary>
-        private List<string> GetRecentPhotos(string folder, int count)
+        public void CollectRecentPhotos()
         {
-            try
+            if (!PermissionGranted)
             {
-                return IODirectory.GetFiles(folder, "*.jpg", SearchOption.TopDirectoryOnly)
-                    .OrderByDescending(f => File.GetLastWriteTime(f))
-                    .Take(count)
-                    .ToList();
+                Debug.LogWarning("[GalleryEXIFCollector] 권한 미허용 → 스킵");
+                return;
             }
+
+            string json = ReadRecentPhotosJson(maxPhotos);
+            if (string.IsNullOrEmpty(json) || json == "[]")
+            {
+                Debug.Log("[GalleryEXIFCollector] 수집된 사진 없음");
+                return;
+            }
+
+            string wrapped = "{\"items\":" + json + "}";
+            PhotoList list;
+            try { list = JsonUtility.FromJson<PhotoList>(wrapped); }
             catch (Exception e)
             {
-                Debug.LogError($"[GalleryEXIFCollector] 폴더 스캔 실패: {e.Message}");
-                return new List<string>();
+                Debug.LogError($"[GalleryEXIFCollector] JSON 파싱 실패: {e.Message}\n{json}");
+                return;
             }
-        }
 
-        /// <summary>
-        /// 사진 파일에서 EXIF 메타데이터 추출
-        /// </summary>
-        /// <returns>추출 성공 여부</returns>
-        private bool ExtractEXIF(string imagePath, out float lat, out float lng, out string captureTime)
-        {
-            lat = 0;
-            lng = 0;
-            captureTime = "";
-
-            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(imagePath);
-
-            // GPS 정보 추출
-            var gpsDir = directories.OfType<GpsDirectory>().FirstOrDefault();
-            if (gpsDir != null)
+            if (list?.items == null || list.items.Length == 0)
             {
-                var location = gpsDir.GetGeoLocation();
-                if (location != null)
+                Debug.Log("[GalleryEXIFCollector] 빈 items");
+                return;
+            }
+
+            int saved = 0;
+            string nowIso = DateTime.UtcNow.ToString("o");
+            foreach (var p in list.items)
+            {
+                // GPS 0,0이면 위치 정보 없는 사진 — 그래도 저장 (시간만이라도 활용)
+                string content = $"{{\"image_path\":\"{EscapeJson(p.image_path)}\",\"lat\":{p.lat},\"lng\":{p.lng},\"capture_time\":\"{p.capture_time}\"}}";
+                var raw = new RawData
                 {
-                    lat = (float)location.Value.Latitude;
-                    lng = (float)location.Value.Longitude;
-                }
+                    Type = "exif",
+                    Content = content,
+                    Timestamp = nowIso,
+                    Processed = 0
+                };
+                SQLiteManager.Instance.Connection.Insert(raw);
+                saved++;
             }
-
-            // 촬영 시간 추출
-            var subIfdDir = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
-            if (subIfdDir != null)
-            {
-                if (subIfdDir.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime dateTime))
-                {
-                    captureTime = dateTime.ToString("o");
-                }
-            }
-
-            // GPS 또는 시간 둘 중 하나는 있어야 함
-            if (lat == 0 && lng == 0 && string.IsNullOrEmpty(captureTime))
-            {
-                return false;
-            }
-
-            // 시간 없으면 파일 수정 시간 사용
-            if (string.IsNullOrEmpty(captureTime))
-            {
-                captureTime = File.GetLastWriteTime(imagePath).ToString("o");
-            }
-
-            return true;
+            Debug.Log($"[GalleryEXIFCollector] {saved}건 저장");
         }
 
-        /// <summary>
-        /// 갤러리 접근 권한 체크
-        /// </summary>
-        private bool HasGalleryPermission()
+        private string ReadRecentPhotosJson(int max)
         {
-            // 안드로이드 13+ : READ_MEDIA_IMAGES
-            // 안드로이드 12 이하: READ_EXTERNAL_STORAGE
-            return Permission.HasUserAuthorizedPermission("android.permission.READ_MEDIA_IMAGES")
-                || Permission.HasUserAuthorizedPermission(Permission.ExternalStorageRead);
-        }
-
-        /// <summary>
-        /// 갤러리 권한 요청
-        /// </summary>
-        private void RequestGalleryPermission()
-        {
-            Debug.Log("[GalleryEXIFCollector] 갤러리 권한 요청");
-
-            // 안드로이드 13+ 와 12 이하 둘 다 요청
-            Permission.RequestUserPermission("android.permission.READ_MEDIA_IMAGES");
-            Permission.RequestUserPermission(Permission.ExternalStorageRead);
-        }
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using (var cls = new AndroidJavaClass("com.ontology.metaverse.gallery.GalleryHelper"))
+            using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+            {
+                return cls.CallStatic<string>("getRecentPhotos", activity, max);
+            }
+#else
+            return "[{\"image_path\":\"editor_mock.jpg\",\"lat\":35.88,\"lng\":128.60,\"capture_time\":\"2026-06-06T12:00:00\"}]";
 #endif
-
-        /// <summary>
-        /// EXIF 데이터를 SQLite raw_data에 저장
-        /// </summary>
-        private void SaveToSQLite(string imagePath, float lat, float lng, string captureTime)
-        {
-            string content = $"{{\"image_path\":\"{imagePath}\",\"lat\":{lat},\"lng\":{lng},\"capture_time\":\"{captureTime}\"}}";
-
-            var rawData = new RawData
-            {
-                Type = "exif",
-                Content = content,
-                Timestamp = DateTime.UtcNow.ToString("o")
-            };
-
-            SQLiteManager.Instance.Connection.Insert(rawData);
-            Debug.Log($"[GalleryEXIFCollector] EXIF DB 저장 완료: Id={rawData.Id}, image={Path.GetFileName(imagePath)}");
         }
+
+        private static string EscapeJson(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        [Serializable] private class PhotoEntry { public string image_path; public float lat; public float lng; public string capture_time; }
+        [Serializable] private class PhotoList { public PhotoEntry[] items; }
     }
 }

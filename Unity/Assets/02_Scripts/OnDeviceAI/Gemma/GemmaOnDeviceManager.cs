@@ -1,98 +1,81 @@
 using System;
 using System.IO;
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace OntologyMetaverse.OnDeviceAI.Gemma
 {
+    /// <summary>
+    /// Gemma 3n 온디바이스 추론 매니저.
+    ///
+    /// 실기기:
+    ///   Plugins/Android/GemmaInference.java 를 AndroidJavaObject로 호출.
+    ///   모델 파일은 별도 ModelDownloader가 Firebase Storage에서 받아오고,
+    ///   InitWithModelPath(absolutePath)로 주입한다.
+    ///
+    /// Editor:
+    ///   네이티브 호출 불가 → 명세서 규격 mock 트리플 응답 반환.
+    ///
+    /// 호출 인터페이스 (TextTripleExtractor 등 기존 호출자가 사용):
+    ///   - bool isModelLoaded
+    ///   - string GenerateResponse(string prompt)
+    ///   - string GenerateResponseWithImage(string prompt, byte[] imageBytes)
+    /// </summary>
     public class GemmaOnDeviceManager : MonoBehaviour
     {
         [Header("모델 파일 이름")]
         public string modelFileName = "gemma-3n-E2B-it-int4.task";
 
-        public bool isModelLoaded = false;
+        public bool isModelLoaded { get; private set; }
 
+        // ModelDownloader가 채워주는 실제 모델 파일 절대 경로
         private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        // Kotlin GemmaBridge 인스턴스 (AAR에서 가져옴)
-        private AndroidJavaObject gemmaBridge;
+        // com.ontology.metaverse.gemma.GemmaInference 인스턴스
+        private AndroidJavaObject nativeBridge;
 #endif
 
-        void Start()
+        /// <summary>
+        /// 모델 파일 경로를 받아 네이티브 초기화. ModelDownloader 완료 콜백에서 호출.
+        /// 실기기에서 수 초 ~ 십수 초 걸릴 수 있음 (메인 스레드 OK, MediaPipe 내부 처리).
+        /// </summary>
+        public void InitWithModelPath(string absolutePath)
         {
-            StartCoroutine(InitGemmaModel());
-        }
+            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+            {
+                Debug.LogError($"[GemmaManager] 모델 파일을 찾을 수 없습니다: {absolutePath}");
+                isModelLoaded = false;
+                return;
+            }
 
-        private IEnumerator InitGemmaModel()
-        {
-            Debug.Log("[GemmaManager] AI 모델 로딩 시작! (Gemma 3n 멀티모달)");
+            modelPath = absolutePath;
+            Debug.Log($"[GemmaManager] 모델 초기화 시작: {modelPath}");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // 1. 안드로이드: StreamingAssets는 APK 안에 있어서 바로 못 읽음
-            //    persistentDataPath로 복사한 다음에 사용해야 함
-            string sourcePath = Path.Combine(Application.streamingAssetsPath, modelFileName);
-            string destPath = Path.Combine(Application.persistentDataPath, modelFileName);
-
-            if (!File.Exists(destPath))
-            {
-                Debug.Log("[GemmaManager] 모델 파일 복사 시작 (시간 걸림)");
-
-                UnityWebRequest www = UnityWebRequest.Get(sourcePath);
-                yield return www.SendWebRequest();
-
-                if (www.result == UnityWebRequest.Result.Success)
-                {
-                    File.WriteAllBytes(destPath, www.downloadHandler.data);
-                    Debug.Log("[GemmaManager] 모델 파일 복사 완료");
-                }
-                else
-                {
-                    Debug.LogError("[GemmaManager] 모델 파일 복사 실패: " + www.error);
-                    yield break;
-                }
-            }
-            else
-            {
-                Debug.Log("[GemmaManager] 모델 파일 이미 있음. 복사 생략.");
-            }
-
-            modelPath = destPath;
-
-            // 2. Kotlin GemmaBridge 인스턴스 생성 + 모델 초기화
             try
             {
-                // 현재 Activity context 가져오기
-                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-
-                // GemmaBridge 인스턴스 생성 (context 전달)
-                gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
-
-                // 모델 초기화
-                bool success = gemmaBridge.Call<bool>("initialize", modelPath);
-
-                if (success)
+                nativeBridge = new AndroidJavaObject("com.ontology.metaverse.gemma.GemmaInference");
+                bool ok = nativeBridge.Call<bool>("init", modelPath);
+                if (!ok)
                 {
-                    isModelLoaded = true;
-                    Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
+                    Debug.LogError("[GemmaManager] 네이티브 init 실패 - logcat의 GemmaInference TAG 확인");
+                    nativeBridge.Dispose();
+                    nativeBridge = null;
+                    isModelLoaded = false;
+                    return;
                 }
-                else
-                {
-                    Debug.LogError("[GemmaManager] AI 로딩 실패");
-                }
+                isModelLoaded = true;
+                Debug.Log("[GemmaManager] 네이티브 모델 로딩 성공");
             }
             catch (Exception e)
             {
-                Debug.LogError("[GemmaManager] AI 로딩 실패: " + e.Message);
+                Debug.LogError($"[GemmaManager] AndroidJavaObject 호출 실패: {e}");
+                isModelLoaded = false;
             }
 #else
-            // PC 에디터: 가짜로 1초 대기하고 로딩됐다고 치기
-            modelPath = Path.Combine(Application.streamingAssetsPath, modelFileName);
-            yield return new WaitForSeconds(1.0f);
+            // PC 에디터: 네이티브 호출 불가, mock 모드
             isModelLoaded = true;
-            Debug.Log("[GemmaManager] PC 에디터 모드: AI 로딩 완료 (가짜)");
+            Debug.Log("[GemmaManager] Editor 모드: mock 응답 활성");
 #endif
         }
 
@@ -100,32 +83,42 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         // 텍스트 입력 → 응답
         // ─────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 텍스트 프롬프트 전달 → 응답 문자열 반환 (동기).
+        /// 실기기에서 수 초 걸림. 백그라운드 batch 시점에서 호출 권장.
+        /// </summary>
         public string GenerateResponse(string prompt)
         {
-            if (isModelLoaded == false)
+            if (!isModelLoaded)
             {
-                Debug.LogWarning("[GemmaManager] 아직 AI가 준비 안 됐어요!");
+                Debug.LogWarning("[GemmaManager] 모델 미로딩 상태에서 GenerateResponse 호출");
                 return "AI 준비 중...";
             }
 
-            Debug.Log("[GemmaManager] AI한테 질문 (텍스트): " + prompt);
+            if (string.IsNullOrEmpty(prompt))
+            {
+                return "";
+            }
+
+            Debug.Log($"[GemmaManager] generateResponse 호출 (prompt 길이={prompt.Length})");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+            if (nativeBridge == null) return "";
             try
             {
-                return gemmaBridge.Call<string>("generateResponse", prompt);
+                return nativeBridge.Call<string>("generateResponse", prompt) ?? "";
             }
             catch (Exception e)
             {
-                Debug.LogError("[GemmaManager] 응답 생성 실패: " + e.Message);
+                Debug.LogError($"[GemmaManager] 네이티브 generateResponse 실패: {e}");
                 return "";
             }
 #else
-            // 에디터에서는 명세서 규격 가짜 트리플 응답 (텍스트용 - 위치)
+            // Editor mock: 위치 트리플 (TextTripleExtractor 테스트용)
             return @"{""triples"": [
-              {""s"": ""prod:user_001"", ""p"": ""prod:visited"", ""o"": ""prod:loc_001_test"", ""datatype"": null},
-              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeName"", ""o"": ""Mock Place"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:loc_001_test"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
+              {""s"": ""http://7team.dev/ontology#user_001"", ""p"": ""prod:hasLocation"", ""o"": ""http://7team.dev/ontology#loc_001_test"", ""datatype"": null},
+              {""s"": ""http://7team.dev/ontology#loc_001_test"", ""p"": ""prod:placeName"", ""o"": ""Mock Place"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#loc_001_test"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
             ]}";
 #endif
         }
@@ -134,65 +127,64 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         // 이미지 + 텍스트 입력 → 응답 (멀티모달)
         // ─────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 멀티모달 입력. 현재 네이티브 브릿지에 vision API 미구현 — 텍스트만 전달.
+        /// MediaPipe LlmInferenceSession.addImage() 추가 후 GemmaInference.java 보강 필요.
+        /// </summary>
         public string GenerateResponseWithImage(string prompt, byte[] imageBytes)
         {
-            if (isModelLoaded == false)
+            if (!isModelLoaded)
             {
-                Debug.LogWarning("[GemmaManager] 아직 AI가 준비 안 됐어요!");
+                Debug.LogWarning("[GemmaManager] 모델 미로딩 상태에서 GenerateResponseWithImage 호출");
                 return "AI 준비 중...";
             }
 
             if (imageBytes == null || imageBytes.Length == 0)
             {
-                Debug.LogWarning("[GemmaManager] 이미지 데이터가 비어있어요!");
+                Debug.LogWarning("[GemmaManager] 이미지 데이터 비어있음");
                 return null;
             }
 
-            Debug.Log($"[GemmaManager] AI한테 질문 (이미지+텍스트): 이미지 크기={imageBytes.Length} bytes, prompt={prompt}");
+            Debug.Log($"[GemmaManager] 멀티모달 호출 (이미지 {imageBytes.Length}B, prompt 길이={prompt?.Length ?? 0})");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // 실기기: MediaPipe 멀티모달은 Kotlin Bridge에 별도 메서드 필요
-            // 현재는 텍스트만 전달 (이미지 입력은 추후 Kotlin Bridge 확장)
-            Debug.LogWarning("[GemmaManager] 실기기 비전 API 호출 미구현 - 텍스트만 전달");
-            try
-            {
-                return gemmaBridge.Call<string>("generateResponse", prompt);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("[GemmaManager] 응답 생성 실패: " + e.Message);
-                return "";
-            }
+            // TODO: GemmaInference.java에 generateResponseWithImage(byte[], String) 추가 후 연결.
+            // 현재는 텍스트만 전달.
+            Debug.LogWarning("[GemmaManager] 실기기 비전 API 미구현 - 텍스트만 전달");
+            return GenerateResponse(prompt);
 #else
-            // 에디터에서는 명세서 규격 가짜 트리플 응답 (이미지용 - 음식 사진 가정)
+            // Editor mock: 갤러리 사진 트리플
             return @"{""triples"": [
-              {""s"": ""prod:user_001"", ""p"": ""prod:photographed"", ""o"": ""prod:photo_001_test"", ""datatype"": null},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
-              {""s"": ""prod:photo_001_test"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
+              {""s"": ""http://7team.dev/ontology#user_001"", ""p"": ""prod:hasGalleryPhoto"", ""o"": ""http://7team.dev/ontology#photo_001_test"", ""datatype"": null},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:foodType"", ""o"": ""pasta"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:placeType"", ""o"": ""restaurant"", ""datatype"": ""xsd:string""},
+              {""s"": ""http://7team.dev/ontology#photo_001_test"", ""p"": ""prod:analyzedBy"", ""o"": ""Gemma-3n"", ""datatype"": ""xsd:string""}
             ]}";
 #endif
         }
 
         // ─────────────────────────────────────────────────────
-        // 메모리 정리
+        // 메모리 해제
         // ─────────────────────────────────────────────────────
 
         void OnDestroy()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (gemmaBridge != null)
+            if (nativeBridge != null)
             {
                 try
                 {
-                    gemmaBridge.Call("close");
-                    gemmaBridge.Dispose();
-                    gemmaBridge = null;
-                    Debug.Log("[GemmaManager] AI 메모리 해제");
+                    nativeBridge.Call("close");
+                    nativeBridge.Dispose();
+                    Debug.Log("[GemmaManager] 네이티브 모델 해제");
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("[GemmaManager] 메모리 해제 실패: " + e.Message);
+                    Debug.LogError($"[GemmaManager] close 실패: {e}");
+                }
+                finally
+                {
+                    nativeBridge = null;
                 }
             }
 #endif

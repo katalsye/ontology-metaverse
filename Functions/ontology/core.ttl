@@ -1,0 +1,909 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix prod: <http://7team.dev/ontology#> .
+
+# ─── Ontology Declaration ───────────────────────────────────────────────────
+
+<http://7team.dev/ontology>
+    a owl:Ontology ;
+    rdfs:label "Personal Productivity Ontology" ;
+    rdfs:comment "7조 종합설계 — 온톨로지 기반 개인 생산성 향상 플랫폼" .
+
+# ─── Classes ────────────────────────────────────────────────────────────────
+
+prod:User a owl:Class ;
+    rdfs:label   "User" ;
+    rdfs:comment "앱 사용자. uid로 식별되며 모든 데이터의 중심 노드." .
+
+prod:SleepData a owl:Class ;
+    rdfs:label   "SleepData" ;
+    rdfs:comment "Health Connect에서 수집한 수면 기록. 하루 단위로 생성됨." .
+
+prod:StepCount a owl:Class ;
+    rdfs:label   "StepCount" ;
+    rdfs:comment "Health Connect에서 수집한 걸음수 기록. 날짜별 하루 단위로 생성됨." .
+
+prod:AppUsage a owl:Class ;
+    rdfs:label   "AppUsage" ;
+    rdfs:comment "Android UsageStatsManager에서 수집한 앱 사용 기록. 앱별 사용 시간 포함." .
+
+prod:GalleryPhoto a owl:Class ;
+    rdfs:label   "GalleryPhoto" ;
+    rdfs:comment "Gemma 3n이 온디바이스 분석한 갤러리 사진. EXIF 위치·음식 유형·장소 유형 추출." .
+
+prod:Location a owl:Class ;
+    rdfs:label   "Location" ;
+    rdfs:comment "GPS에서 수집한 방문 장소 기록. 역지오코딩된 장소명 포함." .
+
+prod:Activity a owl:Class ;
+    rdfs:label   "Activity" ;
+    rdfs:comment "사용자 활동 기록. 걷기·운동·식사·독서 등 activityType으로 분류됨." .
+
+prod:Quest a owl:Class ;
+    rdfs:label   "Quest" ;
+    rdfs:comment "추론 엔진이 생성하는 행동 제안(삶 개선형) 또는 데이터 보완 질문(데이터 보완형). 완료 시 Reward 지급." .
+
+prod:Reward a owl:Class ;
+    rdfs:label   "Reward" ;
+    rdfs:comment "퀘스트 완료 시 지급되는 보상. Unity 상점에서 아이템 구매에 사용 가능." .
+
+prod:Persona a owl:Class ;
+    rdfs:label   "Persona" ;
+    rdfs:comment "추론 규칙(P1~P6)으로 자동 생성되는 사용자 성격 요약. energyType·socialPreference·lifePattern 속성 포함. Firestore users/{uid}에 저장됨." .
+
+prod:RoomObject a owl:Class ;
+    rdfs:label   "RoomObject" ;
+    rdfs:comment "추론 결과로 생성되는 Unity 3D 방 오브젝트. 장소 습관·루틴 등을 시각화. Firestore room_objects에 저장됨." .
+
+# Inferred state classes
+prod:FatigueRisk a owl:Class ;
+    rdfs:label   "FatigueRisk" ;
+    rdfs:comment "수면 6시간 미만 + 카페인 과다로 추론된 피로 위험 상태(Rule 1)." .
+
+prod:BurnoutWarning a owl:Class ;
+    rdfs:label   "BurnoutWarning" ;
+    rdfs:comment "피로 위험 상태 + 운동 퀘스트 미완료 지속 시 추론된 번아웃 경고 상태(Rule 2, Rule 13)." .
+
+prod:SedentaryPattern a owl:Class ;
+    rdfs:label   "SedentaryPattern" ;
+    rdfs:comment "3일 연속 걸음수 3000보 미만일 때 추론된 좌식 생활 패턴(Rule 3)." .
+
+prod:PlaceHabit a owl:Class ;
+    rdfs:label   "PlaceHabit" ;
+    rdfs:comment "같은 장소를 3회 이상 방문할 때 추론된 장소 습관(Rule 4). 연관 RoomObject 생성." .
+
+# ─── Object Properties ──────────────────────────────────────────────────────
+
+prod:hasSleepData a owl:ObjectProperty ;
+    rdfs:label   "hasSleepData" ;
+    rdfs:comment "User → SleepData 연결. 사용자의 수면 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:SleepData .
+
+prod:hasStepCount a owl:ObjectProperty ;
+    rdfs:label   "hasStepCount" ;
+    rdfs:comment "User → StepCount 연결. 사용자의 걸음수 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:StepCount .
+
+prod:hasConsecutiveLowStepDays a owl:DatatypeProperty ;
+    rdfs:label   "hasConsecutiveLowStepDays" ;
+    rdfs:comment "DuckDB 전처리로 계산한 최대 연속 저보행(3000보 미만) 일수. 단위: 일(integer). sedentary_pattern 규칙이 읽음." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:integer .
+
+prod:hasWeekendCaffeineScore a owl:DatatypeProperty ;
+    rdfs:label   "hasWeekendCaffeineScore" ;
+    rdfs:comment "DuckDB 전처리로 계산한 주말 카페인 가중치 점수. CalendarEvent 공백일(주말 프록시)의 카페 방문에 ×1.5 가중치 적용. 단위: float. fatigue_risk 규칙이 읽음." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:float .
+
+prod:hasAppUsage a owl:ObjectProperty ;
+    rdfs:label   "hasAppUsage" ;
+    rdfs:comment "User → AppUsage 연결. 사용자의 앱 사용 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:AppUsage .
+
+prod:hasGalleryPhoto a owl:ObjectProperty ;
+    rdfs:label   "hasGalleryPhoto" ;
+    rdfs:comment "User → GalleryPhoto 연결. Gemma 3n이 분석한 사진 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:GalleryPhoto .
+
+prod:hasLocation a owl:ObjectProperty ;
+    rdfs:label   "hasLocation" ;
+    rdfs:comment "User → Location 연결. GPS 기반 방문 장소 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Location .
+
+prod:hasActivity a owl:ObjectProperty ;
+    rdfs:label   "hasActivity" ;
+    rdfs:comment "User → Activity 연결. 사용자 활동 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Activity .
+
+prod:hasPersona a owl:ObjectProperty ;
+    rdfs:label   "hasPersona" ;
+    rdfs:comment "User → Persona 연결. 추론 엔진이 자동 생성하며 복수 노드 가능(병합 저장)." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Persona .
+
+prod:receivesQuest a owl:ObjectProperty ;
+    rdfs:label   "receivesQuest" ;
+    rdfs:comment "User → Quest 연결. 추론 엔진이 퀘스트 배정 시 생성됨." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Quest .
+
+prod:triggeredBy a owl:ObjectProperty ;
+    rdfs:label   "triggeredBy" ;
+    rdfs:comment "Activity → Quest 연결. 특정 활동이 퀘스트 생성을 유발한 경우." ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  prod:Quest .
+
+prod:gives a owl:ObjectProperty ;
+    rdfs:label   "gives" ;
+    rdfs:comment "Quest → Reward 연결. 퀘스트 완료 시 지급될 보상 참조." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  prod:Reward .
+
+prod:hasState a owl:ObjectProperty ;
+    rdfs:label   "hasState" ;
+    rdfs:comment "User의 추론된 상태 클래스 연결. FatigueRisk·SedentaryPattern·BurnoutWarning 등." ;
+    rdfs:domain prod:User .
+
+prod:hasRoomObject a owl:ObjectProperty ;
+    rdfs:label   "hasRoomObject" ;
+    rdfs:comment "User → RoomObject 연결. 추론 결과 Unity 방에 배치되는 오브젝트." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:RoomObject .
+
+prod:inferredFromConcept a owl:ObjectProperty ;
+    rdfs:label   "inferredFromConcept" ;
+    rdfs:comment "RoomObject가 어떤 개념(PlaceHabit·Persona 등)에서 유래했는지 URI로 기록. inferredFrom(string)과 병행 사용." ;
+    rdfs:domain prod:RoomObject .
+
+# ─── Datatype Properties — User ─────────────────────────────────────────────
+
+prod:uid a owl:DatatypeProperty ;
+    rdfs:label   "uid" ;
+    rdfs:comment "사용자 고유 식별자. Firebase Authentication UID. 형식: 문자열." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:string .
+
+prod:name a owl:DatatypeProperty ;
+    rdfs:label   "name" ;
+    rdfs:comment "사용자 표시 이름. 앱 프로필 기반. 형식: 문자열." ;
+    rdfs:domain prod:User ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — SleepData ────────────────────────────────────────
+
+prod:duration a owl:DatatypeProperty ;
+    rdfs:label   "duration" ;
+    rdfs:comment "수면 시간. 단위: 시간(float). 허용 범위 0.0~24.0." ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:float .
+
+prod:quality a owl:DatatypeProperty ;
+    rdfs:label   "quality" ;
+    rdfs:comment "수면 질 점수. Health Connect 수면 단계 기반. 단위: 정수. 허용 범위 0~100." ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:integer .
+
+prod:deepSleepRatio a owl:DatatypeProperty ;
+    rdfs:label   "deepSleepRatio" ;
+    rdfs:comment "깊은 수면(deep sleep) 비율. 전체 수면 시간 중 딥슬립 비중. 범위 0.0~1.0(float)." ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:float .
+
+prod:cause a owl:DatatypeProperty ;
+    rdfs:label   "cause" ;
+    rdfs:comment "수면 질 저하 원인. missing_sleep_cause 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:SleepData ;
+    rdfs:range  xsd:string .
+
+prod:timestamp a owl:DatatypeProperty ;
+    rdfs:label   "timestamp" ;
+    rdfs:comment "기록 생성 시각. 도메인 제한 없음(여러 클래스에 공통 적용). 형식: xsd:dateTime." ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — StepCount ────────────────────────────────────────
+
+prod:count a owl:DatatypeProperty ;
+    rdfs:label   "count" ;
+    rdfs:comment "하루 총 걸음수. Health Connect에서 수집. 단위: 보(정수). 최솟값 0." ;
+    rdfs:domain prod:StepCount ;
+    rdfs:range  xsd:integer .
+
+prod:date a owl:DatatypeProperty ;
+    rdfs:label   "date" ;
+    rdfs:comment "기록 날짜. 도메인 제한 없음(StepCount·AppUsage 등 공통 사용). 형식: xsd:date (예: 2026-04-17)." ;
+    rdfs:range  xsd:date .
+
+# ─── Datatype Properties — AppUsage ─────────────────────────────────────────
+
+prod:appName a owl:DatatypeProperty ;
+    rdfs:label   "appName" ;
+    rdfs:comment "앱 패키지명 또는 표시 이름. Android UsageStats 제공. 형식: 문자열." ;
+    rdfs:domain prod:AppUsage ;
+    rdfs:range  xsd:string .
+
+prod:usageDuration a owl:DatatypeProperty ;
+    rdfs:label   "usageDuration" ;
+    rdfs:comment "앱 사용 시간. 단위: 분(정수)." ;
+    rdfs:domain prod:AppUsage ;
+    rdfs:range  xsd:integer .
+
+# ─── Datatype Properties — GalleryPhoto ─────────────────────────────────────
+
+prod:latitude a owl:DatatypeProperty ;
+    rdfs:label   "latitude" ;
+    rdfs:comment "사진 촬영 위도. EXIF GPS 정보. 단위: 도(float). 범위 -90.0~90.0." ;
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
+    rdfs:range   xsd:float .
+
+prod:longitude a owl:DatatypeProperty ;
+    rdfs:label   "longitude" ;
+    rdfs:comment "사진 촬영 경도. EXIF GPS 정보. 단위: 도(float). 범위 -180.0~180.0." ;
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
+    rdfs:range   xsd:float .
+
+prod:foodType a owl:DatatypeProperty ;
+    rdfs:label   "foodType" ;
+    rdfs:comment "Gemma 3n이 분석한 음식 유형. 예: '파스타', '커피'. 형식: 문자열." ;
+    rdfs:domain prod:GalleryPhoto ;
+    rdfs:range  xsd:string .
+
+prod:placeType a owl:DatatypeProperty ;
+    rdfs:label   "placeType" ;
+    rdfs:comment "장소 유형. Gemma 3n 분석 또는 GPS 기반 추론. 예: 'cafe', 'restaurant', 'gym'. 형식: 문자열." ;
+    rdfs:domain  [ a owl:Class ; owl:unionOf ( prod:GalleryPhoto prod:Location ) ] ;
+    rdfs:range   xsd:string .
+
+prod:analyzedBy a owl:DatatypeProperty ;
+    rdfs:label   "analyzedBy" ;
+    rdfs:comment "이미지 분석 모델 식별자. 예: 'Gemma-3n'. 형식: 문자열." ;
+    rdfs:domain prod:GalleryPhoto ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Location ─────────────────────────────────────────
+
+prod:placeName a owl:DatatypeProperty ;
+    rdfs:label   "placeName" ;
+    rdfs:comment "방문 장소 이름. GPS 역지오코딩 또는 사용자 입력. 형식: 문자열." ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
+
+prod:visitTime a owl:DatatypeProperty ;
+    rdfs:label   "visitTime" ;
+    rdfs:comment "방문 시각. 카페인 시간대 추론(Rule 1, 5, 10) 및 야행성 페르소나(Rule P6)에 사용. 형식: xsd:dateTime." ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:dateTime .
+
+prod:visitCount a owl:DatatypeProperty ;
+    rdfs:label   "visitCount" ;
+    rdfs:comment "누적 방문 횟수. 형식: 정수." ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:integer .
+
+prod:companion a owl:DatatypeProperty ;
+    rdfs:label   "companion" ;
+    rdfs:comment "동행자 정보. missing_companion 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
+
+prod:purpose a owl:DatatypeProperty ;
+    rdfs:label   "purpose" ;
+    rdfs:comment "방문 목적. missing_purpose 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:Location ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Activity ─────────────────────────────────────────
+
+prod:activityType a owl:DatatypeProperty ;
+    rdfs:label   "activityType" ;
+    rdfs:comment "활동 유형. Gemma 3n 분석 제공. 예: '운동', '독서', '식사'. 형식: 문자열." ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  xsd:string .
+
+prod:emotion a owl:DatatypeProperty ;
+    rdfs:label   "emotion" ;
+    rdfs:comment "활동 중 감정. missing_emotion 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:Activity ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Quest ─────────────────────────────────────────────
+
+prod:title a owl:DatatypeProperty ;
+    rdfs:label   "title" ;
+    rdfs:comment "퀘스트 제목. 사용자에게 표시되는 행동 제안 또는 질문 문구. 형식: 문자열." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:string .
+
+prod:questType a owl:DatatypeProperty ;
+    rdfs:label   "questType" ;
+    rdfs:comment "퀘스트 유형. '삶 개선형'(행동 제안) 또는 '데이터 보완형'(빈 노드 정보 수집). 형식: 문자열." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:string .
+
+prod:isCompleted a owl:DatatypeProperty ;
+    rdfs:label   "isCompleted" ;
+    rdfs:comment "퀘스트 완료 여부. Android 앱에서 사용자 응답 시 true로 갱신. 형식: xsd:boolean." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:boolean .
+
+prod:rewardAmount a owl:DatatypeProperty ;
+    rdfs:label   "rewardAmount" ;
+    rdfs:comment "퀘스트 완료 시 지급되는 코인 보상 수량. 데이터 보완형=30, 삶 개선형=50. 형식: 정수." ;
+    rdfs:domain  prod:Quest ;
+    rdfs:range   xsd:integer .
+
+prod:createdAt a owl:DatatypeProperty ;
+    rdfs:label   "createdAt" ;
+    rdfs:comment "퀘스트 생성 시각. 추론 엔진 실행 시 자동 기록. 형식: xsd:dateTime." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — Reward ────────────────────────────────────────────
+
+prod:amount a owl:DatatypeProperty ;
+    rdfs:label   "amount" ;
+    rdfs:comment "보상 재화 수량. Unity 상점에서 아이템 구매에 사용. 단위: 개(정수)." ;
+    rdfs:domain prod:Reward ;
+    rdfs:range  xsd:integer .
+
+prod:rewardType a owl:DatatypeProperty ;
+    rdfs:label   "rewardType" ;
+    rdfs:comment "보상 유형. 예: '재화', '아이템'. 형식: 문자열." ;
+    rdfs:domain prod:Reward ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Persona ───────────────────────────────────────────
+
+prod:energyType a owl:DatatypeProperty ;
+    rdfs:label   "energyType" ;
+    rdfs:comment "에너지 성향. 추론 값: 'active'(활동적, Rule P1) 또는 'indoor'(실내형, Rule P2). 형식: 문자열." ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:socialPreference a owl:DatatypeProperty ;
+    rdfs:label   "socialPreference" ;
+    rdfs:comment "사교 성향. 추론 값: 'social'(사교적, Rule P3) 또는 'solitary'(혼자 선호, Rule P4). 형식: 문자열." ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:lifePattern a owl:DatatypeProperty ;
+    rdfs:label   "lifePattern" ;
+    rdfs:comment "생활 패턴. 추론 값: 'routine'(루틴형, Rule P5) 또는 'night_owl'(야행성, Rule P6). 형식: 문자열." ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
+prod:updatedAt a owl:DatatypeProperty ;
+    rdfs:label   "updatedAt" ;
+    rdfs:comment "페르소나 갱신 시각. 추론 엔진 실행 시 NOW()로 자동 기록. 형식: xsd:dateTime." ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — RoomObject ────────────────────────────────────────
+
+prod:objectType a owl:DatatypeProperty ;
+    rdfs:label   "objectType" ;
+    rdfs:comment "방 오브젝트 유형. Unity가 에셋 선택에 사용. 예: 장소명·루틴 시간대. 형식: 문자열." ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .
+
+prod:positionX a owl:DatatypeProperty ;
+    rdfs:label   "positionX" ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 X축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:positionY a owl:DatatypeProperty ;
+    rdfs:label   "positionY" ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 Y축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:positionZ a owl:DatatypeProperty ;
+    rdfs:label   "positionZ" ;
+    rdfs:comment "deprecated, use placementZone. 오브젝트 Z축 위치. Unity 월드 좌표계. 단위: float." ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:float .
+
+prod:placementZone a owl:DatatypeProperty ;
+    rdfs:label   "placementZone" ;
+    rdfs:comment "RoomObject 배치 영역. 유니티팀이 실제 좌표로 변환. 허용값: desk, floor, wall, ceiling, window, shelf" ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .
+
+prod:inferredFrom a owl:DatatypeProperty ;
+    rdfs:label   "inferredFrom" ;
+    rdfs:comment "오브젝트 유래 규칙 이름. 예: 'PlaceHabit'. inferredFromConcept(URI)와 병행 기록. 형식: 문자열." ;
+    rdfs:domain prod:RoomObject ;
+    rdfs:range  xsd:string .
+
+# inferredFromConcept: RoomObject → 유래 개념 URI (PlaceHabit, Persona 등)
+# inferredFrom(string)과 병행 — 엔진이 두 속성 모두 기록
+
+# ─── Classes — 확장 데이터 소스 ─────────────────────────────────────────────
+
+prod:MusicListening a owl:Class ;
+    rdfs:label   "MusicListening" ;
+    rdfs:comment "음악 스트리밍 앱(Spotify·멜론 등)에서 수집한 음악 청취 기록. 트랙·아티스트·장르 포함." .
+
+prod:CalendarEvent a owl:Class ;
+    rdfs:label   "CalendarEvent" ;
+    rdfs:comment "캘린더 앱에서 수집한 일정 기록. 시작/종료 시각·반복 여부 포함." .
+
+prod:Weather a owl:Class ;
+    rdfs:label   "Weather" ;
+    rdfs:comment "날씨 API(OpenWeatherMap 등)에서 수집한 날씨 정보. GPS 위치 기반 일별 기록." .
+
+# Inferred state classes — 확장
+prod:IndoorDayPattern a owl:Class ;
+    rdfs:label   "IndoorDayPattern" ;
+    rdfs:comment "비 날씨 또는 겨울(12·1·2월)에 외출이 2곳 미만일 때 추론된 실내 중심 생활 패턴(Rule 7)." .
+
+prod:Routine a owl:Class ;
+    rdfs:label   "Routine" ;
+    rdfs:comment "같은 시간대에 캘린더 일정이 3회 이상 반복될 때 추론된 생활 루틴(Rule 8). routineHour 속성 포함." .
+
+prod:MusicMood a owl:Class ;
+    rdfs:label   "MusicMood" ;
+    rdfs:comment "특정 장르를 하루 2시간 이상 청취할 때 추론된 음악 기반 감정 상태(Rule 9). moodGenre 속성 포함." .
+
+# 다단계 인과 체인 중간 상태 클래스
+prod:SleepQualityImpaired a owl:Class ;
+    rdfs:label   "SleepQualityImpaired" ;
+    rdfs:comment "오후 카페인 섭취 후 수면질 60 미만일 때 추론된 수면 질 저하 상태. 인과 체인 Rule 10의 출력." .
+
+prod:ExerciseSkipped a owl:Class ;
+    rdfs:label   "ExerciseSkipped" ;
+    rdfs:comment "SleepQualityImpaired 상태에서 운동 기록이 없을 때 추론된 운동 누락 상태. 인과 체인 Rule 11의 출력." .
+
+prod:WeeklyActivityLow a owl:Class ;
+    rdfs:label   "WeeklyActivityLow" ;
+    rdfs:comment "ExerciseSkipped 상태에서 주간 걸음수가 3일 이상 저조할 때 추론된 주간 활동량 저하 상태. 인과 체인 Rule 12의 출력." .
+
+prod:FocusMode a owl:Class ;
+    rdfs:label   "FocusMode" ;
+    rdfs:comment "클래식·Lo-fi 장르를 3시간 이상 연속 청취 시 추론된 집중 모드 상태. RoomObject 책상 조명 밝기 증가." .
+
+prod:StressIndicator a owl:Class ;
+    rdfs:label   "StressIndicator" ;
+    rdfs:comment "헤비메탈·록 장르를 야간(22시 이후) 청취 시 추론된 스트레스 지표 상태. 데이터 보완형 퀘스트 생성." .
+
+prod:SocialActivity a owl:Class ;
+    rdfs:label   "SocialActivity" ;
+    rdfs:comment "댄스·팝 장르 청취 + 외출 위치 동시 발생 시 추론된 사교 활동 상태. RoomObject 파티 조명 효과 추가." .
+
+prod:ScheduleOverload a owl:Class ;
+    rdfs:label   "ScheduleOverload" ;
+    rdfs:comment "하루 일정 5개 이상 또는 연속 일정(휴식 30분 미만) 3개 이상일 때 추론된 일정 과부하 상태." .
+
+# ─── Object Properties — 확장 ───────────────────────────────────────────────
+
+prod:listensTo a owl:ObjectProperty ;
+    rdfs:label   "listensTo" ;
+    rdfs:comment "User → MusicListening 연결. 사용자의 음악 청취 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:MusicListening .
+
+prod:hasCalendarEvent a owl:ObjectProperty ;
+    rdfs:label   "hasCalendarEvent" ;
+    rdfs:comment "User → CalendarEvent 연결. 사용자의 캘린더 일정 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:CalendarEvent .
+
+prod:hasWeather a owl:ObjectProperty ;
+    rdfs:label   "hasWeather" ;
+    rdfs:comment "User → Weather 연결. 사용자 위치 기반 날씨 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:Weather .
+
+# ─── Datatype Properties — MusicListening ───────────────────────────────────
+
+prod:trackName a owl:DatatypeProperty ;
+    rdfs:label   "trackName" ;
+    rdfs:comment "음악 트랙 제목. 스트리밍 앱 메타데이터 제공. 형식: 문자열." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:artist a owl:DatatypeProperty ;
+    rdfs:label   "artist" ;
+    rdfs:comment "아티스트 이름. 스트리밍 앱 메타데이터 제공. 형식: 문자열." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:genre a owl:DatatypeProperty ;
+    rdfs:label   "genre" ;
+    rdfs:comment "음악 장르. 장르별 청취 시간 집계(Rule 9)에 사용. 예: 'jazz', 'pop'. 형식: 문자열." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+prod:playedAt a owl:DatatypeProperty ;
+    rdfs:label   "playedAt" ;
+    rdfs:comment "음악 재생 시각. 형식: xsd:dateTime." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:dateTime .
+
+prod:listenDuration a owl:DatatypeProperty ;
+    rdfs:label   "listenDuration" ;
+    rdfs:comment "청취 시간. 단위: 분(정수). 하루 총합 120분 이상 시 MusicMood 추론(Rule 9)." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:integer .
+
+prod:mood a owl:DatatypeProperty ;
+    rdfs:label   "mood" ;
+    rdfs:comment "음악 청취 중 감정. missing_music_mood 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:MusicListening ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — CalendarEvent ────────────────────────────────────
+
+prod:eventTitle a owl:DatatypeProperty ;
+    rdfs:label   "eventTitle" ;
+    rdfs:comment "일정 제목. 캘린더 앱 원본 제목. 형식: 문자열." ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:string .
+
+prod:startTime a owl:DatatypeProperty ;
+    rdfs:label   "startTime" ;
+    rdfs:comment "일정 시작 시각. 루틴 탐지(Rule 8)에서 시간대 집계에 사용. 형식: xsd:dateTime." ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:dateTime .
+
+prod:endTime a owl:DatatypeProperty ;
+    rdfs:label   "endTime" ;
+    rdfs:comment "일정 종료 시각. NOW()와 비교해 종료 여부 판단(Rule 6-F). 형식: xsd:dateTime." ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:dateTime .
+
+prod:isRecurring a owl:DatatypeProperty ;
+    rdfs:label   "isRecurring" ;
+    rdfs:comment "반복 일정 여부. 캘린더 앱 제공. 형식: xsd:boolean." ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:boolean .
+
+prod:review a owl:DatatypeProperty ;
+    rdfs:label   "review" ;
+    rdfs:comment "일정 후기. missing_event_review 퀘스트에 대한 사용자 응답으로 기록. 형식: 문자열." ;
+    rdfs:domain prod:CalendarEvent ;
+    rdfs:range  xsd:string .
+
+# ─── Datatype Properties — Weather ──────────────────────────────────────────
+
+prod:temperature a owl:DatatypeProperty ;
+    rdfs:label   "temperature" ;
+    rdfs:comment "기온. 날씨 API 제공. 단위: 섭씨(float). 허용 범위 -50.0~60.0." ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:float .
+
+prod:condition a owl:DatatypeProperty ;
+    rdfs:label   "condition" ;
+    rdfs:comment "날씨 상태 문자열. IndoorDayPattern(Rule 7)·SunnyIndoorQuest(Rule 14) 추론에 사용. 예: 'sunny', 'rainy', 'cloudy'. 형식: 문자열." ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:string .
+
+prod:humidity a owl:DatatypeProperty ;
+    rdfs:label   "humidity" ;
+    rdfs:comment "습도. 날씨 API 제공. 단위: %(float). 허용 범위 0.0~100.0." ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:float .
+
+prod:recordedAt a owl:DatatypeProperty ;
+    rdfs:label   "recordedAt" ;
+    rdfs:comment "날씨 기록 시각. MONTH() 추출로 계절 판단(Rule 7)에 사용. 형식: xsd:dateTime." ;
+    rdfs:domain prod:Weather ;
+    rdfs:range  xsd:dateTime .
+
+# ─── Datatype Properties — Routine / MusicMood ──────────────────────────────
+
+prod:routineHour a owl:DatatypeProperty ;
+    rdfs:label   "routineHour" ;
+    rdfs:comment "루틴 시간대. 반복 일정이 집중된 시각(시 단위 정수). 예: 9(오전 9시). 형식: 정수." ;
+    rdfs:domain prod:Routine ;
+    rdfs:range  xsd:integer .
+
+prod:moodGenre a owl:DatatypeProperty ;
+    rdfs:label   "moodGenre" ;
+    rdfs:comment "감정 상태와 연결된 음악 장르. MusicMood 노드에 기록. 형식: 문자열." ;
+    rdfs:domain prod:MusicMood ;
+    rdfs:range  xsd:string .
+
+# ─── OWL 제약조건 ────────────────────────────────────────────────────────────
+
+# ── 클래스 분리 선언 (owl:disjointWith) ──────────────────────────────────────
+
+prod:SleepData      owl:disjointWith prod:StepCount .
+prod:Quest          owl:disjointWith prod:Reward .
+prod:FatigueRisk    owl:disjointWith prod:BurnoutWarning .
+prod:CalendarEvent  owl:disjointWith prod:MusicListening .
+prod:FocusMode      owl:disjointWith prod:StressIndicator .
+prod:FocusMode      owl:disjointWith prod:SocialActivity .
+prod:StressIndicator owl:disjointWith prod:SocialActivity .
+
+# ── 데이터 범위 제약 (owl:allValuesFrom + owl:withRestrictions) ───────────────
+
+# SleepData.duration: 0.0 ~ 24.0 (시간)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:duration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float  ]
+            [ xsd:maxInclusive "24.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# SleepData.quality: 0 ~ 100 (정수)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:quality ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer   ]
+            [ xsd:maxInclusive "100"^^xsd:integer ]
+        )
+    ]
+] .
+
+# StepCount.count: 0 ~ 100000 (비음수, 하루 최대 10만 보)
+prod:StepCount rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:count ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer      ]
+            [ xsd:maxInclusive "100000"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Weather.temperature: -50 ~ 60 (섭씨)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:temperature ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-50.0"^^xsd:float ]
+            [ xsd:maxInclusive "60.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# Weather.humidity: 0 ~ 100 (퍼센트)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:humidity ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float   ]
+            [ xsd:maxInclusive "100.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# Location.visitCount: 1 ~ 10000 (방문 횟수)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:visitCount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer     ]
+            [ xsd:maxInclusive "10000"^^xsd:integer ]
+        )
+    ]
+] .
+
+# MusicListening.listenDuration: 1 ~ 1440 (분, 1분 이상 하루 최대 24시간)
+prod:MusicListening rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:listenDuration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer    ]
+            [ xsd:maxInclusive "1440"^^xsd:integer ]
+        )
+    ]
+] .
+
+# AppUsage.usageDuration: 0 ~ 1440 (분, 하루 최대 24시간)
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:usageDuration ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer    ]
+            [ xsd:maxInclusive "1440"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Quest.rewardAmount: 0 ~ 1000 (퀘스트 보상 코인)
+prod:Quest rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:rewardAmount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer    ]
+            [ xsd:maxInclusive "1000"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Reward.amount: 0 ~ 1000000 (보상 재화 수량)
+prod:Reward rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:amount ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0"^^xsd:integer       ]
+            [ xsd:maxInclusive "1000000"^^xsd:integer ]
+        )
+    ]
+] .
+
+# SleepData.deepSleepRatio: 0.0 ~ 1.0 (깊은 수면 비율)
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:deepSleepRatio ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# Location.latitude: -90.0 ~ 90.0 (위도)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:latitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-90.0"^^xsd:float ]
+            [ xsd:maxInclusive "90.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# Location.longitude: -180.0 ~ 180.0 (경도)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:longitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-180.0"^^xsd:float ]
+            [ xsd:maxInclusive "180.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# GalleryPhoto.latitude: -90.0 ~ 90.0 (위도)
+prod:GalleryPhoto rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:latitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-90.0"^^xsd:float ]
+            [ xsd:maxInclusive "90.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# GalleryPhoto.longitude: -180.0 ~ 180.0 (경도)
+prod:GalleryPhoto rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:longitude ;
+    owl:allValuesFrom [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "-180.0"^^xsd:float ]
+            [ xsd:maxInclusive "180.0"^^xsd:float  ]
+        )
+    ]
+] .
+
+# ── 필수 속성 선언 (owl:minCardinality 1) ────────────────────────────────────
+
+# User는 반드시 uid를 가져야 함
+prod:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:uid ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Quest는 반드시 title을 가져야 함
+prod:Quest rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:title ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# SleepData는 반드시 duration을 가져야 함
+prod:SleepData rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:duration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# StepCount는 반드시 count를 가져야 함
+prod:StepCount rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:count ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# AppUsage는 반드시 appName과 usageDuration을 가져야 함
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:appName ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+prod:AppUsage rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:usageDuration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# MusicListening은 반드시 listenDuration을 가져야 함
+prod:MusicListening rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:listenDuration ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# CalendarEvent는 반드시 startTime을 가져야 함 (Rule 8 routine_detection, Rule 29 schedule_overload에서 사용)
+prod:CalendarEvent rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:startTime ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Location은 반드시 placeName을 가져야 함 (Rule 4/6 place_habit, missing_companion에서 사용)
+prod:Location rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:placeName ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Weather는 반드시 recordedAt을 가져야 함 (Rule 7 계절 판단에서 사용)
+prod:Weather rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty prod:recordedAt ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .

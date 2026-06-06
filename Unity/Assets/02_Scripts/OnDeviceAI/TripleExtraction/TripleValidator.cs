@@ -63,17 +63,41 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             return ValidationResult.Success();
         }
 
+        // 명세서 base URI — full URI 형식도 인정하기 위한 prefix
+        private const string OntologyBaseUri = "http://7team.dev/ontology#";
+
+        // RDF 표준 predicate (rdf:type 등은 우리 도메인 외부지만 허용)
+        private static readonly string[] AllowedPredicatePrefixes = new[]
+        {
+            "prod:",
+            "rdf:",
+            "rdfs:",
+            "owl:",
+            "xsd:"
+        };
+
         /// <summary>
-        /// 2. prefix 검증: Subject와 Predicate는 반드시 "prod:"로 시작
-        /// (Object는 리터럴 값일 수 있어서 검증 제외)
+        /// 2. prefix 검증.
+        /// Subject: "prod:" 약식 prefix OR "http://7team.dev/ontology#" full URI 둘 다 OK.
+        /// Predicate: prod:/rdf:/rdfs:/owl:/xsd: 표준 prefix 또는 full URI.
+        /// (Object는 리터럴일 수 있어서 검증 제외)
         /// </summary>
         private static ValidationResult CheckPrefix(TripleJson t)
         {
-            if (!t.s.StartsWith("prod:"))
-                return ValidationResult.Fail($"Subject가 'prod:' prefix로 시작하지 않음: {t.s}");
+            bool subjectOk = t.s.StartsWith("prod:") || t.s.StartsWith(OntologyBaseUri);
+            if (!subjectOk)
+                return ValidationResult.Fail($"Subject가 'prod:' prefix 또는 '{OntologyBaseUri}' full URI로 시작하지 않음: {t.s}");
 
-            if (!t.p.StartsWith("prod:"))
-                return ValidationResult.Fail($"Predicate가 'prod:' prefix로 시작하지 않음: {t.p}");
+            bool predicateOk = t.p.StartsWith(OntologyBaseUri);
+            if (!predicateOk)
+            {
+                foreach (var px in AllowedPredicatePrefixes)
+                {
+                    if (t.p.StartsWith(px)) { predicateOk = true; break; }
+                }
+            }
+            if (!predicateOk)
+                return ValidationResult.Fail($"Predicate가 허용된 prefix(prod:/rdf:/rdfs:/owl:/xsd:)로 시작하지 않음: {t.p}");
 
             return ValidationResult.Success();
         }

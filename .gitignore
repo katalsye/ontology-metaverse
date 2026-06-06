@@ -131,6 +131,17 @@ Thumbs.db
 Unity/Assets/02_Scripts/Config/AuthConfig.asset
 Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
 
+# OMC 세션 기록
+.omc/
+
+# Firebase 서비스 계정 키 (절대 git에 올리면 안 됨)
+serviceAccountKey.json
+*serviceAccountKey*.json
+
+# Pretendard SDF asset (Tools/Setup Hangul Font 으로 재생성)
+Unity/Assets/04_Fonts/Pretendard-Regular SDF.asset
+Unity/Assets/04_Fonts/Pretendard-Regular SDF.asset.meta
+
 # Keystore (절대 커밋 금지)
 *.keystore
 *.jks

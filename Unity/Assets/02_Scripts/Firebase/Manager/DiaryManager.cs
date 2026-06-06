@@ -21,11 +21,16 @@ public class DiaryManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    void Start()
+    void Awake()
+    {
+        rewardManager = GetComponent<RewardManager>();
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
-        rewardManager = GetComponent<RewardManager>();
     }
 
     // ───────────────────────────────────────

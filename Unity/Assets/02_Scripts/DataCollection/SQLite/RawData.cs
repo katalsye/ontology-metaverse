@@ -29,5 +29,15 @@ namespace OntologyMetaverse.DataCollection.SQLite
         /// </summary>
         [NotNull]
         public string Timestamp { get; set; }
+
+        /// <summary>
+        /// 트리플 변환 처리 여부.
+        /// 0 = 미처리 (Gemma 변환 대기 중)
+        /// 1 = 처리 완료 (이미 triples 테이블로 변환됨)
+        ///
+        /// RawDataToTripleConverter가 batch마다 Processed=0인 것들만 가져와 처리 후 1로 마크.
+        /// 기본값 0 (SQLite-net이 신규 컬럼 추가 시 기존 row는 0으로 채움).
+        /// </summary>
+        public int Processed { get; set; }
     }
 }
