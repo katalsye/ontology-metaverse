@@ -38,7 +38,33 @@ public class FurnitureCarouselController : MonoBehaviour
     {
         EnhancedTouchSupport.Enable();
         prevButton?.onClick.AddListener(OnPrevClick);
-        if (data != null) ShowFurniture(data.CurrentIndex);
+        if (data != null) LoadPurchasedFlagsAndShow();
+    }
+
+    /// <summary>RewardManager에서 구매 목록을 받아 isPurchased 플래그 갱신 후 UI 빌드.
+    /// variant 0은 항상 구매됨(기본). variant 1+는 아이템 ID "furniture_{fi}_variant_{vi}" 보유 여부.</summary>
+    void LoadPurchasedFlagsAndShow()
+    {
+        if (RewardManager.Instance == null) { ShowFurniture(data.CurrentIndex); return; }
+
+        RewardManager.Instance.GetItems(
+            items =>
+            {
+                if (data?.furnitures != null)
+                {
+                    for (int fi = 0; fi < data.furnitures.Length; fi++)
+                    {
+                        var variants = data.furnitures[fi].variants;
+                        if (variants == null) continue;
+                        for (int vi = 0; vi < variants.Length; vi++)
+                            variants[vi].isPurchased =
+                                vi == 0 || items.Contains($"furniture_{fi}_variant_{vi}");
+                    }
+                }
+                ShowFurniture(data.CurrentIndex);
+            },
+            _ => ShowFurniture(data.CurrentIndex)
+        );
     }
 
     void OnDisable()
@@ -232,6 +258,8 @@ public class FurnitureCarouselController : MonoBehaviour
 
     void OnColorClick(int fi, int vi, int ci)
     {
+        if (data != null) data.CurrentColor = ci;
+
         if (_colorButtons != null)
             for (int i = 0; i < _colorButtons.Length; i++)
                 if (_colorButtons[i] != null)

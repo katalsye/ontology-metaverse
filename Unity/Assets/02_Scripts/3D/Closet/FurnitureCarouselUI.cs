@@ -52,4 +52,5 @@ public class FurnitureCarouselUI : MonoBehaviour
 
     public int CurrentIndex   { get; set; } = 0;
     public int CurrentVariant { get; set; } = 0;
+    public int CurrentColor   { get; set; } = 0;
 }
