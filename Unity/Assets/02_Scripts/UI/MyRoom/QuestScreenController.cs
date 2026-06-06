@@ -71,6 +71,9 @@ public class QuestScreenController : MonoBehaviour
             QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
             QuestManager.Instance.StartQuestListener();
         }
+
+        // Firebase 응답 전에도 빈 상태를 즉시 표시
+        RenderQuests();
     }
 
     private void OnDisable()
