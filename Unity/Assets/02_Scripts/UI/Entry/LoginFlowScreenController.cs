@@ -23,7 +23,6 @@ public class LoginFlowScreenController : MonoBehaviour
 
     // 로그인 버튼
     private Button btnGoogle;
-    private Button btnKakao;
 
     // 권한
     private Button btnPermNext;
@@ -56,9 +55,7 @@ public class LoginFlowScreenController : MonoBehaviour
 
         // 로그인 버튼
         btnGoogle = root.Q<Button>("btn-google");
-        btnKakao = root.Q<Button>("btn-kakao");
-        btnGoogle.clicked += () => OnSocialLogin("google");
-        btnKakao.clicked += () => OnSocialLogin("kakao");
+        btnGoogle.clicked += () => OnSocialLogin();
 
         // 권한 토글
         btnPermNext = root.Q<Button>("btn-perm-next");
@@ -172,16 +169,9 @@ public class LoginFlowScreenController : MonoBehaviour
     /// 소셜 로그인 버튼 클릭
     /// 실제 구현 시 Firebase Auth 호출
     /// </summary>
-    private void OnSocialLogin(string provider)
+    private void OnSocialLogin()
     {
-        if (provider == "kakao")
-        {
-            Debug.Log("[LoginFlow] 카카오 로그인은 아직 준비 중입니다.");
-            return;
-        }
-
         btnGoogle.SetEnabled(false);
-        btnKakao.SetEnabled(false);
 
         AuthService.Instance.SignInWithGoogle(
             onSuccess: () => GoToStep(1),
@@ -189,7 +179,6 @@ public class LoginFlowScreenController : MonoBehaviour
             {
                 Debug.LogError($"[LoginFlow] 로그인 실패: {err}");
                 btnGoogle.SetEnabled(true);
-                btnKakao.SetEnabled(true);
             }
         );
     }

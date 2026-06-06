@@ -49,7 +49,7 @@ namespace OntologyMetaverse.DataCollection.UsageStats
             Debug.LogWarning("[UsageStatsCollector] Editor에서는 더미 데이터 사용");
 
             // 더미 앱 사용 통계 3건
-            SaveToSQLite("com.kakao.talk", "카카오톡", 3600000);  // 1시간
+            SaveToSQLite("com.instagram.android", "Instagram", 3600000);  // 1시간
             SaveToSQLite("com.spotify.music", "Spotify", 1800000);  // 30분
             SaveToSQLite("com.youtube.android", "YouTube", 2400000);  // 40분
 
