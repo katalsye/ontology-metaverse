@@ -7,11 +7,20 @@ using Firebase.Extensions;
 
 public class QuestManager : MonoBehaviour
 {
+    public static QuestManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private RewardManager rewardManager;
 
     private ListenerRegistration _questListener;
+
+    void Awake()
+    {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     public event Action<List<Quest>> OnQuestsChanged;
     public event Action<int> OnUnreadQuestCountChanged;

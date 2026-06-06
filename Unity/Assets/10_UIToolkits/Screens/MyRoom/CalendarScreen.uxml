@@ -1,0 +1,59 @@
+<!-- ============================================
+     4-6. CalendarScreen.uxml — 달력 뷰
+     월간 캘린더 그리드 + 날짜 선택 → 과거 방 3D
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="CalendarScreen.uss" />
+
+    <ui:VisualElement name="calendar-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement class="top-bar row">
+            <ui:Button name="btn-back" class="icon-btn">
+                <ui:Label text="←" class="icon-btn-text" />
+            </ui:Button>
+            <ui:Label text="달력" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" />
+        </ui:VisualElement>
+
+        <!-- 월 선택 -->
+        <ui:VisualElement name="month-nav" class="month-nav row">
+            <ui:Button name="btn-prev" class="month-arrow">
+                <ui:Label text="‹" class="month-arrow-text" />
+            </ui:Button>
+            <ui:Label name="month-title" text="2026년 5월" class="month-title" />
+            <ui:Button name="btn-next" class="month-arrow">
+                <ui:Label text="›" class="month-arrow-text" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- 요일 헤더 -->
+        <ui:VisualElement name="weekday-header" class="weekday-header row">
+            <ui:Label text="일" class="weekday-label weekday--sun" />
+            <ui:Label text="월" class="weekday-label" />
+            <ui:Label text="화" class="weekday-label" />
+            <ui:Label text="수" class="weekday-label" />
+            <ui:Label text="목" class="weekday-label" />
+            <ui:Label text="금" class="weekday-label" />
+            <ui:Label text="토" class="weekday-label weekday--sat" />
+        </ui:VisualElement>
+
+        <!-- 캘린더 그리드 (C#에서 42칸 동적 생성) -->
+        <ui:VisualElement name="calendar-grid" class="calendar-grid" />
+
+        <!-- 선택된 날짜 정보 -->
+        <ui:VisualElement name="selected-info" class="selected-info col">
+            <ui:Label name="selected-date-label" text="" class="selected-date-text" />
+            <ui:Label name="selected-summary" text="" class="selected-summary" />
+            <ui:Button name="btn-view-room" text="과거 방 보기"
+                       class="btn btn--md btn--rose btn--full" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

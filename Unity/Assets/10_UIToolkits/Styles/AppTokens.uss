@@ -1,0 +1,77 @@
+/* ============================================
+ * AppTokens.uss — 전체 앱 디자인 토큰
+ * 프로토타입(myroom-prototype.html)에서 추출
+ * ============================================ */
+
+:root {
+    /* ── 배경 ── */
+    --bg:           #FCF5EB;
+    --bg-soft:      #F9E6DC;
+    --bg-warm:      #F6DFCD;
+    --card:         #FFFCF9;
+    --card-soft:    #F9F4ED;
+
+    /* ── 텍스트 ── */
+    --ink:          #312620;
+    --ink-muted:    #7A6E68;
+    --ink-faint:    #ABA29E;
+
+    /* ── 액센트 ── */
+    --rose:         #F18785;
+    --rose-soft:    #FFD8D3;
+    --mint:         #92D5B7;
+    --mint-soft:    #D3F4E4;
+    --butter:       #F5D289;
+    --butter-soft:  #FCECCC;
+    --lav:          #BAAEE2;
+    --lav-soft:     #E8E3FD;
+    --sky:          #94CDE9;
+    --sky-soft:     #D7EFFB;
+
+    /* ── 구분선 ── */
+    --line:         #DED5D0;
+    --line-faint:   #ECE6E3;
+
+    /* ── 상태 ── */
+    --red:          #E85854;
+    --white:        #FFFFFF;
+    --overlay:      rgba(40, 28, 12, 0.55);
+
+    /* ── 타이포 크기 ── */
+    --fs-hero:      40px;
+    --fs-title:     34px;
+    --fs-heading:   28px;
+    --fs-subhead:   24px;
+    --fs-body:      20px;
+    --fs-body-sm:   18px;
+    --fs-caption:   16px;
+    --fs-small:     15px;
+    --fs-tiny:      13px;
+    --fs-micro:     12px;
+
+    /* ── 둥글기 ── */
+    --r-xs:         6px;
+    --r-sm:         8px;
+    --r-md:         12px;
+    --r-lg:         16px;
+    --r-xl:         20px;
+    --r-2xl:        24px;
+    --r-full:       999px;
+
+    /* ── 간격 ── */
+    --sp-xs:        4px;
+    --sp-sm:        8px;
+    --sp-md:        12px;
+    --sp-lg:        16px;
+    --sp-xl:        24px;
+    --sp-2xl:       32px;
+
+    /* ── 그림자 ── */
+    /* UI Toolkit은 CSS box-shadow 미지원, 
+       대신 border + background 조합으로 처리 */
+
+    /* ── 전환 ── */
+    --dur-fast:     120ms;
+    --dur-normal:   200ms;
+    --dur-slow:     350ms;
+}

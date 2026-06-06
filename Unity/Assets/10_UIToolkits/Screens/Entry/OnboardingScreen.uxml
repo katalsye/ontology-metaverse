@@ -1,0 +1,83 @@
+<!-- ============================================
+     1-2. OnboardingScreen.uxml
+     서비스 소개 슬라이드 + Gemma 모델 다운로드
+     슬라이드 한 화면으로 통합
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="OnboardingScreen.uss" />
+
+    <ui:VisualElement name="onboarding-root" class="full-screen col">
+
+        <!-- 슬라이드 영역 -->
+        <ui:VisualElement name="slide-container" class="slide-area">
+
+            <!-- 슬라이드 1: 자동 기록 -->
+            <ui:VisualElement name="slide-0" class="slide active">
+                <ui:VisualElement name="slide-0-illust" class="slide-illust" />
+                <ui:Label text="자동으로 채워지는 일상" class="slide-title" />
+                <ui:Label text="갤러리, 위치, 건강 데이터를&#10;별도 입력 없이 자동으로 수집해요"
+                          class="slide-desc" />
+            </ui:VisualElement>
+
+            <!-- 슬라이드 2: 3D 방 -->
+            <ui:VisualElement name="slide-1" class="slide hidden">
+                <ui:VisualElement name="slide-1-illust" class="slide-illust" />
+                <ui:Label text="나만의 3D 공간" class="slide-title" />
+                <ui:Label text="오늘의 행동이 방 안 오브젝트로&#10;자동 배치돼요"
+                          class="slide-desc" />
+            </ui:VisualElement>
+
+            <!-- 슬라이드 3: 소셜 -->
+            <ui:VisualElement name="slide-2" class="slide hidden">
+                <ui:VisualElement name="slide-2-illust" class="slide-illust" />
+                <ui:Label text="친구의 일상 구경하기" class="slide-title" />
+                <ui:Label text="팔로우한 친구의 방을 방문하고&#10;방명록을 남겨보세요"
+                          class="slide-desc" />
+            </ui:VisualElement>
+
+            <!-- 슬라이드 4: Gemma 다운로드 -->
+            <ui:VisualElement name="slide-3" class="slide hidden">
+                <ui:VisualElement name="slide-3-illust" class="slide-illust" />
+                <ui:Label text="AI 엔진 준비" class="slide-title" />
+                <ui:Label text="온디바이스 AI 모델을 다운로드해요&#10;Wi-Fi 연결을 권장합니다"
+                          class="slide-desc" />
+
+                <!-- 다운로드 진행 영역 -->
+                <ui:VisualElement name="download-area" class="download-area">
+                    <ui:VisualElement name="progress-bar-bg" class="progress-bg">
+                        <ui:VisualElement name="progress-bar-fill" class="progress-fill" />
+                    </ui:VisualElement>
+                    <ui:Label name="download-status" text="다운로드 대기 중..." class="text-small" />
+                    <ui:Label name="download-size" text="약 1.5GB" class="text-tiny" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- 하단 컨트롤 영역 -->
+        <ui:VisualElement name="bottom-controls" class="bottom-area">
+
+            <!-- 인디케이터 점 -->
+            <ui:VisualElement name="indicators" class="row indicator-row">
+                <ui:VisualElement name="dot-0" class="dot dot--active" />
+                <ui:VisualElement name="dot-1" class="dot" />
+                <ui:VisualElement name="dot-2" class="dot" />
+                <ui:VisualElement name="dot-3" class="dot" />
+            </ui:VisualElement>
+
+            <!-- 다음 / 시작 버튼 -->
+            <ui:Button name="btn-next" text="다음" class="btn btn--md btn--rose btn--full" />
+
+            <!-- 건너뛰기 (마지막 슬라이드에서는 숨김) -->
+            <ui:Button name="btn-skip" text="건너뛰기" class="btn-skip" />
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>
