@@ -1074,9 +1074,11 @@ public class FurnitureEditController : MonoBehaviour
             _ceilingActivated = new System.Collections.Generic.List<(GameObject, bool)>();
             foreach (Transform child in ceilingItemParent)
             {
-                bool wasActive = child.gameObject.activeSelf;
-                _ceilingActivated.Add((child.gameObject, wasActive));
-                child.gameObject.SetActive(true);
+                // 처음부터 inactive인 천장 가구 = 방에 없는 것 → 완전 무시 (active·등록 안 함).
+                // 단, 방금 SpawnFurniture로 추가한 새 가구는 active 상태로 들어오므로 정상 등록됨.
+                if (!child.gameObject.activeSelf) continue;
+
+                _ceilingActivated.Add((child.gameObject, true));
                 reList.Add(new FurnitureEditConfig
                 {
                     target         = child.gameObject,
@@ -1142,9 +1144,11 @@ public class FurnitureEditController : MonoBehaviour
         var list = new System.Collections.Generic.List<FurnitureEditConfig>();
         foreach (Transform child in ceilingItemParent)
         {
-            bool wasActive = child.gameObject.activeSelf;
-            _ceilingActivated.Add((child.gameObject, wasActive));
-            child.gameObject.SetActive(true);
+            // 처음부터 inactive인 천장 가구 = 방에 존재하지 않는 것 → 완전 무시.
+            // active 시키지도, editableItems에 등록하지도 않는다. (안 보이고 겹침 검사 대상도 아님)
+            if (!child.gameObject.activeSelf) continue;
+
+            _ceilingActivated.Add((child.gameObject, true));
             list.Add(new FurnitureEditConfig
             {
                 target         = child.gameObject,

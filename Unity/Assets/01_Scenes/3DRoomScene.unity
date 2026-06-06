@@ -1221,7 +1221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8f133aa1928e9f47a418282a459655d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomModeManager
-  _debugMode: 2
+  _debugMode: 1
   ceilingObject: {fileID: 979540144}
   playerObject: {fileID: 1112934377}
   joystickArea: {fileID: 1099573294}
@@ -1315,6 +1315,10 @@ PrefabInstance:
     - target: {fileID: 5940756168176752078, guid: ccad79e545e58a54bae548455d873520, type: 3}
       propertyPath: m_Name
       value: photo_frame_friends
+      objectReference: {fileID: 0}
+    - target: {fileID: 5940756168176752078, guid: ccad79e545e58a54bae548455d873520, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4292,6 +4296,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: dumbbell
       objectReference: {fileID: 0}
+    - target: {fileID: 1193346018881060259, guid: b4cb1b7c465b6fd4bbfa7ec0187acf9b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2000809128493606681, guid: b4cb1b7c465b6fd4bbfa7ec0187acf9b, type: 3}
       propertyPath: m_LocalPosition.x
       value: -97.39215
@@ -6165,6 +6173,10 @@ PrefabInstance:
     - target: {fileID: 1332976673585884527, guid: 458fe949a7448be47ae847a26bf539e1, type: 3}
       propertyPath: m_Name
       value: bookshelf
+      objectReference: {fileID: 0}
+    - target: {fileID: 1332976673585884527, guid: 458fe949a7448be47ae847a26bf539e1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6771010627575762062, guid: 458fe949a7448be47ae847a26bf539e1, type: 3}
       propertyPath: m_LocalScale.x
@@ -11473,6 +11485,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: running_shoes
       objectReference: {fileID: 0}
+    - target: {fileID: 8961780262756164519, guid: 2285a17b34e4ebe4e964be4bc88c8124, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12629,6 +12645,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: heaterready
       objectReference: {fileID: 0}
+    - target: {fileID: 8327182642824636310, guid: 559881946fae2ae40a8595279b5348a9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8708775109121031468, guid: 559881946fae2ae40a8595279b5348a9, type: 3}
       propertyPath: m_LocalPosition.x
       value: -100.40078
@@ -12860,6 +12880,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: (Prb)DeskLight
       objectReference: {fileID: 0}
+    - target: {fileID: 5013015304456416618, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9137499087289233243, guid: 7a0f3422c272539469bd89011296e58d, type: 3}
       propertyPath: m_LocalScale.x
       value: 3.5
@@ -12994,7 +13018,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4831807943516791461, guid: c6fbb00ced815884f98d931f04c6fbb9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5207805029763446815, guid: c6fbb00ced815884f98d931f04c6fbb9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -13154,6 +13178,10 @@ PrefabInstance:
     - target: {fileID: 3838794897141299073, guid: 02dce3262522eb44c87e552de8b37a02, type: 3}
       propertyPath: m_Name
       value: waker
+      objectReference: {fileID: 0}
+    - target: {fileID: 3838794897141299073, guid: 02dce3262522eb44c87e552de8b37a02, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4471497402649423163, guid: 02dce3262522eb44c87e552de8b37a02, type: 3}
       propertyPath: m_LocalScale.x
@@ -13641,6 +13669,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gold Cup (Medium Poly)
       objectReference: {fileID: 0}
+    - target: {fileID: 5103349473308358031, guid: d8be9ce60815c154192aeeda204fb50e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13715,7 +13747,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6470929448825147889, guid: 97f104385e337a445a21c99380c70756, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13784,6 +13816,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cube
       objectReference: {fileID: 0}
+    - target: {fileID: 5143120940934504627, guid: c0315d7895a332f4a97c20363090023f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7512409121751825289, guid: c0315d7895a332f4a97c20363090023f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -106.26
@@ -13824,6 +13860,10 @@ PrefabInstance:
     - target: {fileID: 1547669483098618088, guid: e7793aa975a81f64197529e719cf206e, type: 3}
       propertyPath: m_Name
       value: Postit
+      objectReference: {fileID: 0}
+    - target: {fileID: 1547669483098618088, guid: e7793aa975a81f64197529e719cf206e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7497241333812676050, guid: e7793aa975a81f64197529e719cf206e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -13911,10 +13951,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7497241333812676050, guid: e7793aa975a81f64197529e719cf206e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1160394956}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8165900786471731290, guid: e7793aa975a81f64197529e719cf206e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e7793aa975a81f64197529e719cf206e, type: 3}
 --- !u!4 &4133749718723720829 stripped
 Transform:
@@ -13981,6 +14018,10 @@ PrefabInstance:
     - target: {fileID: 6948561911740905896, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
       propertyPath: m_Name
       value: Headphones
+      objectReference: {fileID: 0}
+    - target: {fileID: 6948561911740905896, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7720736097156752146, guid: 9ffa941ba4fe6fb4899e111e334f60b4, type: 3}
       propertyPath: m_LocalScale.x
@@ -14125,6 +14166,10 @@ PrefabInstance:
     - target: {fileID: 8042247194972606837, guid: 0cb803451dd4f0948bf7028a29c5ac6c, type: 3}
       propertyPath: m_Name
       value: (Prb)Container4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8042247194972606837, guid: 0cb803451dd4f0948bf7028a29c5ac6c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14311,6 +14356,10 @@ PrefabInstance:
     - target: {fileID: 6614166447674433373, guid: 7d7becba5ff19a34f957997ef0cd50d7, type: 3}
       propertyPath: m_Name
       value: Clock
+      objectReference: {fileID: 0}
+    - target: {fileID: 6614166447674433373, guid: 7d7becba5ff19a34f957997ef0cd50d7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14581,6 +14630,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 3889129545476120111, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3982103537519275198, guid: 40310a32abfa0e347993f7bb021578af, type: 3}
       propertyPath: m_Layer
       value: 8
@@ -14646,6 +14699,10 @@ PrefabInstance:
     - target: {fileID: 6825485002394889064, guid: fb5df94b282867f4f9839a2166119d10, type: 3}
       propertyPath: m_Name
       value: board
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825485002394889064, guid: fb5df94b282867f4f9839a2166119d10, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6946985991308852525, guid: fb5df94b282867f4f9839a2166119d10, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14781,7 +14838,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2129568051986680633, guid: 7948860bfdb3c9f44a92c75a5862ff2c, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7944688624059553200, guid: 7948860bfdb3c9f44a92c75a5862ff2c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -15346,6 +15403,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Partylight
       objectReference: {fileID: 0}
+    - target: {fileID: 8722937707912186975, guid: d5153066db8a25446a27c324f225527c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -15474,6 +15535,10 @@ PrefabInstance:
     - target: {fileID: 3301397531593993457, guid: 6a10c90590027ca4687e0a987e4e9b1f, type: 3}
       propertyPath: m_Layer
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3301397531593993457, guid: 6a10c90590027ca4687e0a987e4e9b1f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
