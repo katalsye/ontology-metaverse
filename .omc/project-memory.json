@@ -1,0 +1,155 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1780643772648,
+  "projectRoot": "c:\\Users\\user\\Desktop\\ontology-metaverse",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "Docs": {
+      "path": "Docs",
+      "purpose": "Documentation",
+      "fileCount": 3,
+      "lastAccessed": 1780643772501,
+      "keyFiles": [
+        "auto_work_log.md",
+        "docs.gitkeep",
+        "작업현황.md"
+      ]
+    },
+    "Functions": {
+      "path": "Functions",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1780643772503,
+      "keyFiles": [
+        "fcm_sender.py",
+        "functions.gitkeep",
+        "main.py",
+        "ontology_engine.py",
+        "requirements.txt"
+      ]
+    },
+    "Unity": {
+      "path": "Unity",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1780643772506,
+      "keyFiles": [
+        "ontology-metaverse.slnx",
+        "Unity.slnx"
+      ]
+    },
+    "Functions\\scripts": {
+      "path": "Functions\\scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 3,
+      "lastAccessed": 1780643772511,
+      "keyFiles": [
+        "check_inference.py",
+        "README.md",
+        "test_check_inference.py"
+      ]
+    },
+    "Unity\\Assets": {
+      "path": "Unity\\Assets",
+      "purpose": "Static assets",
+      "fileCount": 11,
+      "lastAccessed": 1780643772525,
+      "keyFiles": [
+        "01_Scenes.meta",
+        "02_Scripts.meta",
+        "03_Prefabs.meta"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "Functions\\test_ontology_engine.py",
+      "accessCount": 28,
+      "lastAccessed": 1780453159264,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\rules\\inference_rules.sparql",
+      "accessCount": 25,
+      "lastAccessed": 1780213669867,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\test_rules.py",
+      "accessCount": 21,
+      "lastAccessed": 1780065587635,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology_engine.py",
+      "accessCount": 12,
+      "lastAccessed": 1780475464014,
+      "type": "file"
+    },
+    {
+      "path": "Docs\\작업현황.md",
+      "accessCount": 11,
+      "lastAccessed": 1780476945200,
+      "type": "file"
+    },
+    {
+      "path": "Docs\\contracts\\firestore_schema.md",
+      "accessCount": 5,
+      "lastAccessed": 1780475361654,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\ontology\\core.ttl",
+      "accessCount": 4,
+      "lastAccessed": 1780065137125,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\validate_ontology.py",
+      "accessCount": 3,
+      "lastAccessed": 1780065147514,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\fcm_sender.py",
+      "accessCount": 1,
+      "lastAccessed": 1780475450501,
+      "type": "file"
+    },
+    {
+      "path": "Functions\\test_fcm_sender.py",
+      "accessCount": 1,
+      "lastAccessed": 1780475532757,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

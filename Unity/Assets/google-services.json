@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "616295277126",
+    "project_id": "ontology-metaverse",
+    "storage_bucket": "ontology-metaverse.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616295277126:android:5d4addf6ffdff3374d2047",
+        "android_client_info": {
+          "package_name": "com.ontology.metaverse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "616295277126-fjbt4c0n23hlr3basomd0g6jj3i8pm3q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ontology.metaverse",
+            "certificate_hash": "d6d31430ffcf5e798d060536cd25818ef4a9a736"
+          }
+        },
+        {
+          "client_id": "616295277126-nn2qsnprh6dc758pudl35tbmubfb3ll9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ontology.metaverse",
+            "certificate_hash": "c3eb3c6efd87c20934f370785b93360ebbfd0cd6"
+          }
+        },
+        {
+          "client_id": "616295277126-qdlqp2bpf0k21pu4surr3lit1g2pobr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc8vswJg8B8MOJQGX8G42RMUKTjBFF360"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "616295277126-qdlqp2bpf0k21pu4surr3lit1g2pobr9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

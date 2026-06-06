@@ -1,0 +1,86 @@
+/* ============================================
+ * SplashScreen.uss — 스플래시 화면 전용 스타일
+ * ============================================ */
+
+/* 루트: 그라데이션 효과
+   UI Toolkit은 CSS gradient 미지원이므로
+   단색 배경 + 위에 반투명 영역으로 근사 처리 */
+#splash-root {
+    background-color: var(--bg-soft);
+    padding: 40px 24px;
+}
+
+/* ── 로고 ── */
+#logo-container {
+    margin-bottom: 24px;
+}
+
+#logo-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 48px; /* 40% of 120 */
+    /* conic gradient 근사: 4색 테두리로 대체 */
+    background-color: var(--rose);
+    border-width: 3px;
+    border-color: var(--butter);
+    /* 실제 구현 시 Sprite로 gradient ring 이미지 사용 권장 */
+}
+
+#logo-inner {
+    width: 100px;
+    height: 100px;
+    border-radius: 40px; /* 40% of 100 */
+    background-color: var(--card);
+}
+
+#logo-icon {
+    width: 60px;
+    height: 60px;
+    /* background-image: url('프로젝트에서 로고 Sprite 경로'); */
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ── 텍스트 ── */
+#app-name {
+    margin-top: 24px;
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: var(--ink);
+    -unity-text-align: middle-center;
+    letter-spacing: -1px;
+}
+
+#app-subtitle {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+}
+
+/* ── 로딩 ── */
+#loading-area {
+    margin-top: 48px;
+}
+
+#spinner {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    border-width: 2.5px;
+    border-color: var(--line-faint);
+    border-top-color: var(--rose);
+    /* 회전 애니메이션은 C# 스크립트에서 처리 */
+}
+
+#loading-text {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}
+
+/* ── 애니메이션 (C#에서 제어) ──
+ * 로고: scale 0.85 → 1.04 → 1.0 (0.6s)
+ * 텍스트: opacity 0 → 1 (0.4s delay 0.3s)
+ * 스피너: rotate 0 → 360 반복 (0.8s linear)
+ */

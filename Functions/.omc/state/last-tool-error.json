@@ -1,0 +1,7 @@
+{
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"cd \\\"c:\\\\Users\\\\user\\\\Desktop\\\\ontology-metaverse\\\\Functions\\\"; python -c @'\\nfrom triple_validator import TripleValidator\\nv = TripleValidator()\\ntest = [\\n    {\\\"subject\\\": \\\"http://7tea...",
+  "error": "Exit code 1\n  File \"<string>\", line 4\r\n    {subject: http://7team.dev/ontology#user_abc,\r\n                     ^\r\nSyntaxError: invalid decimal literal",
+  "timestamp": "2026-05-20T04:23:41.332Z",
+  "retry_count": 1
+}

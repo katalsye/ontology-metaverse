@@ -1,0 +1,133 @@
+<!-- ============================================
+     1-3. LoginFlowScreen.uxml
+     로그인 + 권한 요청 + 초기 프로필 설정
+     단계형 한 플로우 (step 1→2→3)
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="LoginFlowScreen.uss" />
+
+    <ui:VisualElement name="login-root" class="full-screen col">
+
+        <!-- 상단 진행 표시 -->
+        <ui:VisualElement name="step-header" class="step-header row">
+            <ui:VisualElement name="step-bar-bg" class="step-bar-bg">
+                <ui:VisualElement name="step-bar-fill" class="step-bar-fill" />
+            </ui:VisualElement>
+            <ui:Label name="step-label" text="1 / 3" class="text-tiny" />
+        </ui:VisualElement>
+
+        <!-- ──────────────────────────────
+             STEP 1: 소셜 로그인
+             ────────────────────────────── -->
+        <ui:VisualElement name="step-login" class="step-content active">
+            <ui:Label text="로그인" class="step-title" />
+            <ui:Label text="소셜 계정으로 간편하게 시작하세요" class="step-desc" />
+
+            <ui:VisualElement name="login-buttons" class="login-buttons col">
+                <ui:Button name="btn-google" class="social-btn">
+                    <ui:VisualElement class="social-icon social-icon--google" />
+                    <ui:Label text="Google로 계속하기" class="social-label" />
+                </ui:Button>
+
+                <ui:Button name="btn-kakao" class="social-btn social-btn--kakao">
+                    <ui:VisualElement class="social-icon social-icon--kakao" />
+                    <ui:Label text="카카오로 계속하기" class="social-label social-label--kakao" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- ──────────────────────────────
+             STEP 2: 권한 요청
+             ────────────────────────────── -->
+        <ui:VisualElement name="step-permissions" class="step-content hidden">
+            <ui:Label text="데이터 접근 권한" class="step-title" />
+            <ui:Label text="더 정확한 분석을 위해&#10;아래 권한을 허용해주세요"
+                      class="step-desc" />
+
+            <ui:VisualElement name="permission-list" class="perm-list col">
+                <!-- 갤러리 -->
+                <ui:VisualElement name="perm-gallery" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--gallery" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="갤러리" class="perm-name" />
+                        <ui:Label text="사진에서 장소·음식 등을 분석해요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-gallery" class="toggle" />
+                </ui:VisualElement>
+
+                <!-- 위치 -->
+                <ui:VisualElement name="perm-location" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--location" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="위치" class="perm-name" />
+                        <ui:Label text="방문 장소를 자동으로 기록해요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-location" class="toggle" />
+                </ui:VisualElement>
+
+                <!-- Health Connect -->
+                <ui:VisualElement name="perm-health" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--health" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="Health Connect" class="perm-name" />
+                        <ui:Label text="수면·걸음 수·운동 데이터를 가져와요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-health" class="toggle" />
+                </ui:VisualElement>
+
+                <!-- 앱 사용시간 -->
+                <ui:VisualElement name="perm-usage" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--usage" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="앱 사용시간" class="perm-name" />
+                        <ui:Label text="관심사와 습관을 파악해요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-usage" class="toggle" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label text="나중에 설정에서 변경할 수 있어요" class="text-tiny perm-hint" />
+
+            <ui:Button name="btn-perm-next" text="다음" class="btn btn--md btn--rose btn--full" />
+        </ui:VisualElement>
+
+        <!-- ──────────────────────────────
+             STEP 3: 프로필 설정
+             ────────────────────────────── -->
+        <ui:VisualElement name="step-profile" class="step-content hidden">
+            <ui:Label text="프로필 설정" class="step-title" />
+            <ui:Label text="다른 사람에게 보여지는 이름이에요" class="step-desc" />
+
+            <!-- 아바타 미리보기 (플레이스홀더) -->
+            <ui:VisualElement name="avatar-preview" class="avatar-preview center-content">
+                <ui:Label text="😊" class="avatar-emoji" />
+            </ui:VisualElement>
+
+            <!-- 닉네임 입력 -->
+            <ui:VisualElement name="nickname-field" class="input-group col">
+                <ui:Label text="닉네임" class="input-label" />
+                <ui:TextField name="input-nickname" class="text-input"
+                              max-length="12" />
+                <ui:Label name="nickname-hint" text="2~12자, 한글/영문/숫자"
+                          class="input-hint" />
+            </ui:VisualElement>
+
+            <!-- 상태메시지 입력 -->
+            <ui:VisualElement name="status-field" class="input-group col">
+                <ui:Label text="상태메시지 (선택)" class="input-label" />
+                <ui:TextField name="input-status" class="text-input"
+                              max-length="30" />
+                <ui:Label text="최대 30자" class="input-hint" />
+            </ui:VisualElement>
+
+            <ui:Button name="btn-start" text="시작하기" class="btn btn--md btn--rose btn--full" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

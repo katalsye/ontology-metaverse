@@ -1,0 +1,61 @@
+<!-- ============================================
+     5-1 / 5-2. ShopScreen.uxml
+     카테고리 탭(가구/스킨/펫) + 아이템 그리드
+     아이템 상세 시트 (하단 오버레이)
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="ShopScreen.uss" />
+
+    <ui:VisualElement name="shop-root" class="full-screen col">
+
+        <!-- 상단 -->
+        <ui:VisualElement class="shop-header row">
+            <ui:Label text="상점" class="text-heading" />
+        </ui:VisualElement>
+
+        <!-- 카테고리 탭 -->
+        <ui:VisualElement name="category-tabs" class="tab-bar row">
+            <ui:Button name="tab-furniture" text="가구" class="tab-btn tab-btn--active" />
+            <ui:Button name="tab-skin" text="스킨" class="tab-btn" />
+            <ui:Button name="tab-pet" text="펫" class="tab-btn" />
+        </ui:VisualElement>
+
+        <!-- 아이템 그리드 -->
+        <ui:ScrollView name="item-scroll" class="item-scroll">
+            <ui:VisualElement name="item-grid" class="item-grid" />
+        </ui:ScrollView>
+
+        <!-- 아이템 상세 시트 (5-2) -->
+        <ui:VisualElement name="item-detail-overlay" class="overlay-bg" style="display: none;">
+            <ui:VisualElement name="item-detail-sheet" class="detail-sheet col">
+                <ui:Button name="btn-close-detail" class="close-btn">
+                    <ui:Label text="✕" class="close-btn-text" />
+                </ui:Button>
+
+                <!-- 아이템 미리보기 -->
+                <ui:VisualElement name="item-preview" class="item-preview center-content">
+                    <ui:Label name="item-preview-emoji" text="🪑" class="item-preview-emoji" />
+                </ui:VisualElement>
+
+                <ui:Label name="item-detail-name" text="" class="item-detail-name" />
+                <ui:Label name="item-detail-desc" text="" class="item-detail-desc" />
+
+                <!-- 가격 -->
+                <ui:VisualElement name="item-price-row" class="item-price-row row">
+                    <ui:Label text="🪙" class="price-icon" />
+                    <ui:Label name="item-price" text="100" class="price-value" />
+                </ui:VisualElement>
+
+                <ui:Button name="btn-buy" text="구매하기"
+                           class="btn btn--md btn--rose btn--full" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>
