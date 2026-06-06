@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Firebase.Extensions;
 
 // 유니티 Inspector 설정:
 //   postItPrefab → 03_Prefabs/postit 프리팹 연결
@@ -26,6 +27,9 @@ public class PostItManager : MonoBehaviour
 
     [Header("포스트잇 머티리얼 3개")]
     public Material[] materials = new Material[3];
+
+    [Header("방 주인 UID (방 입장 시 외부에서 주입 — 비우면 현재 로그인 사용자)")]
+    public string ownerUid;
 
     [Header("설정")]
     public int   maxNotes            = 30;
@@ -85,15 +89,34 @@ public class PostItManager : MonoBehaviour
     // ── 댓글 로드 ─────────────────────────────────────────────────────────
     void LoadComments()
     {
-        // ════════════════════════════════════════════════════════════════════
-        // ★★★ TODO: 백엔드 연동 — 추후 백엔드 담당이 구현 ★★★
-        // 백엔드 모듈에서 방 댓글 목록을 받아와 각 항목을 AddComment(username, comment)로 호출.
-        // 응답 실패 / 빈 결과 시 아래 더미(운영자 3개)로 fallback.
-        // 프론트는 함수 호출만, 실제 DB 통신은 백엔드 모듈에 위임.
-        // ════════════════════════════════════════════════════════════════════
+        string uid = string.IsNullOrEmpty(ownerUid)
+            ? Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser?.UserId
+            : ownerUid;
 
-        foreach (var data in _dummyComments)
-            AddComment(data.username, data.comment);
+        if (string.IsNullOrEmpty(uid))
+        {
+            foreach (var d in _dummyComments) AddComment(d.username, d.comment);
+            return;
+        }
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("room_comments").Document(uid).Collection("comments")
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || task.Result.Count == 0)
+                {
+                    foreach (var d in _dummyComments) AddComment(d.username, d.comment);
+                    return;
+                }
+                foreach (var doc in task.Result.Documents)
+                {
+                    string username = doc.ContainsField("username") ? doc.GetValue<string>("username") : "방문자";
+                    string comment  = doc.ContainsField("comment")  ? doc.GetValue<string>("comment")  : "";
+                    if (!string.IsNullOrEmpty(comment))
+                        AddComment(username, comment);
+                }
+            });
     }
 
     // ── Public API ────────────────────────────────────────────────────────

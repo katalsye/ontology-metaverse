@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using Firebase.Extensions;
 
 // 댓글 작성 시스템.
 //   1) Sticky_note_yellow (board 자식) → 댓글 추가 버튼으로 자동 연결 (태그 + 콜라이더)
@@ -19,8 +20,10 @@ public class CommentInputUI : MonoBehaviour
 
     [Header("연동")]
     public PostItManager postItManager;
-    [Tooltip("작성자 표시명 (추후 로그인 유저로 대체)")]
+    [Tooltip("작성자 표시명 (Start에서 Firebase Auth 닉네임으로 자동 설정)")]
     public string currentUsername = "방문자";
+    [Tooltip("방 주인 UID (방 입장 시 외부에서 주입 — 비우면 현재 로그인 사용자)")]
+    public string ownerUid;
 
     [Header("제한")]
     public int maxCharacters = 50;
@@ -66,6 +69,10 @@ public class CommentInputUI : MonoBehaviour
     void Start()
     {
         if (postItManager == null) postItManager = FindObjectOfType<PostItManager>();
+
+        var user = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser;
+        if (user != null && !string.IsNullOrEmpty(user.DisplayName))
+            currentUsername = user.DisplayName;
 
         WireAddButton();
         WireWindow();
@@ -226,12 +233,27 @@ public class CommentInputUI : MonoBehaviour
             postItManager.AddComment(currentUsername, text);
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        // ★★★ TODO: 백엔드 연동 — 추후 백엔드 담당이 구현 ★★★
-        // 댓글 작성 시 DB에 저장하는 로직을 여기에 호출.
-        // 프론트는 함수 호출만, 실제 DB 통신은 백엔드 모듈/매니저에 위임.
-        // 예: BackendBridge.SaveComment(roomId, currentUsername, text);
-        // ════════════════════════════════════════════════════════════════════
+        string uid = string.IsNullOrEmpty(ownerUid)
+            ? Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser?.UserId
+            : ownerUid;
+
+        if (!string.IsNullOrEmpty(uid))
+        {
+            string docId = System.DateTime.UtcNow.ToString("yyyyMMddHHmmss") + "_" + Random.Range(1000, 9999);
+            Firebase.Firestore.FirebaseFirestore.DefaultInstance
+                .Collection("room_comments").Document(uid)
+                .Collection("comments").Document(docId)
+                .SetAsync(new System.Collections.Generic.Dictionary<string, object>
+                {
+                    { "username",  currentUsername },
+                    { "comment",   text },
+                    { "createdAt", Firebase.Firestore.FieldValue.ServerTimestamp },
+                })
+                .ContinueWithOnMainThread(t =>
+                {
+                    if (t.IsFaulted) Debug.LogError("[CommentInputUI] 댓글 저장 실패: " + t.Exception);
+                });
+        }
 
         ClosePanel();
     }
