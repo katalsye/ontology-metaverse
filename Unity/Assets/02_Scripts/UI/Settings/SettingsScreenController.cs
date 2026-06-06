@@ -17,11 +17,33 @@ public class SettingsScreenController : MonoBehaviour
 
     private TextField editNickname, editStatus;
 
+    // 페르소나 표시 레이블
+    private VisualElement _personaSection;
+    private Label _labelEnergyType;
+    private Label _labelSocialPref;
+    private Label _labelLifePattern;
+
     private void OnEnable()
     {
         root = uiDocument.rootVisualElement;
 
         root.Q<Button>("btn-back").clicked += () => ScreenManager.Instance.GoBack();
+
+        // 페르소나 섹션 바인딩
+        _personaSection  = root.Q("persona-section");
+        _labelEnergyType = root.Q<Label>("label-energy-type");
+        _labelSocialPref = root.Q<Label>("label-social-pref");
+        _labelLifePattern = root.Q<Label>("label-life-pattern");
+
+        if (_personaSection != null)
+            _personaSection.style.display = DisplayStyle.None;
+
+        // 페르소나 이벤트 구독 + 초기 로드
+        if (UserManager.Instance != null)
+        {
+            UserManager.Instance.OnPersonaRestored += RefreshPersonaUI;
+            UserManager.Instance.GetPersona(RefreshPersonaUI);
+        }
 
         // 프로필 편집
         profileEditOverlay = root.Q("profile-edit-overlay");
@@ -78,6 +100,24 @@ public class SettingsScreenController : MonoBehaviour
         root.Q<Button>("btn-confirm-delete").clicked += OnDeleteAccount;
         root.Q<Button>("btn-cancel-delete").clicked += () =>
             deleteConfirmOverlay.style.display = DisplayStyle.None;
+    }
+
+    private void OnDisable()
+    {
+        if (UserManager.Instance != null)
+            UserManager.Instance.OnPersonaRestored -= RefreshPersonaUI;
+    }
+
+    private void RefreshPersonaUI(Persona p)
+    {
+        if (p == null) return;
+
+        if (_labelEnergyType  != null) _labelEnergyType.text  = p.EnergyType      ?? "-";
+        if (_labelSocialPref  != null) _labelSocialPref.text  = p.SocialPreference ?? "-";
+        if (_labelLifePattern != null) _labelLifePattern.text = p.LifePattern      ?? "-";
+
+        if (_personaSection != null)
+            _personaSection.style.display = DisplayStyle.Flex;
     }
 
     private void SetupToggle(string toggleName, string prefKey)

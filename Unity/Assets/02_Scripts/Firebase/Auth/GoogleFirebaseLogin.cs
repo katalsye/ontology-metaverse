@@ -58,6 +58,7 @@ public class GoogleFirebaseLogin : MonoBehaviour
                     userNameTMP.text = "User Name: " + user.DisplayName;
 
                     GetComponent<UserManager>().CreateUserIfNotExists();
+                    GetComponent<UserManager>().RestorePersonaOnLogin();
                     FcmManager.Instance?.RegisterToken();
                     FcmManager.Instance?.StartNotificationListener();
                 }
@@ -128,6 +129,7 @@ public class GoogleFirebaseLogin : MonoBehaviour
                 userNameTMP.text = $"User Name: {user.DisplayName}";
 
                 GetComponent<UserManager>().CreateUserIfNotExists();
+                GetComponent<UserManager>().RestorePersonaOnLogin();
                 FcmManager.Instance?.RegisterToken();
                 FcmManager.Instance?.StartNotificationListener();
             });
