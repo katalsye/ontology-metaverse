@@ -16,8 +16,8 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
         [Tooltip("Inspector에서 GemmaOnDeviceManager가 붙은 GameObject 드래그")]
         public GemmaOnDeviceManager gemmaManager;
 
-        // 테스트용 임시 user_uid (나중에 Firebase Auth로 대체)
-        private string testUserUid = "user_001";
+        private string testUserUid =>
+            Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser?.UserId ?? "user_001";
 
         /// <summary>
         /// 이미지 → 트리플 추출 → SQLite 저장

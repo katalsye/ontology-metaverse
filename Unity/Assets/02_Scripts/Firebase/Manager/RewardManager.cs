@@ -151,6 +151,49 @@ public class RewardManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
+    // 보석 잔액 읽기
+    // ───────────────────────────────────────
+    public void GetGems(System.Action<int> onSuccess, System.Action<string> onFailure = null)
+    {
+        if (auth.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("rewards").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted) { onFailure?.Invoke(task.Exception.Message); return; }
+            int gems = task.Result.Exists && task.Result.ContainsField("Gems")
+                ? task.Result.GetValue<int>("Gems") : 0;
+            onSuccess?.Invoke(gems);
+        });
+    }
+
+    // ───────────────────────────────────────
+    // 보석 증가
+    // ───────────────────────────────────────
+    public void AddGems(int amount, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    {
+        if (auth.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+        string uid = auth.CurrentUser.UserId;
+        DocumentReference rewardDoc = db.Collection("rewards").Document(uid);
+
+        db.RunTransactionAsync(transaction =>
+        {
+            return transaction.GetSnapshotAsync(rewardDoc).ContinueWithOnMainThread(task =>
+            {
+                int current = task.Result.Exists && task.Result.ContainsField("Gems")
+                    ? task.Result.GetValue<int>("Gems") : 0;
+                var data = new Dictionary<string, object> { { "Gems", current + amount } };
+                if (task.Result.Exists) transaction.Update(rewardDoc, data);
+                else transaction.Set(rewardDoc, data);
+                return true;
+            });
+        }).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted) { onFailure?.Invoke(task.Exception.Message); return; }
+            onSuccess?.Invoke();
+        });
+    }
+
+    // ───────────────────────────────────────
     // 보유 아이템 목록 읽기
     // ───────────────────────────────────────
     public void GetItems(System.Action<List<string>> onSuccess, System.Action<string> onFailure = null)

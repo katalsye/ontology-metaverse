@@ -29,8 +29,10 @@ public class CurrencyBarController : MonoBehaviour
             onFailure: _ => coinLabel.text = "0"
         );
 
-        // 보석: Firestore 미구현, PlayerPrefs 유지
-        gemLabel.text = PlayerPrefs.GetInt("gems", 0).ToString();
+        RewardManager.Instance.GetGems(
+            onSuccess: gems => gemLabel.text = gems.ToString(),
+            onFailure: _ => gemLabel.text = "0"
+        );
     }
 
     public void AddCoins(int amount)
@@ -40,9 +42,6 @@ public class CurrencyBarController : MonoBehaviour
 
     public void AddGems(int amount)
     {
-        int gems = PlayerPrefs.GetInt("gems", 0) + amount;
-        PlayerPrefs.SetInt("gems", gems);
-        PlayerPrefs.Save();
-        gemLabel.text = gems.ToString();
+        RewardManager.Instance.AddGems(amount, onSuccess: Refresh);
     }
 }
