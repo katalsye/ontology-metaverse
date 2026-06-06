@@ -1,0 +1,4 @@
+<!-- MyRoomScreen.uxml — 투명 오버레이 (3DRoomScene이 뒤에 렌더링됨) -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="myroom-root" class="full-screen" />
+</ui:UXML>

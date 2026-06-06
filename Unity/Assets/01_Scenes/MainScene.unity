@@ -207,7 +207,7 @@ MonoBehaviour:
     document: {fileID: 2028554414}
     hideBottomNav: 1
   - key: myroom
-    document: {fileID: 282732559}
+    document: {fileID: 394470283}
     hideBottomNav: 0
 --- !u!1 &240639916
 GameObject:
@@ -600,6 +600,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 394470281}
+  - component: {fileID: 394470283}
+  - component: {fileID: 394470282}
   m_Layer: 0
   m_Name: MyRoom
   m_TagString: Untagged
@@ -628,6 +630,43 @@ Transform:
   - {fileID: 631082436}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &394470282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 394470280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec7064a405b0d3b45b35250f7e931c1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyRoomScreenController
+  uiDocument: {fileID: 394470283}
+  mainSceneCamera: {fileID: 584438238}
+--- !u!114 &394470283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 394470280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: c4aad159bf6757f4f9795e8ee7a29713, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: d0cd859665721ba47807b7a5c22de23e, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &461695269
 GameObject:
   m_ObjectHideFlags: 0

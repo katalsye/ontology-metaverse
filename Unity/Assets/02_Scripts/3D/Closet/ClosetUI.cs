@@ -74,23 +74,9 @@ public class ClosetUI : MonoBehaviour
     {
         RoomModeManager.SetMode(mode);
 
-        // Build Settings에서 씬 이름 포함 여부로 인덱스 탐색 후 로드
-        int buildIdx = -1;
-        int count = SceneManager.sceneCountInBuildSettings;
-        for (int i = 0; i < count; i++)
-        {
-            string path = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
-            if (path.Contains(roomSceneName)) { buildIdx = i; break; }
-        }
-
-        if (buildIdx >= 0)
-            SceneManager.LoadScene(buildIdx);
-        else
-        {
-            // Debug.LogWarning($"[ClosetUI] '{roomSceneName}' 씬을 Build Settings에서 찾지 못했습니다. " +
-            //                   "File > Build Settings > Add Open Scenes 에서 해당 씬을 추가하세요.");
-            SceneManager.LoadScene(roomSceneName);
-        }
+        // MainScene을 유지하면서 Closet 언로드 → 3DRoomScene 추가 로드
+        SceneManager.UnloadSceneAsync("Closet");
+        SceneManager.LoadScene(roomSceneName, LoadSceneMode.Additive);
     }
 
     void SelectTab(bool isCharacter)

@@ -313,7 +313,7 @@ public class CameraController : MonoBehaviour
             }
         }
 
-        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null, hHost = null, hSelf = null;
+        RaycastHit? hCommentBtn = null, hPostIt = null, hBoard = null, hFurniture = null, hTable = null, hCalendar = null, hHost = null, hSelf = null, hDoor = null;
         foreach (var h in hits)
         {
             bool hasMarker    = h.collider.GetComponent<CommentButtonMarker>() != null
@@ -334,6 +334,8 @@ public class CameraController : MonoBehaviour
                              || h.collider.GetComponentInParent<HostInteraction>() != null;
             bool hasSelf      = h.collider.GetComponent<PlayerSelfInteraction>() != null
                              || h.collider.GetComponentInParent<PlayerSelfInteraction>() != null;
+            bool hasDoor      = h.collider.GetComponent<RoomExitController>() != null
+                             || h.collider.GetComponentInParent<RoomExitController>() != null;
             if      (hCommentBtn == null && hasMarker)    hCommentBtn = h;
             else if (hPostIt     == null && hasNote)      hPostIt     = h;
             else if (hBoard      == null && hasBoard)     hBoard      = h;
@@ -342,8 +344,17 @@ public class CameraController : MonoBehaviour
             else if (hFurniture  == null && hasFurniture) hFurniture  = h;
             else if (hTable      == null && hasTable)     hTable      = h;
             else if (hCalendar   == null && hasCalendar)  hCalendar   = h;
+            else if (hDoor       == null && hasDoor)      hDoor       = h;
         }
 
+
+        if (hDoor.HasValue && RoomModeManager.CurrentMode == RoomMode.MyRoom)
+        {
+            var exit = hDoor.Value.collider.GetComponent<RoomExitController>()
+                    ?? hDoor.Value.collider.GetComponentInParent<RoomExitController>();
+            exit?.OnDoorTapped();
+            return;
+        }
 
         if (hCommentBtn.HasValue && bfc.State == BoardFocusController.FocusState.Board)
         {

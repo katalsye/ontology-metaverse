@@ -16,6 +16,8 @@ public class FurnitureEditController : MonoBehaviour
 {
     public static FurnitureEditController Instance { get; private set; }
 
+    private const string RoomScene = "3DRoomScene";
+
     [Header("자동 등록 — 씬 컨테이너")]
     [Tooltip("가구들의 부모 Transform — RoomData.furnitureType으로 자식을 검색해 자동 등록")]
     public Transform furnitureParent;
@@ -262,8 +264,9 @@ public class FurnitureEditController : MonoBehaviour
                 }
                 if (closetBuildIndex >= 0)
                 {
-                    // 씬 이름 대신 빌드 인덱스로 로드 — 이름 오타 문제 원천 차단
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(closetBuildIndex);
+                    // MainScene을 유지하면서 3DRoomScene 언로드 → Closet 추가 로드
+                    UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(RoomScene);
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(closetBuildIndex, UnityEngine.SceneManagement.LoadSceneMode.Additive);
                 }
                 else
                 {

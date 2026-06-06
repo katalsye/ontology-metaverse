@@ -12852,6 +12852,18 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7815368799318645320, guid: 8077d7aa5e7746a4db33648662c9379c, type: 3}
   m_PrefabInstance: {fileID: 2660174894604334448}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1262812880421676314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 923807856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a79140dd503b024380bd41a77c7589f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomExitController
 --- !u!1001 &1270747604379448925
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13329,7 +13341,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4779522178244316326, guid: 8077d7aa5e7746a4db33648662c9379c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1262812880421676314}
   m_SourcePrefab: {fileID: 100100000, guid: 8077d7aa5e7746a4db33648662c9379c, type: 3}
 --- !u!1 &2663019135464381379
 GameObject:
