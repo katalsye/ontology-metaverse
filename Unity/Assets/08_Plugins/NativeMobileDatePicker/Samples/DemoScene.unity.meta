@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bb8d6de3da7cfde4eab021f9f851dbc0
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322280
+  packageName: Native mobile date picker
+  packageVersion: 1.0.0
+  assetPath: Assets/NativeMobileDatePicker/Samples/DemoScene.unity
+  uploadId: 766331

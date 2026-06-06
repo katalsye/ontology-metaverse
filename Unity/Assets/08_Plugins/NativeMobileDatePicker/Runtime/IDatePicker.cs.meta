@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 89a0549c31a868d48baa27bbe3fc455b
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322280
+  packageName: Native mobile date picker
+  packageVersion: 1.0.0
+  assetPath: Assets/NativeMobileDatePicker/Runtime/IDatePicker.cs
+  uploadId: 766331

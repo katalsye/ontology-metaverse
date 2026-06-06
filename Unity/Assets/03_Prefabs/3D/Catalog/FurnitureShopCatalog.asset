@@ -1,0 +1,209 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23b5664710c84304b8561b27109ab665, type: 3}
+  m_Name: FurnitureShopCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureShopCatalog
+  furnitures:
+  - id: 0
+    displayName: BigTable
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: b83caeff37527df4b896aa7c6abbe724, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: d2dd7120ff45c5640ba8ce980a35ef9e, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: cce8fb3299c163045a7d454cb850de38, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 159052ce15972ca45b68ac72ae09a103, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 15ec639c7818eca4ab35a61c8eaa11c6, type: 3}
+        isPurchased: 0
+    - displayName: Desk
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 2330b5d67ab83914d9f05eaa5fce342a, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: ddecc020a6f8a76468b76129856d2cf5, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 0ba652de82672314d92589c7a869acfc, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: f934a601d17ddd14dabfc8aaf0e9733c, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: b96974a3913eaf540b579f1dfdf047ea, type: 3}
+        isPurchased: 0
+    - displayName: BedsideTable
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 908327eed3beac14fa373de713dfb31a, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 20730b186b115de4a9a6bd97fb19ed2f, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: aacd3f8cd391ee041a8498016fe51627, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: af5f3248ad689004e89e4015ee7f63d8, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 5a60cb4d966f41d4086663b06edc1308, type: 3}
+        isPurchased: 0
+  - id: 1
+    displayName: Chair
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 4e3bdc2f0b0724b4381f2e7079bb4877, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 0ef86dd1e17a69240ac9630c04f76272, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 6eaf4f56a8f6f4b469a3ccbbfa0a2827, type: 3}
+        isPurchased: 0
+    - displayName: Ver2
+      colors:
+      - thumbnail: {fileID: 21300000, guid: fe7fea61a729fe047b60e9ac38e535f3, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 13ee8628fc880b54da946febdfe48f1a, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 2d6f732edd629584099adce19ebc42e4, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 78f2148c540ea9b4d8143fc5268ebb81, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: b7240aa6451acbe48b8917b5923aa494, type: 3}
+        isPurchased: 0
+  - id: 2
+    displayName: SmallTable
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 99c4d43a10c4f124a910aa39edf43e1e, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 978b194f243a6af45ad1ff4fcd96a4f2, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: c1d11738e1124a142b0100db23bfa2a9, type: 3}
+        isPurchased: 0
+  - id: 3
+    displayName: Closet
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: bea58455c0cebbe42a350140b4739231, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 20f2a6feb9edd7b4d9c3399330fa13c1, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 424df44a8eb44d14199ef72767451c36, type: 3}
+        isPurchased: 0
+  - id: 4
+    displayName: Bed
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 16a615f95698edf4d83655ea94567ced, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: f275b51475bdaef4e972fe2422dbec50, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: a14a9e87972dfa34b86294641041ae55, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: cf4e40b6f68f61f429c4e024c827108f, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 50e31ce9c647ed4449a0a9c47d6ba8af, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 46e3d780ca2163442a362c4154fba377, type: 3}
+        isPurchased: 0
+  - id: 5
+    displayName: Door
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: c8d18a174074b854f98fc1401612980b, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: e483e66578654794bbd5019a8b87b618, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: e3f351e8b013ba645ade9a28d57d1272, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: ccbd3d9f4b0764a48bc8f0a62bee692f, type: 3}
+        isPurchased: 0
+  - id: 6
+    displayName: BedLight
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 73c1934e261b14a40b5d34a9667518ff, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 6fedc4212a8dfc647aa2abd40135d493, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 4179c297259f2864d87ac89e7e6cc1e5, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: b42690d0f40ef364bbfa5acb3d5bd9db, type: 3}
+        isPurchased: 0
+  - id: 7
+    displayName: CeilingLight
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: c07a8fb869c357446bf95ba70896e011, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: f0a2aa9aa94ed994889597d7626fc7b7, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 1064ba1fbf395a1459dd6377b1086a83, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: e90cbcd0c986b68489be3602a9a4760c, type: 3}
+        isPurchased: 0
+  - id: 8
+    displayName: CornerLight
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 2d7a7aeb7dc8e874e9108c81c126d57b, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 5647597e7c789554c96540d1de8d6258, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: ebd53580d0fcbcb4eb09e3c9bf391a7c, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 5c8f89978e2b00c46ac6e3bbbacc9f50, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 1450dd784647a6c4b9e589dd719ff249, type: 3}
+        isPurchased: 0
+  - id: 9
+    displayName: Lamp
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: e34e26594279bd445983a438f2051ad3, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: f1bc20dcbd6533749a322cd71ce64441, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: c7c496c04d833af45af724e463d86bd4, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 47ef6da3847de8646816f54c8112d78a, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 9a4306cd22e8a8242b558c9cbcc41cdf, type: 3}
+        isPurchased: 0
+  - id: 10
+    displayName: RoomLight
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 91d9409cd8cc72e469234bbb867a8fc0, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 207fbe7bfab3709458f998911ed78537, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 1e60e821091d0a74fabd7966aceba9e2, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: fde201e861bd4e14a823ba0da61ca447, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: 21ad1f60e504ff34cb0023f870e9668d, type: 3}
+        isPurchased: 0
+  - id: 11
+    displayName: Toilet
+    variants:
+    - displayName: Original
+      colors:
+      - thumbnail: {fileID: 21300000, guid: 4b207994906efd143a71b90ecf9941cd, type: 3}
+        isPurchased: 0
+      - thumbnail: {fileID: 21300000, guid: c0b6849b9005dad46be46b8023cfb144, type: 3}
+        isPurchased: 0

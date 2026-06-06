@@ -1,0 +1,557 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3936172581907683807
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1899991130370779797}
+  - component: {fileID: 7273893984520130282}
+  m_Layer: 0
+  m_Name: FurnitureCarouselUI 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1899991130370779797
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3936172581907683807}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -455.20502, y: -414.3106, z: 38.2303}
+  m_LocalScale: {x: 0.5555556, y: 0.5555556, z: 0.5555556}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7273893984520130282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3936172581907683807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b94f2e89e2787de4892f8fe9a1dd86d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FurnitureCarouselUI
+  furnitures:
+  - displayName: BigTable
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+    - displayName: Desk
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 2
+          materials:
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      colorThumbnails: []
+    - displayName: BedsideTable
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      colorThumbnails: []
+  - displayName: Chair
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 2
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+      colorThumbnails: []
+    - displayName: Ver2
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: fac6997ebfb39364db1173ae4a1c49e6, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      colorThumbnails: []
+  - displayName: SmallTable
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: Closet
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: c0999236ab32ad94fb08c06e6694fa49, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: Bed
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 11ed21415b661da499e94e4e9e5c47f4, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: Door
+    variants:
+    - displayName: Original
+      isPurchased: 1
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 5f00a35557dee5b499cf97dda42339c0, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 95d691d1ae476e049b3ca1db2f7b4c0d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: BedLight
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 2
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: CeilingLight
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: fac6997ebfb39364db1173ae4a1c49e6, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: CornerLight
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 31e87d42f3ffa2546b1f527e7a0a4b9d, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: Lamp
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 1
+          materials:
+          - {fileID: 2100000, guid: eb0f168ce60c9424896bd8c33ac3f2c9, type: 2}
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: 7f64eac4bd640ef44ae0187dbfcb4089, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: RoomLight
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: e03c61940200c9b428ea54b9134ba0a7, type: 2}
+          - {fileID: 2100000, guid: 35261150e5398c0439d6fd7481f62b62, type: 2}
+          - {fileID: 2100000, guid: e3681f2feac05f94888039c51ba9b321, type: 2}
+          - {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+  - displayName: Toilet
+    variants:
+    - displayName: Original
+      isPurchased: 0
+      model:
+        model3D: {fileID: 0}
+        colorChildren:
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+        - renderer: {fileID: 0}
+          materialIndex: 0
+          materials:
+          - {fileID: 2100000, guid: 3441f6441092d3c459a48c3c48ea63c6, type: 2}
+          - {fileID: 2100000, guid: eecaa3198cbebd74e8cd79d0f71765cc, type: 2}
+      colorThumbnails:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
