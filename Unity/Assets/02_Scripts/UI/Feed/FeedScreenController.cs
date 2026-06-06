@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using Firebase.Auth;
+using Firebase.Extensions;
 
 /// <summary>
 /// 2-1. FeedScreen 컨트롤러
@@ -56,6 +57,8 @@ public class FeedScreenController : MonoBehaviour
 
         // 데이터 로드
         LoadFeedData();
+        // Firestore에서 즐겨찾기·방문횟수 덮어쓰기 (비동기 — 완료되면 재정렬)
+        LoadVisitDataFromFirestore();
     }
 
     /// <summary>
@@ -214,9 +217,14 @@ public class FeedScreenController : MonoBehaviour
             // 즐겨찾기 버튼 클릭이면 방 이동 차단
             if (evt.target is Button) return;
 
-            int cnt = PlayerPrefs.GetInt($"visit_{data.userId}", 0);
-            PlayerPrefs.SetInt($"visit_{data.userId}", cnt + 1);
+            int cnt = PlayerPrefs.GetInt($"visit_{data.userId}", 0) + 1;
+            PlayerPrefs.SetInt($"visit_{data.userId}", cnt);
             PlayerPrefs.Save();
+
+            // Firestore에 방문 횟수 저장
+            string myUid = FirebaseAuth.DefaultInstance?.CurrentUser?.UserId ?? "";
+            if (!string.IsNullOrEmpty(myUid))
+                SaveVisitCountToFirestore(myUid, data.userId, cnt);
 
             PlayerPrefs.SetString("visiting_user_id", data.userId);
             ScreenManager.Instance.GoTo("theirs_room");
@@ -282,7 +290,7 @@ public class FeedScreenController : MonoBehaviour
         RenderCards();
     }
 
-    /// <summary>즐겨찾기 토글 후 PlayerPrefs에 저장.</summary>
+    /// <summary>즐겨찾기 토글 후 PlayerPrefs + Firestore에 저장.</summary>
     private void ToggleFavorite(FeedCardData data)
     {
         data.isFavorite = !data.isFavorite;
@@ -292,6 +300,70 @@ public class FeedScreenController : MonoBehaviour
             if (d.isFavorite) favList.Add(d.userId);
         PlayerPrefs.SetString($"favs_{myUid}", string.Join(",", favList));
         PlayerPrefs.Save();
+
+        if (myUid != "guest")
+            SaveFavoritesToFirestore(myUid, favList);
+    }
+
+    private void LoadVisitDataFromFirestore()
+    {
+        var auth = FirebaseAuth.DefaultInstance;
+        if (auth?.CurrentUser == null) return;
+        string myUid = auth.CurrentUser.UserId;
+
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(myUid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted || !task.Result.Exists) return;
+                var doc = task.Result;
+                bool changed = false;
+
+                if (doc.ContainsField("favorites"))
+                {
+                    var favList = doc.GetValue<List<string>>("favorites") ?? new List<string>();
+                    PlayerPrefs.SetString($"favs_{myUid}", string.Join(",", favList));
+                    changed = true;
+                }
+                if (doc.ContainsField("visitCounts"))
+                {
+                    var counts = doc.GetValue<Dictionary<string, object>>("visitCounts");
+                    if (counts != null)
+                        foreach (var kv in counts)
+                            PlayerPrefs.SetInt($"visit_{kv.Key}", System.Convert.ToInt32(kv.Value));
+                    changed = true;
+                }
+
+                if (changed) ApplySortAndRender();
+            });
+    }
+
+    private void SaveFavoritesToFirestore(string myUid, List<string> favList)
+    {
+        var data = new Dictionary<string, object> { { "favorites", favList } };
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(myUid)
+            .UpdateAsync(data)
+            .ContinueWithOnMainThread(t =>
+            {
+                if (t.IsFaulted) Debug.LogWarning("[Feed] 즐겨찾기 저장 실패: " + t.Exception);
+            });
+    }
+
+    private void SaveVisitCountToFirestore(string myUid, string targetUid, int count)
+    {
+        var data = new Dictionary<string, object>
+        {
+            { $"visitCounts.{targetUid}", (long)count }
+        };
+        Firebase.Firestore.FirebaseFirestore.DefaultInstance
+            .Collection("users").Document(myUid)
+            .UpdateAsync(data)
+            .ContinueWithOnMainThread(t =>
+            {
+                if (t.IsFaulted) Debug.LogWarning("[Feed] 방문횟수 저장 실패: " + t.Exception);
+            });
     }
 
     /// <summary>DateTime → 한국어 상대 시간 문자열.</summary>
