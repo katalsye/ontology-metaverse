@@ -23,6 +23,9 @@ public class DesignSelectUI : MonoBehaviour
     [Header("가구별 디자인 목록 (Inspector에서 추가)")]
     public List<FurnitureDesignConfig> designConfigs = new();
 
+    [Header("방 가구 커스터마이저 (디자인 적용 + Firestore 저장)")]
+    public RoomFurnitureCustomizer customizer;
+
     // ── 내부 ──────────────────────────────────────────────────
     private string _currentFurnitureName;
     private readonly List<GameObject> _spawnedThumbnails = new();
@@ -98,12 +101,8 @@ public class DesignSelectUI : MonoBehaviour
 
     void OnDesignSelected(DesignData design)
     {
-
-        // TODO: 실제 가구 메시/머티리얼 교체
-        // FurnitureEditController.Instance?.ApplyDesign(_currentFurnitureName, design);
-
-        // TODO: DB 저장
-        // FirebaseManager.Instance?.SaveFurnitureDesign(_currentFurnitureName, design.designId);
+        if (customizer != null)
+            customizer.ApplyDesignByTargetName(_currentFurnitureName, design.modelIndex, design.colorIndex);
 
         Close();
     }
@@ -115,8 +114,12 @@ public class DesignSelectUI : MonoBehaviour
 public class DesignData
 {
     public string designName;
-    public string designId;    // DB 저장 키
+    public string designId;
     public Sprite thumbnail;
+    [Tooltip("FurnitureSkinCatalog variant 인덱스 (0 = 기본 모델)")]
+    public int modelIndex;
+    [Tooltip("FurnitureSkinCatalog color 인덱스")]
+    public int colorIndex;
 }
 
 [System.Serializable]
