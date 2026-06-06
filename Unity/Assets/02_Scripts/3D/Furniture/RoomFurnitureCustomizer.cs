@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Firebase.Auth;
+using Firebase.Firestore;
+using Firebase.Extensions;
 
 /// <summary>
 /// 방 씬에 배치된 실제 가구에 "모델 variant 교체 + 색상 적용"을 수행한다.
@@ -73,13 +76,7 @@ public class RoomFurnitureCustomizer : MonoBehaviour
 
     void Start()
     {
-        // ── DB 불러오기 자리 (추후 구현) ──────────────────────────
-        // TODO: 서버/로컬에서 가구별 (modelIndex, colorIndex)를 불러와 entries 값을 덮어쓴다.
-        //   var saved = RoomDataManager.Instance?.LoadFurnitureSkins();
-        //   if (saved != null) { foreach(e in entries) e.modelIndex/colorIndex = saved[...]; }
-        // 불러오기 실패(또는 미구현) 시: 아래처럼 Inspector에 입력된 값을 그대로 적용한다.
-
-        ApplyAll();
+        LoadSkinsFromFirestore();
     }
 
     // ── 공개 적용 함수 ─────────────────────────────────────────
@@ -278,6 +275,81 @@ public class RoomFurnitureCustomizer : MonoBehaviour
         // 이 함수를 호출하게 된다. 예:
         //   var saved = RoomDataManager.Instance?.LoadShopItems();
         //   customizer.LoadSavedShopItems(saved);
+    }
+
+    // ── Firestore 스킨 저장/로드 ───────────────────────────────
+    // 스키마: room_skins/{uid} → { skins: [{furnitureId, modelIndex, colorIndex}, ...] }
+
+    /// <summary>Firestore에서 스킨 인덱스를 불러와 entries를 덮어쓴 뒤 ApplyAll 실행.
+    /// 로드 실패 또는 데이터 없으면 Inspector 기본값으로 ApplyAll.</summary>
+    public void LoadSkinsFromFirestore(System.Action onDone = null)
+    {
+        var auth = FirebaseAuth.DefaultInstance;
+        var db   = FirebaseFirestore.DefaultInstance;
+        if (auth?.CurrentUser == null) { ApplyAll(); onDone?.Invoke(); return; }
+
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("room_skins").Document(uid).GetSnapshotAsync()
+          .ContinueWithOnMainThread(task =>
+          {
+              if (!task.IsFaulted && task.Result.Exists &&
+                  task.Result.TryGetValue("skins", out List<object> rawSkins))
+              {
+                  foreach (var raw in rawSkins)
+                  {
+                      if (raw is not Dictionary<string, object> skin) continue;
+                      int fid = System.Convert.ToInt32(skin["furnitureId"]);
+                      int mi  = System.Convert.ToInt32(skin["modelIndex"]);
+                      int ci  = System.Convert.ToInt32(skin["colorIndex"]);
+                      if (entries == null) continue;
+                      foreach (var e in entries)
+                          if (e.furnitureId == fid) { e.modelIndex = mi; e.colorIndex = ci; break; }
+                  }
+              }
+              ApplyAll();
+              onDone?.Invoke();
+          });
+    }
+
+    /// <summary>현재 entries의 모든 스킨 인덱스를 Firestore에 저장.</summary>
+    public void SaveSkinsToFirestore()
+    {
+        var auth = FirebaseAuth.DefaultInstance;
+        var db   = FirebaseFirestore.DefaultInstance;
+        if (auth?.CurrentUser == null || entries == null) return;
+
+        string uid = auth.CurrentUser.UserId;
+        var skinList = new List<object>();
+        foreach (var e in entries)
+            skinList.Add(new Dictionary<string, object>
+            {
+                { "furnitureId", e.furnitureId },
+                { "modelIndex",  e.modelIndex  },
+                { "colorIndex",  e.colorIndex  }
+            });
+
+        db.Collection("room_skins").Document(uid)
+          .SetAsync(new Dictionary<string, object> { { "skins", skinList } })
+          .ContinueWithOnMainThread(t =>
+          {
+              if (t.IsFaulted)
+                  Debug.LogError("[RoomFurnitureCustomizer] 스킨 저장 실패: " + t.Exception);
+          });
+    }
+
+    /// <summary>DesignSelectUI에서 호출 — 이름으로 Entry를 찾아 모델/색상 적용 후 저장.</summary>
+    public void ApplyDesignByTargetName(string targetName, int modelIndex, int colorIndex)
+    {
+        if (entries == null) return;
+        foreach (var e in entries)
+        {
+            if (e.target == null || e.target.name != targetName) continue;
+            e.modelIndex = modelIndex;
+            e.colorIndex = colorIndex;
+            ApplyEntry(e);
+            SaveSkinsToFirestore();
+            return;
+        }
     }
 
     // ── 내부 유틸 ──────────────────────────────────────────────
