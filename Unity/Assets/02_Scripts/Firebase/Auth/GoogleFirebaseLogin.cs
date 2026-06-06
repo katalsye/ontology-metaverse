@@ -37,34 +37,23 @@ public class GoogleFirebaseLogin : MonoBehaviour
             RequestEmail = true,
         };
 
-        InitFirebase();
+        FirebaseBootstrap.RunWhenReady(OnFirebaseReady);
     }
 
-    private void InitFirebase()
+    private void OnFirebaseReady()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
-        {
-            if (task.Result == DependencyStatus.Available)
-            {
-                auth = FirebaseAuth.DefaultInstance;
-                Debug.Log("Firebase Auth initialized successfully.");
+        auth = FirebaseAuth.DefaultInstance;
+        Debug.Log("Firebase Auth initialized successfully.");
 
-                if (auth.CurrentUser != null)
-                {
-                    user = auth.CurrentUser;
-                    Debug.Log("자동 로그인: " + user.DisplayName);
+        if (auth.CurrentUser == null) return;
 
-                    userIdTMP.text = "Google UserId: " + user.UserId;
-                    userNameTMP.text = "User Name: " + user.DisplayName;
+        user = auth.CurrentUser;
+        Debug.Log("자동 로그인: " + user.DisplayName);
 
-                    GetComponent<UserManager>().CreateUserIfNotExists();
-                }
-            }
-            else
-            {
-                Debug.LogError("Could not resolve Firebase dependencies: " + task.Result);
-            }
-        });
+        userIdTMP.text = "Google UserId: " + user.UserId;
+        userNameTMP.text = "User Name: " + user.DisplayName;
+
+        GetComponent<UserManager>().CreateUserIfNotExists();
     }
     
     private void GoogleSignInClick()

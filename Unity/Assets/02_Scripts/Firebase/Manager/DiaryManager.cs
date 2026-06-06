@@ -12,11 +12,16 @@ public class DiaryManager : MonoBehaviour
 
     private const int DiaryRewardAmount = 10; // 일기 보상 재화량
 
-    void Start()
+    void Awake()
+    {
+        rewardManager = GetComponent<RewardManager>();
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
-        rewardManager = GetComponent<RewardManager>();
     }
 
     // ───────────────────────────────────────

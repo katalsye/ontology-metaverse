@@ -24,9 +24,11 @@ public class FcmManager : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        FirebaseBootstrap.RunWhenReady(Init);
     }
 
-    void Start()
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;

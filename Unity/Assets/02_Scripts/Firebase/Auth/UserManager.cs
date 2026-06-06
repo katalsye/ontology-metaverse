@@ -15,18 +15,17 @@ public class UserManager : MonoBehaviour
 
     void Awake()
     {
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
+    {
+        auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
 
         // 오프라인 → 온라인 sync: 앱 재시작 없이 로컬 캐시에서 읽고, 연결 복구 시 Firestore와 자동 동기화
         FirebaseFirestoreSettings settings = db.Settings;
         settings.PersistenceEnabled = true;
-        db.Settings.PersistenceEnabled = true;
-    }
-
-    void Start()
-    {
-        auth = FirebaseAuth.DefaultInstance;
-        db = FirebaseFirestore.DefaultInstance;
     }
 
     // ───────────────────────────────────────

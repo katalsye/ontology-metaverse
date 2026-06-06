@@ -9,7 +9,12 @@ public class FollowManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    void Start()
+    void Awake()
+    {
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;

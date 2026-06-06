@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using OntologyMetaverse.OnDeviceAI.Gemma;
 using OntologyMetaverse.DataCollection.SQLite;
@@ -61,6 +62,18 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             }
 
             Debug.Log($"[TextTripleExtractor] {triples.Length}개 트리플 추출 성공");
+
+            // 5.5. Gemma가 생성한 URI의 흔한 오타 보정 (LLM 출력 노이즈 흡수)
+            //   - "7team.devontology" → "7team.dev/ontology" (슬래시 누락)
+            //   - "user_user_" → "user_" / "loc_loc_" → "loc_" (중복 prefix)
+            //   - prod:xxx → http://7team.dev/ontology#xxx (무성님 추론 엔진 full URI 기대)
+            //     단, rdf:/rdfs:/owl:/xsd: 같은 RDF 표준 prefix는 보존
+            foreach (var t in triples)
+            {
+                t.s = NormalizeGeneratedUri(t.s);
+                t.p = NormalizeGeneratedUri(t.p);
+                t.o = NormalizeGeneratedUri(t.o);
+            }
 
             // 6. 검증 + SQLite 저장 (TripleValidator 재사용)
             int savedCount = 0;
@@ -159,6 +172,46 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
                 Debug.LogError($"[TextTripleExtractor] 파싱 시도 JSON: {jsonStr}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Gemma 생성 URI의 흔한 LLM 노이즈를 보정.
+        /// 한국어 도메인 추론에서 모델이 자주 빠뜨리는 슬래시/중복 prefix 등을 정리.
+        ///
+        /// 보정 패턴:
+        ///   - "http://7team.devontology#"  → "http://7team.dev/ontology#"   (슬래시 누락)
+        ///   - "#user_user_001"            → "#user_001"                   (user_ 중복)
+        ///   - "#loc_loc_001"              → "#loc_001"                    (loc_ 중복)
+        ///   - prefix 형식("prod:user_user_001")도 동일 처리
+        ///
+        /// 다른 형식(prefix `prod:`, 리터럴 문자열)은 건드리지 않음.
+        /// </summary>
+        private string NormalizeGeneratedUri(string uri)
+        {
+            if (string.IsNullOrEmpty(uri)) return uri;
+
+            // 슬래시 누락 보정 (most common LLM error in Korean prompt context)
+            if (uri.Contains("7team.devontology"))
+            {
+                uri = uri.Replace("7team.devontology", "7team.dev/ontology");
+            }
+
+            // 중복 prefix 보정 (Gemma가 가끔 user_user_xxx로 출력)
+            uri = uri.Replace("#user_user_", "#user_");
+            uri = uri.Replace("#loc_loc_", "#loc_");
+            uri = uri.Replace("#photo_photo_", "#photo_");
+            uri = uri.Replace(":user_user_", ":user_");
+            uri = uri.Replace(":loc_loc_", ":loc_");
+            uri = uri.Replace(":photo_photo_", ":photo_");
+
+            // prod: prefix → full URI 확장 (무성님 추론 엔진이 둘 다 받든 안 받든 안전하게)
+            // rdf:/rdfs:/owl:/xsd: 같은 RDF 표준 prefix는 그대로 유지 (그쪽도 통과시킴)
+            if (uri.StartsWith("prod:"))
+            {
+                uri = OntologyBaseUri + uri.Substring("prod:".Length);
+            }
+
+            return uri;
         }
 
         /// <summary>

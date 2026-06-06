@@ -1,11 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="com.ontology.metaverse" android:versionCode="1" android:versionName="1.0">
-
   <!-- FCM 푸시 알림 권한 -->
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-
+  <!-- 자동 데이터 수집 권한 (P3c) -->
+  <!-- 위치: LocationCollector — GPS 좌표 수집해서 장소 방문 패턴 추론용 -->
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <!-- 백그라운드 위치: 앱 화면 끄고도 수집하려면 필요. 일단 포그라운드만 쓸 거라 생략. -->
+  <!-- 신체 활동: StepCollector — 걸음수 카운터(Android 4.4+) -->
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+  <!-- 갤러리 사진: GalleryEXIFCollector — Android 13+ 세분화 권한 -->
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+  <!-- Android 12 이하 폴백 (Target 36이라 13+ 위주지만 호환성용) -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+  <!-- 앱 사용시간: AppUsageCollector — UsageStatsManager 접근
+       이건 일반 권한 아니라 시스템 설정에서 사용자가 수동 허용해야 함.
+       (Settings.ACTION_USAGE_ACCESS_SETTINGS 인텐트로 유도) -->
+  <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
   <application android:label="@string/app_name" android:icon="@drawable/app_icon">
     <!-- The MessagingUnityPlayerActivity is a class that extends
          UnityPlayerActivity to work around a known issue when receiving

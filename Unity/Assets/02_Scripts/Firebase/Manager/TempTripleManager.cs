@@ -25,7 +25,12 @@ public class TempTripleManager : MonoBehaviour
     // 온톨로지 base URI (명세서 §2)
     private const string OntologyBaseUri = "http://7team.dev/ontology#";
 
-    void Start()
+    void Awake()
+    {
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
