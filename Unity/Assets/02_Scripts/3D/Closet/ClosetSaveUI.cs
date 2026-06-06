@@ -47,8 +47,8 @@ public class ClosetSaveUI : MonoBehaviour
     public HatSelectionUI              hatSelectionUI;    // 모자 구매 여부 체크용
 
     [Header("씬")]
-    [Tooltip("상점 씬 이름 (현재는 SampleScene으로 임시 연결)")]
-    public string shopSceneName = "SampleScene";
+    [Tooltip("상점 씬 이름 — Build Settings에 등록된 씬 이름으로 Inspector에서 지정")]
+    public string shopSceneName = "Shop";
 
     // ── 팝업 상태 (스와이프 차단용) ──────────────────────────
     public static bool IsPopupOpen { get; private set; }

@@ -9,7 +9,7 @@ public class HatCatalog : ScriptableObject
         public int    id;
         public string displayName;
         public Sprite thumbnail;
-        // TODO: DB 연동 후 서버에서 받아온 구매 목록으로 설정할 것
+        // Inspector 기본값 — 런타임에는 HatSelectionUI.LoadPurchasesFromFirestore()가 덮어씀
         public bool   isPurchased;
     }
 
