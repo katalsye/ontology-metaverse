@@ -108,17 +108,18 @@ public class FurnitureFocusController : MonoBehaviour
 
     public void FocusFurniture(GameObject target)
     {
-        if (CurrentState != State.Free) { return; }
+        if (CurrentState != State.Free) { Debug.Log($"[FFC] {target.name}: state != Free ({CurrentState}) → 무시"); return; }
 
         var fi = target.GetComponent<FurnitureInteraction>()
                ?? target.GetComponentInParent<FurnitureInteraction>();
-        if (fi == null) { return; }
+        if (fi == null) { Debug.LogWarning($"[FFC] {target.name}: FurnitureInteraction 없음 → 무시"); return; }
+        Debug.Log($"[FFC] {target.name}: fi 찾음 sceneName='{fi.sceneName}' zoomOnly={fi.zoomOnlyNoScene} allowVisit={fi.allowInVisitRoom}");
         // zoomOnlyNoScene이면 sceneName 없어도 줌인 허용 (설명 패널만 표시하는 Ontology 아이템)
-        if (!fi.zoomOnlyNoScene && string.IsNullOrEmpty(fi.sceneName)) { return; }
+        if (!fi.zoomOnlyNoScene && string.IsNullOrEmpty(fi.sceneName)) { Debug.LogWarning($"[FFC] {target.name}: sceneName 비어있고 zoomOnly 아님 → 무시"); return; }
 
         // VisitRoom: allowInVisitRoom이 켜진 가구만 허용
         if (RoomModeManager.CurrentMode == RoomMode.VisitRoom && !fi.allowInVisitRoom)
-        { return; }
+        { Debug.Log($"[FFC] {target.name}: VisitRoom인데 allowInVisitRoom=false → 무시"); return; }
 
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) { return; }

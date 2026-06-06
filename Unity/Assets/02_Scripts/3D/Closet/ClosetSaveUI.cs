@@ -78,20 +78,13 @@ public class ClosetSaveUI : MonoBehaviour
         {
             panel2GoShopBtn.onClick.RemoveAllListeners();
             panel2GoShopBtn.onClick.AddListener(OnGoShopGuarded);
-            // Debug.Log($"[ClosetSaveUI] panel2GoShopBtn 리스너 등록 완료 — name='{panel2GoShopBtn.name}', instanceID={panel2GoShopBtn.GetInstanceID()}");
         }
-        else 
 
         if (panel2CancelBtn)
         {
             panel2CancelBtn.onClick.RemoveAllListeners();
             panel2CancelBtn.onClick.AddListener(OnCancelGuarded);
-            // Debug.Log($"[ClosetSaveUI] panel2CancelBtn 리스너 등록 완료 — name='{panel2CancelBtn.name}', instanceID={panel2CancelBtn.GetInstanceID()}");
         }
-        else 
-
-        // 두 버튼이 같은 객체로 잘못 연결된 경우 즉시 감지
-        if (panel2GoShopBtn && panel2CancelBtn && panel2GoShopBtn == panel2CancelBtn)
 
         // ── Panel2 버튼 child raycast 봉인 (핵심 버그 수정) ──
         // 두 버튼의 child Graphic이 LocalScale(10,10,1) + stretch anchor로

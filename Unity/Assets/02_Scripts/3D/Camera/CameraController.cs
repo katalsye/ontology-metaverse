@@ -424,11 +424,13 @@ public class CameraController : MonoBehaviour
         }
 
         var ffc = FurnitureFocusController.Instance;
+        Debug.Log($"[ClickDBG] furniture분기 검사: hFurniture={(hFurniture.HasValue ? hFurniture.Value.collider.name : "null")} ffc={(ffc!=null)} ffcState={(ffc!=null?ffc.CurrentState.ToString():"-")} bfcState={bfc.State}");
         if (hFurniture.HasValue && ffc != null && ffc.CurrentState == FurnitureFocusController.State.Free
             && bfc.State == BoardFocusController.FocusState.Free)
         {
             var col = hFurniture.Value.collider;
             var fi  = col.GetComponent<FurnitureInteraction>() ?? col.GetComponentInParent<FurnitureInteraction>();
+            Debug.Log($"[ClickDBG] furniture분기 진입: col='{col.name}' fi={(fi!=null?fi.gameObject.name:"null")}");
             if (fi != null) { SaveState(); ffc.FocusFurniture(fi.gameObject); return; }
         }
 

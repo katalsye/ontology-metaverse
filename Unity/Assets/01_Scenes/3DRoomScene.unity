@@ -7848,7 +7848,7 @@ MonoBehaviour:
   descriptionText: {fileID: 878214157}
   furnitureEntries:
   - target: {fileID: 1809217883}
-    sceneName: 
+    sceneName: Closet
     allowInVisitRoom: 0
     zoomOnlyNoScene: 0
   - target: {fileID: 1031763574}
