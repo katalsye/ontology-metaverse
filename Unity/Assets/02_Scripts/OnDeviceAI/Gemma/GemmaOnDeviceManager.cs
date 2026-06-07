@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -14,31 +13,15 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
 
         public bool isModelLoaded = false;
 
-        // ── 다운로드 진행 상황 (UI 폴링용) ──────────────────────
-        public bool IsDownloadingModel { get; private set; }
-        public float DownloadProgress { get; private set; }
-        public ulong DownloadedBytes { get; private set; }
-        public ulong TotalBytes { get; private set; }
-
-        // 파일 복사가 끝난 뒤 AI 엔진을 메모리에 올리는 단계 (오래 걸릴 수 있음)
-        public bool IsInitializingEngine { get; private set; }
-
         private string modelPath = "";
-        private bool _loadingStarted = false;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // Kotlin GemmaBridge 인스턴스 (AAR에서 가져옴)
         private AndroidJavaObject gemmaBridge;
 #endif
 
-        /// <summary>
-        /// 온보딩 화면에서 "다운로드 시작" 버튼을 눌렀을 때 호출 — 모델 로딩을 시작함.
-        /// 자동 시작하지 않고 사용자가 버튼을 눌러야 시작되도록 분리함.
-        /// </summary>
-        public void StartLoading()
+        void Start()
         {
-            if (_loadingStarted) return;
-            _loadingStarted = true;
             StartCoroutine(InitGemmaModel());
         }
 
@@ -57,23 +40,7 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
                 Debug.Log("[GemmaManager] 모델 파일 복사 시작 (시간 걸림)");
 
                 UnityWebRequest www = UnityWebRequest.Get(sourcePath);
-                UnityWebRequestAsyncOperation operation = www.SendWebRequest();
-
-                IsDownloadingModel = true;
-                while (!operation.isDone)
-                {
-                    DownloadProgress = www.downloadProgress;
-                    DownloadedBytes  = www.downloadedBytes;
-                    // Content-Length를 못 받는 로컬 자산이므로 진행률로 총량을 역산
-                    if (DownloadProgress > 0.001f)
-                        TotalBytes = (ulong)(DownloadedBytes / DownloadProgress);
-                    yield return null;
-                }
-
-                DownloadProgress   = 1f;
-                DownloadedBytes    = www.downloadedBytes;
-                TotalBytes         = DownloadedBytes;
-                IsDownloadingModel = false;
+                yield return www.SendWebRequest();
 
                 if (www.result == UnityWebRequest.Result.Success)
                 {
@@ -94,63 +61,32 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             modelPath = destPath;
 
             // 2. Kotlin GemmaBridge 인스턴스 생성 + 모델 초기화
-            // initialize()는 모델을 메모리에 올리는 블로킹 호출이라, 메인 스레드에서
-            // 그대로 부르면 그 동안 메인 스레드 자체가 멈춰서 "초기화 중" 표시조차
-            // 그릴 기회 없이 화면이 멈췄다가 끝나자마자 "완료"로 점프해버림.
-            // 백그라운드 스레드에서 실행하고, 코루틴은 완료 여부만 폴링해서
-            // 그 동안 UI가 계속 갱신되도록 함.
-            IsInitializingEngine = true;
-
-            bool initSuccess = false;
-            Exception initError = null;
-            bool initDone = false;
-
-            Task.Run(() =>
+            try
             {
-                try
+                // 현재 Activity context 가져오기
+                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+
+                // GemmaBridge 인스턴스 생성 (context 전달)
+                gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
+
+                // 모델 초기화
+                bool success = gemmaBridge.Call<bool>("initialize", modelPath);
+
+                if (success)
                 {
-                    AndroidJNI.AttachCurrentThread();
-                    try
-                    {
-                        AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                        AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-
-                        gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
-                        initSuccess = gemmaBridge.Call<bool>("initialize", modelPath);
-                    }
-                    finally
-                    {
-                        AndroidJNI.DetachCurrentThread();
-                    }
+                    isModelLoaded = true;
+                    Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
                 }
-                catch (Exception e)
+                else
                 {
-                    initError = e;
+                    Debug.LogError("[GemmaManager] AI 로딩 실패");
                 }
-                finally
-                {
-                    initDone = true;
-                }
-            });
-
-            while (!initDone)
-                yield return null;
-
-            if (initError != null)
-            {
-                Debug.LogError("[GemmaManager] AI 로딩 실패: " + initError.Message);
             }
-            else if (initSuccess)
+            catch (Exception e)
             {
-                isModelLoaded = true;
-                Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
+                Debug.LogError("[GemmaManager] AI 로딩 실패: " + e.Message);
             }
-            else
-            {
-                Debug.LogError("[GemmaManager] AI 로딩 실패");
-            }
-
-            IsInitializingEngine = false;
 #else
             // PC 에디터: 가짜로 1초 대기하고 로딩됐다고 치기
             modelPath = Path.Combine(Application.streamingAssetsPath, modelFileName);
