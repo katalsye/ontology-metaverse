@@ -1,19 +1,31 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
-using System.Collections.Generic;
 
 public class RoomObjectManager : MonoBehaviour
 {
+    public static RoomObjectManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private ListenerRegistration _roomListener;
-    private string _listeningUid; // 현재 리스닝 중인 uid 추적 (로그아웃 감지용)
+    private string _listeningUid;
 
     public event Action<List<RoomObject>> OnRoomObjectsChanged;
-    // public event Action<string> OnRoomListenerError; // 리스너 에러 알림
+
+    // 온톨로지가 새로 추론해서 배치한 오브젝트가 감지될 때 발생
+    public event Action<List<RoomObject>> OnInferredObjectsAdded;
+
+    // 이미 알림을 보낸 추론 오브젝트 키 추적 (룸 전환 시 초기화)
+    private readonly HashSet<string> _knownInferredKeys = new HashSet<string>();
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -21,9 +33,13 @@ public class RoomObjectManager : MonoBehaviour
         db = FirebaseFirestore.DefaultInstance;
     }
 
+    public void ApplySnapshot(List<RoomObject> objects)
+    {
+        OnRoomObjectsChanged?.Invoke(objects);
+    }
+
     void Update()
     {
-        // 로그아웃 감지: 리스너 돌고 있는데 CurrentUser가 null이면 자동 정리
         if (_roomListener != null && auth?.CurrentUser == null)
         {
             Debug.Log("로그아웃 감지 → 룸 리스너 자동 해제");
@@ -34,7 +50,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     // 내 room_objects 전체 읽기
     // ───────────────────────────────────────
-    public void GetRoomObjects(System.Action<List<RoomObject>> onSuccess, System.Action<string> onFailure = null)
+    public void GetRoomObjects(Action<List<RoomObject>> onSuccess, Action<string> onFailure = null)
     {
         if (auth?.CurrentUser == null)
         {
@@ -46,7 +62,6 @@ public class RoomObjectManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         db.Collection("room_objects")
             .Document(uid)
-            .Collection("objects")
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
             {
@@ -56,21 +71,14 @@ public class RoomObjectManager : MonoBehaviour
                     onFailure?.Invoke(task.Exception.Message);
                     return;
                 }
-
-                List<RoomObject> objects = new List<RoomObject>();
-                foreach (DocumentSnapshot doc in task.Result.Documents)
-                {
-                    objects.Add(doc.ConvertTo<RoomObject>());
-                }
-
-                onSuccess?.Invoke(objects);
+                onSuccess?.Invoke(ParseObjects(task.Result));
             });
     }
 
     // ───────────────────────────────────────
     // 오브젝트 단건 쓰기 (추가 / 수정)
     // ───────────────────────────────────────
-    public void SetRoomObject(RoomObject roomObject, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    public void SetRoomObject(RoomObject roomObject, Action onSuccess = null, Action<string> onFailure = null)
     {
         if (auth?.CurrentUser == null)
         {
@@ -79,30 +87,21 @@ public class RoomObjectManager : MonoBehaviour
             return;
         }
 
-        string uid = auth.CurrentUser.UserId;
-        DocumentReference objectDoc = db.Collection("room_objects")
-            .Document(uid)
-            .Collection("objects")
-            .Document(roomObject.ObjectId);
-
-        objectDoc.SetAsync(roomObject).ContinueWithOnMainThread(task =>
+        GetRoomObjects(objects =>
         {
-            if (task.IsFaulted)
-            {
-                Debug.LogError("오브젝트 쓰기 실패: " + task.Exception);
-                onFailure?.Invoke(task.Exception.Message);
-                return;
-            }
-
-            Debug.Log("오브젝트 저장 완료: " + roomObject.ObjectId);
-            onSuccess?.Invoke();
-        });
+            int idx = objects.FindIndex(o => o.ObjectId == roomObject.ObjectId);
+            if (idx >= 0)
+                objects[idx] = roomObject;
+            else
+                objects.Add(roomObject);
+            SaveCustomLayout(objects, onSuccess, onFailure);
+        }, onFailure);
     }
 
     // ───────────────────────────────────────
     // 오브젝트 단건 삭제
     // ───────────────────────────────────────
-    public void DeleteRoomObject(string objectId, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    public void DeleteRoomObject(string objectId, Action onSuccess = null, Action<string> onFailure = null)
     {
         if (auth?.CurrentUser == null)
         {
@@ -111,30 +110,17 @@ public class RoomObjectManager : MonoBehaviour
             return;
         }
 
-        string uid = auth.CurrentUser.UserId;
-        db.Collection("room_objects")
-            .Document(uid)
-            .Collection("objects")
-            .Document(objectId)
-            .DeleteAsync()
-            .ContinueWithOnMainThread(task =>
-            {
-                if (task.IsFaulted)
-                {
-                    Debug.LogError("오브젝트 삭제 실패: " + task.Exception);
-                    onFailure?.Invoke(task.Exception.Message);
-                    return;
-                }
-
-                Debug.Log("오브젝트 삭제 완료: " + objectId);
-                onSuccess?.Invoke();
-            });
+        GetRoomObjects(objects =>
+        {
+            objects.RemoveAll(o => o.ObjectId == objectId);
+            SaveCustomLayout(objects, onSuccess, onFailure);
+        }, onFailure);
     }
 
     // ───────────────────────────────────────
-    // 커스텀 모드 저장 (배치 일괄 저장)
+    // 커스텀 모드 저장 (배열 전체 덮어쓰기)
     // ───────────────────────────────────────
-    public void SaveCustomLayout(List<RoomObject> roomObjects, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    public void SaveCustomLayout(List<RoomObject> roomObjects, Action onSuccess = null, Action<string> onFailure = null)
     {
         if (auth?.CurrentUser == null)
         {
@@ -144,30 +130,25 @@ public class RoomObjectManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        WriteBatch batch = db.StartBatch();
-
-        foreach (RoomObject obj in roomObjects)
+        var docData = new Dictionary<string, object>
         {
-            DocumentReference objectDoc = db.Collection("room_objects")
-                .Document(uid)
-                .Collection("objects")
-                .Document(obj.ObjectId);
+            { "objects", SerializeObjects(roomObjects) }
+        };
 
-            batch.Set(objectDoc, obj);
-        }
-
-        batch.CommitAsync().ContinueWithOnMainThread(task =>
-        {
-            if (task.IsFaulted)
+        db.Collection("room_objects")
+            .Document(uid)
+            .SetAsync(docData, SetOptions.MergeAll)
+            .ContinueWithOnMainThread(task =>
             {
-                Debug.LogError("커스텀 레이아웃 저장 실패: " + task.Exception);
-                onFailure?.Invoke(task.Exception.Message);
-                return;
-            }
-
-            Debug.Log($"커스텀 레이아웃 저장 완료: {roomObjects.Count}개");
-            onSuccess?.Invoke();
-        });
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("커스텀 레이아웃 저장 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+                Debug.Log($"커스텀 레이아웃 저장 완료: {roomObjects.Count}개");
+                onSuccess?.Invoke();
+            });
     }
 
     // ───────────────────────────────────────
@@ -187,15 +168,12 @@ public class RoomObjectManager : MonoBehaviour
 
         _roomListener = db.Collection("room_objects")
             .Document(uid)
-            .Collection("objects")
-            .Listen(
-                snapshot =>
-                {
-                    List<RoomObject> objects = new List<RoomObject>();
-                    foreach (DocumentSnapshot doc in snapshot.Documents)
-                        objects.Add(doc.ConvertTo<RoomObject>());
-                    OnRoomObjectsChanged?.Invoke(objects);
-                });
+            .Listen(snapshot =>
+            {
+                var objects = ParseObjects(snapshot);
+                OnRoomObjectsChanged?.Invoke(objects);
+                NotifyNewInferredObjects(objects);
+            });
 
         Debug.Log("내 방 리스너 시작: " + uid);
     }
@@ -220,15 +198,10 @@ public class RoomObjectManager : MonoBehaviour
 
         _roomListener = db.Collection("room_objects")
             .Document(targetUid)
-            .Collection("objects")
-            .Listen(
-                snapshot =>
-                {
-                    List<RoomObject> objects = new List<RoomObject>();
-                    foreach (DocumentSnapshot doc in snapshot.Documents)
-                        objects.Add(doc.ConvertTo<RoomObject>());
-                    OnRoomObjectsChanged?.Invoke(objects);
-                });
+            .Listen(snapshot =>
+            {
+                OnRoomObjectsChanged?.Invoke(ParseObjects(snapshot));
+            });
 
         Debug.Log("남의 방 리스너 시작: " + targetUid);
     }
@@ -239,10 +212,103 @@ public class RoomObjectManager : MonoBehaviour
         {
             _roomListener.Stop();
             _roomListener = null;
+            _knownInferredKeys.Clear(); // 방 전환 시 초기화
             Debug.Log("룸 리스너 해제: " + _listeningUid);
             _listeningUid = null;
         }
     }
 
     void OnDestroy() => StopRoomListener();
+
+    // ── 추론 오브젝트 신규 감지 ──────────────────────────────────
+
+    private void NotifyNewInferredObjects(List<RoomObject> objects)
+    {
+        var newInferred = new List<RoomObject>();
+        foreach (var o in objects)
+        {
+            if (string.IsNullOrEmpty(o.InferredFrom)) continue;
+            string key = InferredKey(o);
+            if (_knownInferredKeys.Add(key)) // 처음 보는 키면 Add가 true 반환
+                newInferred.Add(o);
+        }
+        if (newInferred.Count > 0)
+            OnInferredObjectsAdded?.Invoke(newInferred);
+    }
+
+    private static string InferredKey(RoomObject o)
+        => string.IsNullOrEmpty(o.ObjectId)
+            ? $"{o.InferredFrom}:{o.ObjectType}"
+            : o.ObjectId;
+
+    // ───────────────────────────────────────
+    // 파싱 / 직렬화 헬퍼
+    // ───────────────────────────────────────
+
+    private List<RoomObject> ParseObjects(DocumentSnapshot doc)
+    {
+        var result = new List<RoomObject>();
+        if (!doc.Exists || !doc.ContainsField("objects")) return result;
+
+        try
+        {
+            var rawList = doc.GetValue<List<object>>("objects");
+            if (rawList == null) return result;
+
+            foreach (var item in rawList)
+            {
+                if (item is Dictionary<string, object> dict)
+                    result.Add(ParseRoomObject(dict));
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("objects 파싱 오류: " + e.Message);
+        }
+
+        return result;
+    }
+
+    private RoomObject ParseRoomObject(Dictionary<string, object> d)
+    {
+        return new RoomObject
+        {
+            ObjectId            = GetStr(d, "objectId"),
+            ObjectType          = GetStr(d, "objectType"),
+            PlacementZone       = GetStr(d, "placementZone"),
+            PositionX           = GetFloat(d, "positionX"),
+            PositionY           = GetFloat(d, "positionY"),
+            PositionZ           = GetFloat(d, "positionZ"),
+            InferredFrom        = GetStr(d, "inferredFrom"),
+            InferredFromConcept = GetStr(d, "inferredFromConcept"),
+        };
+    }
+
+    private List<object> SerializeObjects(List<RoomObject> objects)
+    {
+        var list = new List<object>(objects.Count);
+        foreach (var o in objects)
+        {
+            var d = new Dictionary<string, object>
+            {
+                { "objectType",          o.ObjectType },
+                { "placementZone",       o.PlacementZone },
+                { "positionX",           o.PositionX },
+                { "positionY",           o.PositionY },
+                { "positionZ",           o.PositionZ },
+                { "inferredFrom",        o.InferredFrom },
+                { "inferredFromConcept", o.InferredFromConcept },
+            };
+            if (!string.IsNullOrEmpty(o.ObjectId))
+                d["objectId"] = o.ObjectId;
+            list.Add(d);
+        }
+        return list;
+    }
+
+    private string GetStr(Dictionary<string, object> d, string key)
+        => d.TryGetValue(key, out var v) ? v?.ToString() : null;
+
+    private float GetFloat(Dictionary<string, object> d, string key)
+        => d.TryGetValue(key, out var v) && v != null ? Convert.ToSingle(v) : 0f;
 }

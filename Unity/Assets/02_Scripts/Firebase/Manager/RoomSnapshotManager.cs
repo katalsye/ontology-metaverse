@@ -6,8 +6,15 @@ using System.Collections.Generic;
 
 public class RoomSnapshotManager : MonoBehaviour
 {
+    public static RoomSnapshotManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {

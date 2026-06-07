@@ -1,0 +1,71 @@
+<!-- ============================================
+     2-2. FriendsScreen.uxml — 친구 관리
+     팔로우 요청 수락/거절 + 친구 검색/추가
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="FriendsScreen.uss" />
+
+    <ui:VisualElement name="friends-root" class="full-screen col">
+
+        <!-- 상단 바 -->
+        <ui:VisualElement name="friends-header" class="top-bar row">
+            <ui:Button name="btn-back" class="btn-back">
+                <ui:Label text="←" class="btn-back-text" />
+            </ui:Button>
+            <ui:Label text="친구 관리" class="text-heading" />
+            <ui:VisualElement style="width: 40px;" /> <!-- spacer -->
+        </ui:VisualElement>
+
+        <!-- 검색 필드 -->
+        <ui:VisualElement name="search-area" class="search-area">
+            <ui:TextField name="input-search" class="search-input" />
+            <ui:Button name="btn-search" text="검색" class="btn btn--sm btn--rose" />
+        </ui:VisualElement>
+
+        <ui:ScrollView name="friends-scroll" class="friends-scroll">
+
+            <!-- 팔로우 요청 섹션 -->
+            <ui:VisualElement name="request-section" class="section">
+                <ui:Label text="팔로우 요청" class="section-title" />
+
+                <!-- 요청 카드 (C#에서 동적 생성, 예시) -->
+                <ui:VisualElement name="request-template" class="friend-row row">
+                    <ui:VisualElement class="friend-avatar center-content">
+                        <ui:Label text="😊" class="friend-avatar-emoji" />
+                    </ui:VisualElement>
+                    <ui:Label name="request-name" text="새로운 유저" class="friend-name" />
+                    <ui:VisualElement class="request-actions row">
+                        <ui:Button name="btn-accept" text="수락"
+                                   class="btn btn--sm btn--rose" />
+                        <ui:Button name="btn-reject" text="거절"
+                                   class="btn btn--sm btn--ghost" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="divider" />
+
+            <!-- 검색 결과 섹션 -->
+            <ui:VisualElement name="search-result-section" class="section">
+                <ui:Label name="search-result-title" text="검색 결과" class="section-title" />
+                <!-- C#에서 동적 생성 -->
+            </ui:VisualElement>
+
+            <ui:VisualElement class="divider" />
+
+            <!-- 친구 목록 섹션 -->
+            <ui:VisualElement name="friends-list-section" class="section">
+                <ui:Label text="내 친구" class="section-title" />
+                <!-- C#에서 동적 생성 -->
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+
+</ui:UXML>

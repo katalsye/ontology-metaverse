@@ -1,0 +1,80 @@
+<!-- ============================================
+     2-1. FeedScreen.uxml — 피드 메인
+     팔로워 방 카드 리스트 + 빈 상태 + 정렬
+     ============================================ -->
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         editor-extension-mode="False">
+
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="../../Styles/AppComponents.uss" />
+    <Style src="FeedScreen.uss" />
+
+    <ui:VisualElement name="feed-root" class="full-screen col">
+
+        <!-- 상단 헤더 -->
+        <ui:VisualElement name="feed-header" class="feed-header row">
+            <ui:Label text="피드" class="text-heading" />
+            <ui:VisualElement class="header-right row">
+                <!-- 정렬 버튼 -->
+                <ui:Button name="btn-sort" class="icon-btn">
+                    <ui:Label text="↕" class="icon-btn-text" />
+                </ui:Button>
+                <!-- 친구 관리 버튼 -->
+                <ui:Button name="btn-friends" class="icon-btn">
+                    <ui:Label text="👥" class="icon-btn-text" />
+                </ui:Button>
+                <!-- 설정 버튼 -->
+                <ui:Button name="btn-settings" class="icon-btn">
+                    <ui:Label text="⚙" class="icon-btn-text" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 정렬 필터 바 -->
+        <ui:VisualElement name="sort-bar" class="sort-bar row">
+            <ui:Button name="btn-sort-recent" text="최근 업데이트" class="sort-chip sort-chip--active" />
+            <ui:Button name="btn-sort-favorite" text="즐겨찾기" class="sort-chip" />
+            <ui:Button name="btn-sort-frequent" text="자주 방문" class="sort-chip" />
+        </ui:VisualElement>
+
+        <!-- 카드 리스트 (스크롤) -->
+        <ui:ScrollView name="feed-scroll" class="feed-scroll">
+
+            <!-- 카드 템플릿 (C#에서 동적 생성, 이건 예시) -->
+            <ui:VisualElement name="card-template" class="feed-card row">
+                <!-- 아바타 -->
+                <ui:VisualElement class="feed-avatar center-content">
+                    <ui:Label text="😊" class="feed-avatar-emoji" />
+                </ui:VisualElement>
+
+                <!-- 텍스트 영역 -->
+                <ui:VisualElement class="feed-card-text col">
+                    <ui:VisualElement class="row">
+                        <ui:Label name="card-nickname" text="닉네임" class="feed-card-name" />
+                        <ui:Label name="card-time" text="3분 전" class="feed-card-time" />
+                    </ui:VisualElement>
+                    <ui:Label name="card-status" text="오늘 카페에서 공부 중 ☕"
+                              class="feed-card-status" />
+                </ui:VisualElement>
+
+                <!-- 업데이트 점 -->
+                <ui:VisualElement name="card-dot" class="update-dot" />
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+        <!-- 빈 상태 (카드 0개일 때) -->
+        <ui:VisualElement name="empty-state" class="empty-state center-content col">
+            <ui:VisualElement class="empty-illust center-content">
+                <ui:Label text="🏠" class="empty-emoji" />
+            </ui:VisualElement>
+            <ui:Label text="아직 팔로우한 친구가 없어요" class="empty-title" />
+            <ui:Label text="친구를 추가하고 일상을 구경해보세요" class="empty-desc" />
+            <ui:Button name="btn-add-friend" text="친구 추가하기"
+                       class="btn btn--md btn--rose" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

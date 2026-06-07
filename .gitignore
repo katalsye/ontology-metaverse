@@ -105,9 +105,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-# AuthConfig
-Unity/Assets/02_Scripts/Config/AuthConfig.asset
-Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
 # OMC 세션 기록
 .omc/
 # Firebase 서비스 계정 키 (절대 git에 올리면 안 됨)
@@ -118,3 +115,12 @@ Functions/.env
 # Firebase 서비스 계정 키 (절대 커밋 금지)
 *serviceAccountKey*.json
 serviceAccountKey.json
+
+# AuthConfig
+Unity/Assets/02_Scripts/Config/AuthConfig.asset
+Unity/Assets/02_Scripts/Config/AuthConfig.asset.meta
+
+# Keystore (절대 커밋 금지)
+*.keystore
+*.jks
+keystore.properties

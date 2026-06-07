@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd2276e8e2594f6499c506ab827c45a0, type: 3}
+  m_Name: HatCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::HatCatalog
+  hats:
+  - id: 0
+    displayName: Cowboy Hat
+    thumbnail: {fileID: 21300000, guid: 8259ae8066e7c934c933183242e4ca73, type: 3}
+  - id: 1
+    displayName: Crown
+    thumbnail: {fileID: 21300000, guid: 33beb5ec0ac5f8c4a85e42b8ed09ec13, type: 3}
+  - id: 2
+    displayName: Magician Hat
+    thumbnail: {fileID: 21300000, guid: bdbbf109cc831b845a51958e0ebb8917, type: 3}
+  - id: 3
+    displayName: Miner Hat
+    thumbnail: {fileID: 21300000, guid: ff89bf2299f21ce478ee12e99a5c9dc5, type: 3}
+  - id: 4
+    displayName: 'Mustache '
+    thumbnail: {fileID: 21300000, guid: b8ffccfafdef00741a4acb62b1a7db82, type: 3}
+  - id: 5
+    displayName: Pajama Hat
+    thumbnail: {fileID: 21300000, guid: 0e9e84ae074d32349b99fd08d5778220, type: 3}
+  - id: 6
+    displayName: Pilbox Hat
+    thumbnail: {fileID: 21300000, guid: 5111b6c8b37d7de4f813f9218f37b358, type: 3}
+  - id: 7
+    displayName: Shower Cap
+    thumbnail: {fileID: 21300000, guid: 55195912ce334384882b80bf5c916bcf, type: 3}
+  - id: 8
+    displayName: Sombrero
+    thumbnail: {fileID: 21300000, guid: dd281102cea46e94dab1d322ce3907b4, type: 3}
+  - id: 9
+    displayName: Viking Helmet
+    thumbnail: {fileID: 21300000, guid: ec0f7d81ee397c74ba0cecd95392546e, type: 3}

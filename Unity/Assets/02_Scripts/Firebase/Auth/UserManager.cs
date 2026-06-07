@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 public class UserManager : MonoBehaviour
 {
+    public static UserManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
@@ -15,25 +17,30 @@ public class UserManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
 
-        // 오프라인 → 온라인 sync: 앱 재시작 없이 로컬 캐시에서 읽고, 연결 복구 시 Firestore와 자동 동기화
         FirebaseFirestoreSettings settings = db.Settings;
         settings.PersistenceEnabled = true;
         db.Settings.PersistenceEnabled = true;
     }
 
-    void Start()
-    {
-        auth = FirebaseAuth.DefaultInstance;
-        db = FirebaseFirestore.DefaultInstance;
-    }
-
     // ───────────────────────────────────────
     // 내 프로필 읽기
     // ───────────────────────────────────────
-    public void GetMyProfile(System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    public void GetMyProfile(Action<UserProfile> onSuccess, Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogError("GetMyProfile: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 상태 아님");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -52,8 +59,15 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     // 닉네임 / 상태메시지 업데이트
     // ───────────────────────────────────────
-    public void UpdateProfile(string nickname, string statusMessage, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    public void UpdateProfile(string nickname, string statusMessage, Action onSuccess = null, Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogError("UpdateProfile: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 상태 아님");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         Dictionary<string, object> updates = new Dictionary<string, object>
         {
@@ -78,8 +92,15 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     // 페르소나 읽기
     // ───────────────────────────────────────
-    public void GetPersona(System.Action<Persona> onSuccess, System.Action<string> onFailure = null)
+    public void GetPersona(Action<Persona> onSuccess, Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogError("GetPersona: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 상태 아님");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -98,8 +119,15 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     // 페르소나 쓰기 (기기 변경 시 복원용)
     // ───────────────────────────────────────
-    public void UpdatePersona(Persona persona, System.Action onSuccess = null, System.Action<string> onFailure = null)
+    public void UpdatePersona(Persona persona, Action onSuccess = null, Action<string> onFailure = null)
     {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogError("UpdatePersona: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 상태 아님");
+            return;
+        }
+
         string uid = auth.CurrentUser.UserId;
         Dictionary<string, object> updates = new Dictionary<string, object>
         {
@@ -123,7 +151,7 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     // 다른 유저 프로필 읽기
     // ───────────────────────────────────────
-    public void GetUserProfile(string uid, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    public void GetUserProfile(string uid, Action<UserProfile> onSuccess, Action<string> onFailure = null)
     {
         db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -148,9 +176,33 @@ public class UserManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
+    // 팔로우 관계 기반 프로필 읽기 (비공개 계정도 허용)
+    // ───────────────────────────────────────
+    public void GetUserProfileForFollow(string uid, Action<UserProfile> onSuccess, Action<string> onFailure = null)
+    {
+        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("유저 프로필 읽기 실패: " + task.Exception);
+                onFailure?.Invoke(task.Exception.Message);
+                return;
+            }
+
+            if (!task.Result.Exists)
+            {
+                onFailure?.Invoke("유저 없음");
+                return;
+            }
+
+            onSuccess?.Invoke(task.Result.ConvertTo<UserProfile>());
+        });
+    }
+
+    // ───────────────────────────────────────
     // 닉네임 기반 유저 검색
     // ───────────────────────────────────────
-    public void SearchUserByNickname(string nickname, System.Action<List<UserProfile>> onSuccess, System.Action<string> onFailure = null)
+    public void SearchUserByNickname(string nickname, Action<List<UserProfile>> onSuccess, Action<string> onFailure = null)
     {
         db.Collection("users")
             .WhereEqualTo("IsPublic", true)
@@ -177,8 +229,6 @@ public class UserManager : MonoBehaviour
 
     // ───────────────────────────────────────
     // 새 기기 로그인 시 페르소나 복원
-    //   GetPersona로 읽은 뒤 OnPersonaRestored 이벤트 발행
-    //   로그인 완료 콜백에서 호출할 것
     // ───────────────────────────────────────
     public void RestorePersonaOnLogin()
     {
@@ -204,14 +254,14 @@ public class UserManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
-    // 신규 유저 문서 생성 (1단계에서 이어짐)
+    // 신규 유저 문서 생성
     // ───────────────────────────────────────
     public void CreateUserIfNotExists()
     {
-        FirebaseUser user = auth.CurrentUser;
+        FirebaseUser user = auth?.CurrentUser;
         if (user == null)
         {
-            Debug.LogError("로그인되지 않은 상태");
+            Debug.LogError("CreateUserIfNotExists: 로그인 상태 아님");
             return;
         }
 

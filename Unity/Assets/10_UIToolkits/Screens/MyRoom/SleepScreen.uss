@@ -1,0 +1,147 @@
+/* ============================================
+ * SleepScreen.uss
+ * ============================================ */
+
+#sleep-root {
+    background-color: var(--bg);
+}
+
+.top-bar {
+    padding: 16px 20px 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sleep-scroll {
+    flex-grow: 1;
+    padding: 8px 20px 20px;
+}
+
+.section-label {
+    font-size: var(--fs-caption);
+    -unity-font-style: bold;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+}
+
+/* ── 수면 요약 ── */
+.sleep-summary-card {
+    margin-bottom: 12px;
+    padding: 28px 24px;
+}
+
+.sleep-moon {
+    font-size: 36px;
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+.sleep-hours {
+    font-size: var(--fs-hero);
+    -unity-font-style: bold;
+    color: var(--ink);
+    -unity-text-align: middle-center;
+    margin-bottom: 6px;
+}
+
+.sleep-range {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+    -unity-text-align: middle-center;
+}
+
+/* ── 수면 질 ── */
+.quality-card {
+    margin-bottom: 12px;
+}
+
+.quality-bar-area {
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.quality-bar-bg {
+    flex-grow: 1;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--line-faint);
+    overflow: hidden;
+    margin-right: 12px;
+}
+
+.quality-bar-fill {
+    width: 82%;
+    height: 100%;
+    border-radius: 5px;
+    background-color: var(--lav);
+}
+
+.quality-percent {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: var(--lav);
+    min-width: 48px;
+    -unity-text-align: middle-right;
+}
+
+.quality-label {
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+}
+
+/* ── 7일 패턴 ── */
+.weekly-card {
+    margin-bottom: 12px;
+}
+
+.weekly-bars {
+    height: 100px;
+    align-items: flex-end;
+    justify-content: space-around;
+    margin-bottom: 6px;
+}
+
+.weekly-bar {
+    width: 24px;
+    border-radius: 4px 4px 0 0;
+    background-color: var(--lav);
+    min-height: 8px;
+}
+
+.weekly-bar--today {
+    background-color: var(--rose);
+}
+
+.weekly-labels {
+    justify-content: space-around;
+}
+
+.weekly-day-label {
+    font-size: var(--fs-micro);
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+    width: 24px;
+}
+
+/* ── 상세 항목 ── */
+.detail-card {
+    margin-bottom: 12px;
+}
+
+.detail-row {
+    padding: 10px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line-faint);
+    justify-content: space-between;
+}
+
+.detail-name {
+    font-size: var(--fs-body-sm);
+    color: var(--ink-muted);
+}
+
+.detail-value {
+    font-size: var(--fs-body-sm);
+    -unity-font-style: bold;
+    color: var(--ink);
+}
