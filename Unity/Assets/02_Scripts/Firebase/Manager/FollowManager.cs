@@ -6,11 +6,17 @@ using System.Collections.Generic;
 
 public class FollowManager : MonoBehaviour
 {
+    public static FollowManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         FirebaseBootstrap.RunWhenReady(Init);
     }
 
@@ -18,6 +24,16 @@ public class FollowManager : MonoBehaviour
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
+    }
+
+    // ───────────────────────────────────────
+    // [STUB] CheckIsFollowing — UI에서 호출하지만 구현 누락
+    // TODO: 서윤님 follow 컬렉션 구조 확정 후 정식 구현
+    // ───────────────────────────────────────
+    public void CheckIsFollowing(string userId, System.Action<bool> onResult, System.Action<string> onFailure = null)
+    {
+        Debug.LogWarning($"[FollowManager] CheckIsFollowing stub 호출 (userId={userId}) — 추후 서윤님 구현");
+        onResult?.Invoke(false);
     }
 
     // ───────────────────────────────────────

@@ -42,8 +42,8 @@ namespace OntologyMetaverse.DataCollection
         public int collectionIntervalSeconds = 60;
 
         [Header("Batch 변환+업로드 사이클 (초)")]
-        [Tooltip("raw_data → triples 변환 + Firestore 업로드 주기. 테스트 120, 운영 600.")]
-        public int batchIntervalSeconds = 120;
+        [Tooltip("raw_data → triples 변환 + Firestore 업로드 주기. 테스트 60, 운영 600. (수집 12건/분 대비 backlog 방지 위해 60s + batchSize 20 조합 권장)")]
+        public int batchIntervalSeconds = 60;
 
         [Header("초기화 대기 (초)")]
         [Tooltip("권한 요청 + 센서 첫 데이터 안정화 시간")]

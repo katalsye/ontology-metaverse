@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using OntologyMetaverse.DataCollection.SQLite;
 
@@ -90,17 +89,22 @@ namespace OntologyMetaverse.DataCollection.Weather
         /// <summary>
         /// raw_data 테이블에서 가장 최근 type=gps 1건의 lat/lng 추출.
         /// 없으면 fallback 좌표.
+        ///
+        /// sqlite-net-pcl LINQ는 Take/FirstOrDefault 체이닝이 불완전해서
+        /// foreach + break 패턴 사용 (RawDataToTripleConverter 와 동일 스타일).
         /// </summary>
         private (double lat, double lng) GetLatestGps()
         {
             try
             {
                 var conn = SQLiteManager.Instance.Connection;
-                var latestGps = conn.Table<RawData>()
-                    .Where(r => r.Type == "gps")
-                    .OrderByDescending(r => r.Id)
-                    .Take(1)
-                    .FirstOrDefault();
+                var query = conn.Table<RawData>().Where(r => r.Type == "gps").OrderByDescending(r => r.Id);
+                RawData latestGps = null;
+                foreach (var r in query)
+                {
+                    latestGps = r;
+                    break; // 가장 최신 1건만 필요
+                }
 
                 if (latestGps == null)
                 {

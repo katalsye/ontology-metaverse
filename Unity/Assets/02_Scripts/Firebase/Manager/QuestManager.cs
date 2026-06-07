@@ -15,19 +15,16 @@ public class QuestManager : MonoBehaviour
 
     private ListenerRegistration _questListener;
 
-    void Awake()
-    {
-        if (Instance != null) { Destroy(this); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-    }
-
     public event Action<List<Quest>> OnQuestsChanged;
     public event Action<int> OnUnreadQuestCountChanged;
     // public event Action<string> OnQuestListenerError; // 리스너 에러 알림
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         rewardManager = GetComponent<RewardManager>();
         if (rewardManager == null)
         {

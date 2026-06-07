@@ -31,8 +31,8 @@ namespace OntologyMetaverse.DataCollection
     public class RawDataToTripleConverter : MonoBehaviour
     {
         [Header("Batch 크기 (한 번에 처리할 raw_data 최대 개수)")]
-        [Tooltip("크기 너무 크면 SQLite 잠금 길어짐. 5~20 권장.")]
-        public int batchSize = 10;
+        [Tooltip("크기 너무 크면 SQLite 잠금 길어짐. 5~20 권장. 수집 사이클 12건/분 대비 backlog 누적 방지로 20 권장.")]
+        public int batchSize = 20;
 
         // 무성님 온톨로지 명세 base URI
         private const string OntologyBaseUri = "http://7team.dev/ontology#";
