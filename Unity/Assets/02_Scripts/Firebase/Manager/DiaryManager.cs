@@ -38,7 +38,7 @@ public class DiaryManager : MonoBehaviour
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
-        rewardManager = GetComponent<RewardManager>();
+        rewardManager = RewardManager.Instance;
     }
 
     // ───────────────────────────────────────

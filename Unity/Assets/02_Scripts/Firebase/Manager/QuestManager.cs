@@ -30,11 +30,11 @@ public class QuestManager : MonoBehaviour
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
-        rewardManager = GetComponent<RewardManager>();
+        rewardManager = RewardManager.Instance;
 
         if (rewardManager == null)
         {
-            Debug.LogError("QuestManager: RewardManager를 같은 GameObject에서 찾을 수 없음. ClaimReward가 작동하지 않습니다.");
+            Debug.LogError("QuestManager: RewardManager.Instance가 없음. ClaimReward가 작동하지 않습니다.");
         }
     }
 
