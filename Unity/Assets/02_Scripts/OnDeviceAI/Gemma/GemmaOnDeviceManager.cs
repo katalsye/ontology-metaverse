@@ -19,6 +19,9 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         public ulong DownloadedBytes { get; private set; }
         public ulong TotalBytes { get; private set; }
 
+        // 파일 복사가 끝난 뒤 AI 엔진을 메모리에 올리는 단계 (오래 걸릴 수 있음)
+        public bool IsInitializingEngine { get; private set; }
+
         private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -83,6 +86,11 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             modelPath = destPath;
 
             // 2. Kotlin GemmaBridge 인스턴스 생성 + 모델 초기화
+            // 파일 복사(DownloadProgress)는 끝났지만, 모델을 메모리에 올리는
+            // initialize 호출 자체가 오래 걸릴 수 있으므로 별도 상태로 노출
+            IsInitializingEngine = true;
+            yield return null; // UI가 "초기화 중" 상태를 한 프레임이라도 그릴 수 있게 양보
+
             try
             {
                 // 현재 Activity context 가져오기
@@ -92,7 +100,7 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
                 // GemmaBridge 인스턴스 생성 (context 전달)
                 gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
 
-                // 모델 초기화
+                // 모델 초기화 (블로킹 호출 — 시간이 걸림)
                 bool success = gemmaBridge.Call<bool>("initialize", modelPath);
 
                 if (success)
@@ -108,6 +116,10 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             catch (Exception e)
             {
                 Debug.LogError("[GemmaManager] AI 로딩 실패: " + e.Message);
+            }
+            finally
+            {
+                IsInitializingEngine = false;
             }
 #else
             // PC 에디터: 가짜로 1초 대기하고 로딩됐다고 치기

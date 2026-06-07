@@ -219,16 +219,26 @@ public class OnboardingScreenController : MonoBehaviour
 
         while (!gemma.isModelLoaded)
         {
-            float progress = gemma.DownloadProgress;
-            progressFill.style.width = Length.Percent(progress * 100f);
+            if (gemma.IsInitializingEngine)
+            {
+                // 파일 복사는 끝났지만 AI 엔진을 메모리에 올리는 중 — 오래 걸릴 수 있음
+                progressFill.style.width = Length.Percent(100f);
+                downloadStatus.text = "AI 엔진을 초기화하는 중...\n(기기에 따라 다소 시간이 걸릴 수 있어요)";
+                downloadSize.text = "초기화 중";
+            }
+            else
+            {
+                float progress = gemma.DownloadProgress;
+                progressFill.style.width = Length.Percent(progress * 100f);
 
-            float downloadedMB = gemma.DownloadedBytes / 1024f / 1024f;
-            float totalMB = gemma.TotalBytes / 1024f / 1024f;
+                float downloadedMB = gemma.DownloadedBytes / 1024f / 1024f;
+                float totalMB = gemma.TotalBytes / 1024f / 1024f;
 
-            downloadStatus.text = totalMB > 0f
-                ? $"다운로드 중... {downloadedMB:F0}MB / {totalMB:F0}MB"
-                : "다운로드 중...";
-            downloadSize.text = $"{(progress * 100f):F0}%";
+                downloadStatus.text = totalMB > 0f
+                    ? $"다운로드 중... {downloadedMB:F0}MB / {totalMB:F0}MB"
+                    : "다운로드 중...";
+                downloadSize.text = $"{(progress * 100f):F0}%";
+            }
 
             yield return null;
         }
