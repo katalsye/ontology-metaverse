@@ -272,6 +272,8 @@ WHERE {
         GROUP BY ?user ?atype
     }
 
+    # RDFLib phantom 솔루션 방어: 서브쿼리 결과 없을 때 ?atype UNBOUND 차단
+    FILTER(BOUND(?atype))
     BIND(COALESCE(STR(?atype), "활동") AS ?displayActivity)
     BIND(CONCAT("오늘 ", ?displayActivity, " 어떤 기분이었어?") AS ?questTitle)
 }
@@ -343,6 +345,8 @@ WHERE {
         GROUP BY ?user ?genre
     }
 
+    # RDFLib phantom 솔루션 방어: 서브쿼리 결과 없을 때 ?genre UNBOUND 차단
+    FILTER(BOUND(?genre))
     BIND(COALESCE(STR(?genre), "다양한") AS ?displayGenre)
     BIND(CONCAT("요즘 ", ?displayGenre, " 음악 자주 듣네, 어떤 기분일 때 들어?") AS ?questTitle)
 }
