@@ -154,6 +154,7 @@ public class SplashScreenController : MonoBehaviour
     private void NavigateNext()
     {
         bool isFirstLaunch = !PlayerPrefs.HasKey("onboarding_complete");
+        bool isLoggedIn = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser != null;
 
         if (isFirstLaunch)
         {
@@ -161,10 +162,16 @@ public class SplashScreenController : MonoBehaviour
             Debug.Log("[Splash] 첫 실행 → OnboardingScreen");
             ScreenManager.Instance.GoTo("onboarding");
         }
+        else if (!isLoggedIn)
+        {
+            // 온보딩은 끝났지만 로그인 세션이 없음 → 로그인 화면
+            Debug.Log("[Splash] 재실행, 로그인 필요 → LoginFlowScreen");
+            ScreenManager.Instance.GoTo("login");
+        }
         else
         {
             // → 마이룸
-            Debug.Log("[Splash] 재실행 → MyRoomScreen");
+            Debug.Log("[Splash] 재실행, 로그인 상태 → MyRoomScreen");
             ScreenManager.Instance.GoTo("myroom");
         }
     }
