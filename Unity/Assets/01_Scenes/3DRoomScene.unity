@@ -954,7 +954,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 97630738}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.99999976
+  m_Size: 0.9999998
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7718,7 +7718,7 @@ MonoBehaviour:
     positionOffset: {x: -6.6, y: 0, z: 0}
     rotationOffset: {x: 90, y: 0, z: 90}
     scaleMultiplier: {x: 36, y: 36, z: 36}
-  activeIndex: 3
+  activeIndex: -1
 --- !u!1 &1080857202
 GameObject:
   m_ObjectHideFlags: 0
@@ -8714,7 +8714,7 @@ MonoBehaviour:
     keepVisible:
     - {fileID: 1027224336}
     furnitureId: 0
-    modelIndex: 2
+    modelIndex: 0
     colorIndex: 0
     modelOffsets:
     - {x: 0, y: 0, z: 0}
@@ -9394,8 +9394,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 194006704}
   m_HandleRect: {fileID: 194006703}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.6099999
+  m_Value: 1.0000002
+  m_Size: 0.60999995
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
