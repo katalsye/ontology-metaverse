@@ -217,6 +217,9 @@ public class OnboardingScreenController : MonoBehaviour
             yield break;
         }
 
+        // 버튼을 눌렀을 때 비로소 다운로드/초기화 시작
+        gemma.StartLoading();
+
         while (!gemma.isModelLoaded)
         {
             if (gemma.IsInitializingEngine)

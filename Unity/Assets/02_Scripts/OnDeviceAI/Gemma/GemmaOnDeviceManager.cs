@@ -23,14 +23,21 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         public bool IsInitializingEngine { get; private set; }
 
         private string modelPath = "";
+        private bool _loadingStarted = false;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // Kotlin GemmaBridge 인스턴스 (AAR에서 가져옴)
         private AndroidJavaObject gemmaBridge;
 #endif
 
-        void Start()
+        /// <summary>
+        /// 온보딩 화면에서 "다운로드 시작" 버튼을 눌렀을 때 호출 — 모델 로딩을 시작함.
+        /// 자동 시작하지 않고 사용자가 버튼을 눌러야 시작되도록 분리함.
+        /// </summary>
+        public void StartLoading()
         {
+            if (_loadingStarted) return;
+            _loadingStarted = true;
             StartCoroutine(InitGemmaModel());
         }
 
