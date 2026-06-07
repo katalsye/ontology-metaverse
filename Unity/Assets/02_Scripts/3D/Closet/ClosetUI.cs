@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 public class ClosetUI : MonoBehaviour
 {
@@ -35,7 +36,17 @@ public class ClosetUI : MonoBehaviour
     [Tooltip("3D 방 씬 이름 — Build Settings에 등록된 이름과 정확히 일치해야 함")]
     public string roomSceneName = "3DRoomScene";
 
-    void Awake() => Instance = this;
+    void Awake()
+    {
+        Instance = this;
+
+        // Closet 전역 라이팅 보정 — Closet은 중성 회색 ambient에서 색감이 정상.
+        // MyRoom/Visit 등에서 넘어오면 원본(푸른 ambient)이 유지돼 파랗게 보이므로,
+        // EditMode와 동일한 값으로 ambient를 통일한다. (RenderSettings는 전역)
+        RenderSettings.ambientMode  = AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.55f);
+        RenderSettings.fog          = false;
+    }
 
     void Start()
     {
