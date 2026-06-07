@@ -34,6 +34,14 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
+    // users/{uid}/fcmTokens/{tokenId} — FCM 푸시 토큰
+    // 본인만 읽기/쓰기 (퀘스트 알림 발송용, Cloud Functions는 Admin SDK라 규칙 무시됨)
+    // ───────────────────────────────────────
+    match /users/{uid}/fcmTokens/{tokenId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
     // quests/{uid}/userQuests/{questId} — 퀘스트
     // 본인만 읽기/쓰기
     // ───────────────────────────────────────
