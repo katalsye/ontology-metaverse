@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections;
+using OntologyMetaverse.OnDeviceAI.Gemma;
 
 /// <summary>
 /// 1-2. OnboardingScreen 컨트롤러
@@ -14,6 +15,20 @@ public class OnboardingScreenController : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float slideTransitionDuration = 0.3f;
+
+    [Header("Gemma 모델 매니저")]
+    [Tooltip("비워두면 씬에서 자동으로 찾음")]
+    [SerializeField] private GemmaOnDeviceManager gemmaManager;
+
+    private GemmaOnDeviceManager GemmaManager
+    {
+        get
+        {
+            if (gemmaManager == null)
+                gemmaManager = FindObjectOfType<GemmaOnDeviceManager>();
+            return gemmaManager;
+        }
+    }
 
     private VisualElement root;
     private VisualElement slideContainer;
@@ -80,7 +95,7 @@ public class OnboardingScreenController : MonoBehaviour
             }
             else if (!isDownloading)
             {
-                StartCoroutine(SimulateDownload());
+                StartCoroutine(WatchModelDownload());
             }
             return;
         }
@@ -184,36 +199,42 @@ public class OnboardingScreenController : MonoBehaviour
     }
 
     /// <summary>
-    /// Gemma 모델 다운로드 시뮬레이션
-    /// 실제 구현 시 MediaPipe 다운로드 로직으로 교체
+    /// Gemma 모델 다운로드 진행 상황을 GemmaOnDeviceManager에서 폴링해 표시
     /// </summary>
-    private IEnumerator SimulateDownload()
+    private IEnumerator WatchModelDownload()
     {
         isDownloading = true;
         UpdateButtons();
-
-        float progress = 0f;
-        float downloadTime = 5f; // 시뮬레이션용 5초
-
         downloadStatus.text = "다운로드 중...";
 
-        while (progress < 1f)
+        var gemma = GemmaManager;
+        if (gemma == null)
         {
-            progress += Time.deltaTime / downloadTime;
-            progress = Mathf.Clamp01(progress);
+            Debug.LogError("[Onboarding] GemmaOnDeviceManager를 찾을 수 없음");
+            downloadStatus.text = "AI 엔진을 찾을 수 없습니다";
+            isDownloading = false;
+            UpdateButtons();
+            yield break;
+        }
 
-            // 프로그래스 바 업데이트
+        while (!gemma.isModelLoaded)
+        {
+            float progress = gemma.DownloadProgress;
             progressFill.style.width = Length.Percent(progress * 100f);
 
-            // 상태 텍스트 업데이트
-            float downloadedMB = progress * 1500f; // 1.5GB
-            downloadStatus.text = $"다운로드 중... {downloadedMB:F0}MB / 1,500MB";
+            float downloadedMB = gemma.DownloadedBytes / 1024f / 1024f;
+            float totalMB = gemma.TotalBytes / 1024f / 1024f;
+
+            downloadStatus.text = totalMB > 0f
+                ? $"다운로드 중... {downloadedMB:F0}MB / {totalMB:F0}MB"
+                : "다운로드 중...";
             downloadSize.text = $"{(progress * 100f):F0}%";
 
             yield return null;
         }
 
         // 다운로드 완료
+        progressFill.style.width = Length.Percent(100f);
         isDownloading = false;
         downloadComplete = true;
         downloadStatus.text = "다운로드 완료!";
@@ -222,7 +243,7 @@ public class OnboardingScreenController : MonoBehaviour
         // 버튼을 "시작하기"로 변경
         UpdateButtons();
 
-        // rose 색상으로 프로그래스 바 변경 (완료 표시)
+        // mint 색상으로 프로그래스 바 변경 (완료 표시)
         progressFill.style.backgroundColor = new StyleColor(AppColors.Mint);
     }
 

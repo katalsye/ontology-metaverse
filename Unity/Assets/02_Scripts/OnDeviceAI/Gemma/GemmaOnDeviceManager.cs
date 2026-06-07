@@ -13,6 +13,12 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
 
         public bool isModelLoaded = false;
 
+        // ── 다운로드 진행 상황 (UI 폴링용) ──────────────────────
+        public bool IsDownloadingModel { get; private set; }
+        public float DownloadProgress { get; private set; }
+        public ulong DownloadedBytes { get; private set; }
+        public ulong TotalBytes { get; private set; }
+
         private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -40,7 +46,23 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
                 Debug.Log("[GemmaManager] 모델 파일 복사 시작 (시간 걸림)");
 
                 UnityWebRequest www = UnityWebRequest.Get(sourcePath);
-                yield return www.SendWebRequest();
+                UnityWebRequestAsyncOperation operation = www.SendWebRequest();
+
+                IsDownloadingModel = true;
+                while (!operation.isDone)
+                {
+                    DownloadProgress = www.downloadProgress;
+                    DownloadedBytes  = www.downloadedBytes;
+                    // Content-Length를 못 받는 로컬 자산이므로 진행률로 총량을 역산
+                    if (DownloadProgress > 0.001f)
+                        TotalBytes = (ulong)(DownloadedBytes / DownloadProgress);
+                    yield return null;
+                }
+
+                DownloadProgress   = 1f;
+                DownloadedBytes    = www.downloadedBytes;
+                TotalBytes         = DownloadedBytes;
+                IsDownloadingModel = false;
 
                 if (www.result == UnityWebRequest.Result.Success)
                 {
