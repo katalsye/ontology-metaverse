@@ -240,7 +240,8 @@ WHERE {
     # companion 속성이 없는 위치 노드만 선택
     FILTER NOT EXISTS { ?loc prod:companion ?anyone }
 
-    BIND(CONCAT("오늘 ", ?place, " 누구랑 갔어?") AS ?questTitle)
+    BIND(COALESCE(STR(?place), "방문 장소") AS ?displayPlace)
+    BIND(CONCAT("오늘 ", ?displayPlace, " 누구랑 갔어?") AS ?questTitle)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -271,7 +272,8 @@ WHERE {
         GROUP BY ?user ?atype
     }
 
-    BIND (CONCAT("오늘 ", STR(?atype), " 어떤 기분이었어?") AS ?questTitle)
+    BIND(COALESCE(STR(?atype), "활동") AS ?displayActivity)
+    BIND(CONCAT("오늘 ", ?displayActivity, " 어떤 기분이었어?") AS ?questTitle)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -309,7 +311,8 @@ WHERE {
         FILTER NOT EXISTS { ?loc2 prod:purpose ?p }
     }
 
-    BIND (CONCAT(STR(?place), "에 자주 가는 이유가 있어?") AS ?questTitle)
+    BIND(COALESCE(STR(?place), "자주 가는 곳") AS ?displayPlace2)
+    BIND(CONCAT(?displayPlace2, "에 자주 가는 이유가 있어?") AS ?questTitle)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -340,7 +343,8 @@ WHERE {
         GROUP BY ?user ?genre
     }
 
-    BIND (CONCAT("요즘 ", STR(?genre), " 음악 자주 듣네, 어떤 기분일 때 들어?") AS ?questTitle)
+    BIND(COALESCE(STR(?genre), "다양한") AS ?displayGenre)
+    BIND(CONCAT("요즘 ", ?displayGenre, " 음악 자주 듣네, 어떤 기분일 때 들어?") AS ?questTitle)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -397,7 +401,8 @@ WHERE {
     FILTER (?et < NOW())
     FILTER NOT EXISTS { ?evt prod:review ?r }
 
-    BIND (CONCAT(STR(?evtTitle), " 어땠어?") AS ?questTitle)
+    BIND(COALESCE(STR(?evtTitle), "최근 일정") AS ?displayEvent)
+    BIND(CONCAT(?displayEvent, " 어땠어?") AS ?questTitle)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
