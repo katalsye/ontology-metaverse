@@ -46,7 +46,7 @@ public class RoomDataManager : MonoBehaviour
         );
     }
 
-    // 온톨로지가 새 오브젝트를 추론·배치했을 때 토스트 알림
+    // 온톨로지가 새 오브젝트를 추론·배치했을 때 토스트 알림 + 씬 배치
     private void HandleInferredObjectsAdded(List<RoomObject> inferred)
     {
         foreach (var obj in inferred)
@@ -59,7 +59,25 @@ public class RoomDataManager : MonoBehaviour
 
             if (ToastController != null)
                 ToastController.Show("온톨로지 추천", msg, "myroom");
+
+            // ObjectType 문자열과 GameObject 이름이 같은 OntologyItem을 찾아 소환
+            var item = FindOntologyItemByType(obj.ObjectType);
+            if (item != null && OntologySpawnManager.Instance != null)
+                OntologySpawnManager.Instance.Spawn(item);
+            else
+                Debug.LogWarning($"[RoomDataManager] OntologyItem을 찾지 못함: objectType={obj.ObjectType}");
         }
+    }
+
+    private OntologyItem FindOntologyItemByType(string objectType)
+    {
+        if (string.IsNullOrEmpty(objectType)) return null;
+
+        foreach (var item in FindObjectsOfType<OntologyItem>(true))
+            if (item.gameObject.name == objectType)
+                return item;
+
+        return null;
     }
 
     private ToastController _toastController;
