@@ -100,7 +100,7 @@ public class QuestScreenController : MonoBehaviour
         var status = q.IsCompleted ? QuestStatus.Done : QuestStatus.Active;
         float progress = q.IsCompleted ? 1f : 0f;
 
-        return new QuestData(q.QuestId, q.Title, "", type, status, progress, q.RewardAmount);
+        return new QuestData(q.Index, q.Title, "", type, status, progress, q.RewardAmount, q.Claimed);
     }
 
     private void SetTab(string tab)
@@ -252,7 +252,7 @@ public class QuestScreenController : MonoBehaviour
         detailTypePill.Add(pillLabel);
 
         // 보상 수령 버튼 (완료 + 미수령일 때만)
-        btnClaim.style.display = (quest.status == QuestStatus.Done)
+        btnClaim.style.display = (quest.status == QuestStatus.Done && !quest.claimed)
             ? DisplayStyle.Flex : DisplayStyle.None;
 
         detailOverlay.style.display = DisplayStyle.Flex;
@@ -291,16 +291,17 @@ public enum QuestStatus { Active, Done }
 
 public class QuestData
 {
-    public string id;
+    public int id;            // quests 배열 내 위치 (Index)
     public string title;
     public string description;
     public QuestType type;
     public QuestStatus status;
     public float progress;
     public int rewardCoins;
+    public bool claimed;
 
-    public QuestData(string id, string title, string description,
-                     QuestType type, QuestStatus status, float progress, int rewardCoins)
+    public QuestData(int id, string title, string description,
+                     QuestType type, QuestStatus status, float progress, int rewardCoins, bool claimed)
     {
         this.id = id;
         this.title = title;
@@ -309,5 +310,6 @@ public class QuestData
         this.status = status;
         this.progress = progress;
         this.rewardCoins = rewardCoins;
+        this.claimed = claimed;
     }
 }
