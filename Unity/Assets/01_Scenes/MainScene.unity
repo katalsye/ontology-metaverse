@@ -208,7 +208,7 @@ MonoBehaviour:
     hideBottomNav: 1
   - key: myroom
     document: {fileID: 394470283}
-    hideBottomNav: 1
+    hideBottomNav: 0
 --- !u!1 &240639916
 GameObject:
   m_ObjectHideFlags: 0
