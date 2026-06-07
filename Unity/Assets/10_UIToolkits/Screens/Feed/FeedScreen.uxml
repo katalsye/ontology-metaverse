@@ -24,6 +24,10 @@
                 <ui:Button name="btn-friends" class="icon-btn">
                     <ui:Label text="👥" class="icon-btn-text" />
                 </ui:Button>
+                <!-- 설정 버튼 -->
+                <ui:Button name="btn-settings" class="icon-btn">
+                    <ui:Label text="⚙" class="icon-btn-text" />
+                </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
 

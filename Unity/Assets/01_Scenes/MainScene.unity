@@ -208,7 +208,7 @@ MonoBehaviour:
     hideBottomNav: 1
   - key: myroom
     document: {fileID: 394470283}
-    hideBottomNav: 0
+    hideBottomNav: 1
 --- !u!1 &240639916
 GameObject:
   m_ObjectHideFlags: 0
@@ -1785,6 +1785,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OnboardingScreenController
   uiDocument: {fileID: 1474422012}
   slideTransitionDuration: 0.3
+  gemmaManager: {fileID: 0}
 --- !u!114 &1474422012
 MonoBehaviour:
   m_ObjectHideFlags: 0

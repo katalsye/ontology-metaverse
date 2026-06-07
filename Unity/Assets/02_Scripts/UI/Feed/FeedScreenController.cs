@@ -43,6 +43,7 @@ public class FeedScreenController : MonoBehaviour
 
         // 버튼 바인딩
         root.Q<Button>("btn-friends").clicked += OnFriendsClicked;
+        root.Q<Button>("btn-settings").clicked += OnSettingsClicked;
         root.Q<Button>("btn-sort").clicked += ToggleSortBar;
         root.Q<Button>("btn-add-friend").clicked += OnFriendsClicked;
 
@@ -387,6 +388,11 @@ public class FeedScreenController : MonoBehaviour
     private void OnFriendsClicked()
     {
         ScreenManager.Instance.GoTo("friends");
+    }
+
+    private void OnSettingsClicked()
+    {
+        ScreenManager.Instance.GoTo("settings");
     }
 }
 
