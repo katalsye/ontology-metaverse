@@ -6,11 +6,17 @@ using System.Collections.Generic;
 
 public class RewardManager : MonoBehaviour
 {
+    public static RewardManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         FirebaseBootstrap.RunWhenReady(Init);
     }
 

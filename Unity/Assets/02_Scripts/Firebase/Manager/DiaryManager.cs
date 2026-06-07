@@ -19,10 +19,7 @@ public class DiaryManager : MonoBehaviour
         if (Instance != null) { Destroy(this); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-    }
 
-    void Awake()
-    {
         rewardManager = GetComponent<RewardManager>();
         FirebaseBootstrap.RunWhenReady(Init);
     }

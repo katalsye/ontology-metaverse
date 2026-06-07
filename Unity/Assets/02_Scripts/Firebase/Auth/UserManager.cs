@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 public class UserManager : MonoBehaviour
 {
+    public static UserManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
@@ -15,6 +17,10 @@ public class UserManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null) { Destroy(this); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
         FirebaseBootstrap.RunWhenReady(Init);
     }
 
@@ -26,6 +32,26 @@ public class UserManager : MonoBehaviour
         // 오프라인 → 온라인 sync: 앱 재시작 없이 로컬 캐시에서 읽고, 연결 복구 시 Firestore와 자동 동기화
         FirebaseFirestoreSettings settings = db.Settings;
         settings.PersistenceEnabled = true;
+    }
+
+    // ───────────────────────────────────────
+    // [STUB] GetUserProfileForFollow — UI에서 호출하지만 구현 누락
+    // TODO: 서윤님 영역 확정 후 정식 구현 (GetMyProfile과 유사 패턴 가능)
+    // ───────────────────────────────────────
+    public void GetUserProfileForFollow(string userId, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
+    {
+        Debug.LogWarning($"[UserManager] GetUserProfileForFollow stub 호출 (userId={userId}) — 추후 서윤님 구현");
+        // 간이 구현: users/{userId} 문서를 그대로 반환
+        if (db == null) { onFailure?.Invoke("Firestore not ready"); return; }
+        db.Collection("users").Document(userId).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || !task.Result.Exists)
+            {
+                onFailure?.Invoke(task.Exception?.Message ?? "user not found");
+                return;
+            }
+            onSuccess?.Invoke(task.Result.ConvertTo<UserProfile>());
+        });
     }
 
     // ───────────────────────────────────────
