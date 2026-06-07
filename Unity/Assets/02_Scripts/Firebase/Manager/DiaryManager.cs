@@ -87,6 +87,7 @@ public class DiaryManager : MonoBehaviour
 
                 Debug.Log("일기 저장 완료");
                 TripleExtractor?.ExtractAndSaveTriples(content);
+                TempTripleSyncManager.Instance?.SyncUnsyncedTriples();
                 onSuccess?.Invoke();
             });
         });
