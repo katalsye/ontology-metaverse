@@ -74,7 +74,8 @@ public class ClosetUI : MonoBehaviour
     {
         RoomModeManager.SetMode(mode);
 
-        // MainScene을 유지하면서 Closet 언로드 → 3DRoomScene 추가 로드
+        // 모든 모드 통일: MainScene 유지하면서 Closet만 언로드 → 3DRoomScene 추가 로드
+        // (EditMode도 Main과 겹치게 처리 — 특수 케이스 없앰)
         SceneManager.UnloadSceneAsync("Closet");
         SceneManager.LoadScene(roomSceneName, LoadSceneMode.Additive);
     }

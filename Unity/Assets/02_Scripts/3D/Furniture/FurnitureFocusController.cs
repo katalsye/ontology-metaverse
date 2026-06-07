@@ -194,8 +194,12 @@ public class FurnitureFocusController : MonoBehaviour
             yield break;
         }
 
-        // TODO: 씬 준비되면 각 가구별 실제 씬 이름으로 교체
-        SceneManager.LoadScene(_targetScene);
+        // MainScene을 유지하면서 3DRoomScene만 언로드 → 대상 씬(Closet 등)을 추가 로드.
+        // (Single LoadScene을 쓰면 MainScene까지 내려가 Closet만 남으므로 Additive 사용)
+        Scene roomScene = SceneManager.GetSceneByName("3DRoomScene");
+        if (roomScene.isLoaded)
+            SceneManager.UnloadSceneAsync(roomScene);
+        SceneManager.LoadScene(_targetScene, LoadSceneMode.Additive);
     }
 
     /// <summary>줌인 후 설명 패널을 열고 텍스트를 세팅한다.</summary>
