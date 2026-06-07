@@ -14,12 +14,19 @@ public class MyRoomScreenController : MonoBehaviour
     [Tooltip("MainScene의 Main Camera — 3D 씬 활성 중 비활성화해 중복 렌더링 방지")]
     [SerializeField] private Camera mainSceneCamera;
 
+    [Tooltip("MainScene의 Directional Light — 3D/Closet과 겹칠 때 조명 중복으로 색감이 뜨므로 비활성화")]
+    [SerializeField] private Light mainSceneLight;
+
     private const string RoomScene = "3DRoomScene";
 
     private void OnEnable()
     {
         if (mainSceneCamera != null)
             mainSceneCamera.gameObject.SetActive(false);
+
+        // Main Directional Light 끄기 — 3D 씬 라이트와 겹쳐 색감이 뜨는 문제 방지
+        if (mainSceneLight != null)
+            mainSceneLight.gameObject.SetActive(false);
 
         if (!SceneManager.GetSceneByName(RoomScene).isLoaded)
             SceneManager.LoadScene(RoomScene, LoadSceneMode.Additive);
@@ -39,6 +46,10 @@ public class MyRoomScreenController : MonoBehaviour
 
         if (mainSceneCamera != null)
             mainSceneCamera.gameObject.SetActive(true);
+
+        // Main Directional Light 복원
+        if (mainSceneLight != null)
+            mainSceneLight.gameObject.SetActive(true);
     }
 
     private void OnUnreadQuestChanged(int count)

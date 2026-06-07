@@ -682,6 +682,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyRoomScreenController
   uiDocument: {fileID: 394470283}
   mainSceneCamera: {fileID: 584438238}
+  mainSceneLight: {fileID: 1145324429}
 --- !u!114 &394470283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1785,7 +1786,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OnboardingScreenController
   uiDocument: {fileID: 1474422012}
   slideTransitionDuration: 0.3
-  gemmaManager: {fileID: 0}
 --- !u!114 &1474422012
 MonoBehaviour:
   m_ObjectHideFlags: 0
