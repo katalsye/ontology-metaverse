@@ -27,6 +27,12 @@ dependencies {
     // Gemma 3n 온디바이스 추론 (Plugins/Android/GemmaInference.java가 사용).
     // Gemma 3n은 STABLEHLO_COMPOSITE opcode 사용 — 0.10.20+ 필요. 0.10.27이 가장 안정.
     implementation 'com.google.mediapipe:tasks-genai:0.10.27'
+    // Health Connect (Plugins/Android/HealthConnectPlugin.java).
+    // 수면/걸음/심박수 등 헬스 데이터를 Android 공식 API로 수집.
+    // 1.1.0-alpha14 = 안정 릴리즈. Java API + ListenableFuture 호환.
+    implementation 'androidx.health.connect:connect-client:1.1.0-alpha14'
+    // Guava ListenableFuture — Health Connect의 비동기 read API에 필요.
+    implementation 'com.google.guava:guava:33.4.0-android'
 **DEPS**}
 
 // Android Resolver Exclusions Start

@@ -158,6 +158,10 @@ namespace OntologyMetaverse.DataCollection
                 case "sleep":     return ConvertSleep(raw);
                 case "exif":      return ConvertExif(raw);
                 case "weather":   return ConvertWeather(raw);
+                case "geocode":   return ConvertGeocode(raw);
+                case "heart_rate": return ConvertHeartRate(raw);
+                case "calendar":  return ConvertCalendar(raw);
+                case "music":     return ConvertMusicListening(raw);
                 default:
                     Debug.LogWarning($"[RawConverter] 알 수 없는 type: {raw.Type}");
                     return new List<TripleJson>();
@@ -297,6 +301,203 @@ namespace OntologyMetaverse.DataCollection
             };
         }
 
+        /// <summary>
+        /// Geocode (카카오 로컬 API) → 기존 Location 노드(loc_{source_gps_id}) 보강.
+        /// JSON 형식: {"placeName":"스타벅스 강남점","placeType":"cafe","lat":..,"lng":..,"source_gps_id":12,"recordedAt":"..."}
+        ///
+        /// 무성님 명세 (core.ttl):
+        ///   prod:placeName(xsd:string), prod:placeType(xsd:string) — Location 도메인
+        ///
+        /// 활성화 Rule:
+        ///   Rule 1 (FatigueRisk):       placeType="cafe" + visitTime → 카페인 시간대 추론
+        ///   Rule 4 (PlaceHabit):        placeType별 RoomObject 추가 (cafe→coffee_cup 등)
+        ///   Rule 5 (LateCaffeineSleep): placeType="cafe" + 18시 이후 방문 + 수면질↓
+        ///   Rule 6 (missing_companion): placeName 존재 + companion 없음 → 보완형 퀘스트
+        ///   Rule 6-C (missing_purpose): placeName 3회+ + purpose 없음 → 보완형 퀘스트
+        ///   Rule 7 (IndoorDayPattern):  placeName "home/집" 필터링에 사용
+        ///   Rule 10~11 (인과 체인):     placeType="cafe" 카페인 프록시
+        ///   Rule P3/P4 (Persona):       social/solitary 페르소나 추론 base
+        ///
+        /// 핵심 설계:
+        ///   ConvertGps가 만든 loc_{gps_id} URI에 추가 트리플만 발행.
+        ///   같은 Location 노드로 머지되어 visitTime/placeName/placeType이 한 곳에 모임.
+        /// </summary>
+        private List<TripleJson> ConvertGeocode(RawData raw)
+        {
+            var json = JsonUtility.FromJson<GeocodeContent>(raw.Content);
+            if (json == null || json.source_gps_id <= 0)
+            {
+                Debug.LogWarning($"[RawConverter] geocode raw[{raw.Id}] source_gps_id 누락 → 스킵");
+                return new List<TripleJson>();
+            }
+
+            // ConvertGps와 정확히 동일한 URI 패턴 (loc_{gps_id})로 같은 노드에 트리플 추가
+            string locUri = OntologyBaseUri + $"loc_{json.source_gps_id}";
+
+            var triples = new List<TripleJson>();
+
+            if (!string.IsNullOrWhiteSpace(json.placeName))
+            {
+                triples.Add(new TripleJson
+                {
+                    s = locUri,
+                    p = OntologyBaseUri + "placeName",
+                    o = json.placeName,
+                    datatype = "xsd:string"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(json.placeType))
+            {
+                triples.Add(new TripleJson
+                {
+                    s = locUri,
+                    p = OntologyBaseUri + "placeType",
+                    o = json.placeType,
+                    datatype = "xsd:string"
+                });
+            }
+
+            return triples;
+        }
+
+        /// <summary>
+        /// Health Connect heart rate → HeartRate 노드.
+        /// JSON 형식: {"avgBpm":72.5,"sampleCount":42,"timestamp":"..."}
+        ///
+        /// ⚠️ 무성님 core.ttl에 prod:HeartRate 클래스/속성 아직 없음 (2026-06-08 기준).
+        ///    트리플은 생성해서 보내되, 무성님 SPARQL은 무시함.
+        ///    무성님께 prod:HeartRate, prod:hasHeartRate, prod:bpm, prod:sampleCount 추가 요청 필요.
+        ///
+        /// 잠재 Rule 후보 (무성님과 협의):
+        ///   - 평균 안정시 bpm 90 이상 + 운동 기록 없음 → 스트레스 지표
+        ///   - bpm 변동성(HRV) 낮음 → 회복 부족 추정
+        /// </summary>
+        private List<TripleJson> ConvertHeartRate(RawData raw)
+        {
+            var json = JsonUtility.FromJson<HeartRateContent>(raw.Content);
+            string hrId = $"hr_{raw.Id}";
+            string hrUri = OntologyBaseUri + hrId;
+            string userUri = OntologyBaseUri + "user_001";
+
+            return new List<TripleJson>
+            {
+                new TripleJson { s = userUri, p = OntologyBaseUri + "hasHeartRate", o = hrUri, datatype = null },
+                new TripleJson { s = hrUri,   p = OntologyBaseUri + "bpm",          o = json.avgBpm.ToString("F1", System.Globalization.CultureInfo.InvariantCulture), datatype = "xsd:float" },
+                new TripleJson { s = hrUri,   p = OntologyBaseUri + "sampleCount",  o = json.sampleCount.ToString(), datatype = "xsd:integer" },
+                new TripleJson { s = hrUri,   p = OntologyBaseUri + "timestamp",    o = json.timestamp ?? raw.Timestamp, datatype = "xsd:dateTime" },
+            };
+        }
+
+        /// <summary>
+        /// 로컬 캘린더 이벤트 → CalendarEvent 노드.
+        /// JSON 형식: {"event_id":1234,"title":"팀 회의","startTime":"2026-06-08T10:00:00Z","endTime":"...","isRecurring":true,"location":"..."}
+        ///
+        /// URI 패턴: calevt_{event_id} — 같은 이벤트는 항상 같은 URI라 자연스럽게 dedup.
+        ///
+        /// 무성님 명세 (core.ttl):
+        ///   prod:CalendarEvent + prod:hasCalendarEvent, prod:eventTitle, prod:startTime, prod:endTime,
+        ///   prod:isRecurring, prod:review (사용자 응답 시 추가)
+        ///
+        /// 활성화 Rule:
+        ///   Rule 6-F (missing_event_review): endTime < NOW + review 없음 → 보완형 퀘스트
+        ///   Rule 8 (Routine):                같은 hour에 3건+ → Routine 상태 + alarm_clock
+        ///   Rule 29 (ScheduleOverload):      같은 날짜 5건+ → 휴식 권장 + calendar_wall
+        ///   Rule P5 (Persona:routine):       Routine 노드 2개+ → routine 페르소나
+        /// </summary>
+        private List<TripleJson> ConvertCalendar(RawData raw)
+        {
+            var json = JsonUtility.FromJson<CalendarContent>(raw.Content);
+            if (json == null || json.event_id <= 0)
+            {
+                Debug.LogWarning($"[RawConverter] calendar raw[{raw.Id}] event_id 누락 → 스킵");
+                return new List<TripleJson>();
+            }
+
+            string evtUri = OntologyBaseUri + $"calevt_{json.event_id}";
+            string userUri = OntologyBaseUri + "user_001"; // TempTripleManager가 실제 uid로 정규화
+
+            var triples = new List<TripleJson>
+            {
+                new TripleJson { s = userUri, p = OntologyBaseUri + "hasCalendarEvent", o = evtUri, datatype = null },
+            };
+
+            if (!string.IsNullOrWhiteSpace(json.title))
+            {
+                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "eventTitle", o = json.title, datatype = "xsd:string" });
+            }
+
+            if (!string.IsNullOrWhiteSpace(json.startTime))
+            {
+                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "startTime", o = json.startTime, datatype = "xsd:dateTime" });
+            }
+
+            if (!string.IsNullOrWhiteSpace(json.endTime))
+            {
+                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "endTime", o = json.endTime, datatype = "xsd:dateTime" });
+            }
+
+            // isRecurring은 false라도 명시적으로 보냄 (Rule 8/29가 boolean 체크 안 하지만 도큐멘트로 유의미)
+            triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "isRecurring", o = json.isRecurring ? "true" : "false", datatype = "xsd:boolean" });
+
+            return triples;
+        }
+
+        /// <summary>
+        /// Spotify 트랙 재생 → MusicListening 노드.
+        /// JSON 형식: {"track_id":"abc","trackName":"...","artist":"...","genre":"k-pop",
+        ///            "playedAt":"2026-06-08T10:30:00.123Z","listenDuration":4}
+        ///
+        /// URI: ml_{raw.Id} (같은 트랙 여러 재생은 별도 노드 — Rule 9가 listenDuration SUM)
+        ///
+        /// 무성님 명세 (core.ttl):
+        ///   prod:MusicListening + prod:listensTo, prod:trackName, prod:artist, prod:genre,
+        ///   prod:playedAt, prod:listenDuration, prod:mood (사용자 응답)
+        ///
+        /// 활성화 Rule (무성님 LCASE+CONTAINS 매칭):
+        ///   Rule 6-D (missing_music_mood):    genre 있고 mood 없음 → 보완형
+        ///   Rule 9 (MusicMood):               장르 SUM 120+분 → MusicMood + music_speaker
+        ///   Rule 26 (FocusMode):              "classic"|"lo-fi"|"lofi" 180+분 → FocusMode + desk_light_bright
+        ///   Rule 27 (StressIndicator):        "metal"|"rock" 22h+ 재생 → stress_ball + 보완형
+        ///   Rule 28 (SocialActivity):         "dance"|"pop" + 외출 시간대 근접 → party_light
+        /// </summary>
+        private List<TripleJson> ConvertMusicListening(RawData raw)
+        {
+            var json = JsonUtility.FromJson<MusicContent>(raw.Content);
+            if (json == null)
+            {
+                Debug.LogWarning($"[RawConverter] music raw[{raw.Id}] 파싱 실패 → 스킵");
+                return new List<TripleJson>();
+            }
+
+            string mlUri = OntologyBaseUri + $"ml_{raw.Id}";
+            string userUri = OntologyBaseUri + "user_001";
+
+            var triples = new List<TripleJson>
+            {
+                new TripleJson { s = userUri, p = OntologyBaseUri + "listensTo", o = mlUri, datatype = null },
+            };
+
+            if (!string.IsNullOrWhiteSpace(json.trackName))
+                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "trackName", o = json.trackName, datatype = "xsd:string" });
+
+            if (!string.IsNullOrWhiteSpace(json.artist))
+                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "artist", o = json.artist, datatype = "xsd:string" });
+
+            // genre가 비어있어도 Rule 9 카운팅에는 빈 문자열도 들어가니까 명시
+            if (!string.IsNullOrWhiteSpace(json.genre))
+                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "genre", o = json.genre, datatype = "xsd:string" });
+
+            if (!string.IsNullOrWhiteSpace(json.playedAt))
+                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "playedAt", o = json.playedAt, datatype = "xsd:dateTime" });
+
+            // listenDuration 1+ (minCardinality, Rule 9 SUM 필수)
+            int dur = json.listenDuration > 0 ? json.listenDuration : 1;
+            triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "listenDuration", o = dur.ToString(), datatype = "xsd:integer" });
+
+            return triples;
+        }
+
         // ─────────────────────────────────────────────────────
         // URI 정규화 (TextTripleExtractor와 동일 로직 — LLM 노이즈 흡수용이지만
         // 코드 생성 URI에도 안전하게 한 번 통과시킴)
@@ -334,5 +535,9 @@ namespace OntologyMetaverse.DataCollection
         [Serializable] private class SleepContent    { public float duration; public int quality; public float deepSleepRatio; public string timestamp; }
         [Serializable] private class ExifContent     { public string image_path; public float lat; public float lng; public string capture_time; }
         [Serializable] private class WeatherContent  { public float temperature; public string condition; public string recordedAt; }
+        [Serializable] private class GeocodeContent  { public string placeName; public string placeType; public float lat; public float lng; public int source_gps_id; public string recordedAt; }
+        [Serializable] private class HeartRateContent { public float avgBpm; public int sampleCount; public string timestamp; }
+        [Serializable] private class CalendarContent  { public long event_id; public string title; public string startTime; public string endTime; public bool isRecurring; public string location; }
+        [Serializable] private class MusicContent     { public string track_id; public string trackName; public string artist; public string genre; public string playedAt; public int listenDuration; }
     }
 }

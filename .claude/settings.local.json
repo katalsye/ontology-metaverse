@@ -12,7 +12,21 @@
       "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/pulls?state=all&per_page=50&sort=updated&direction=desc\")",
       "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); print\\(f'TOTAL PRs: {len\\(data\\)}'\\); [print\\(f'#{p[\\\\\"number\\\\\"]} [{p[\\\\\"state\\\\\"]}] {p[\\\\\"base\\\\\"][\\\\\"ref\\\\\"]} ← {p[\\\\\"head\\\\\"][\\\\\"ref\\\\\"]} | {p[\\\\\"title\\\\\"]} | {p[\\\\\"user\\\\\"][\\\\\"login\\\\\"]} | merged={p.get\\(\\\\\"merged_at\\\\\"\\) is not None}'\\) for p in data]\")",
       "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/issues?state=all&per_page=50&sort=updated&direction=desc\")",
-      "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); issues = [i for i in data if 'pull_request' not in i]; print\\(f'TOTAL Issues \\(excluding PRs\\): {len\\(issues\\)}'\\); [print\\(f'#{i[\\\\\"number\\\\\"]} [{i[\\\\\"state\\\\\"]}] {i[\\\\\"title\\\\\"]} | {i[\\\\\"user\\\\\"][\\\\\"login\\\\\"]} | labels={[l[\\\\\"name\\\\\"] for l in i.get\\(\\\\\"labels\\\\\",[]\\)]}'\\) for i in issues]\")"
+      "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); issues = [i for i in data if 'pull_request' not in i]; print\\(f'TOTAL Issues \\(excluding PRs\\): {len\\(issues\\)}'\\); [print\\(f'#{i[\\\\\"number\\\\\"]} [{i[\\\\\"state\\\\\"]}] {i[\\\\\"title\\\\\"]} | {i[\\\\\"user\\\\\"][\\\\\"login\\\\\"]} | labels={[l[\\\\\"name\\\\\"] for l in i.get\\(\\\\\"labels\\\\\",[]\\)]}'\\) for i in issues]\")",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/pulls?state=open&per_page=20\")",
+      "Bash(python -c ' *)",
+      "Bash(curl -s \"https://api.github.com/repos/katalsye/ontology-metaverse/branches?per_page=50\")",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(gh pr *)",
+      "PowerShell(gh pr view 109 --repo katalsye/ontology-metaverse)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue; \\(Get-ChildItem \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" -ErrorAction SilentlyContinue\\).FullName; \\(Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\\\\GitHub CLI\\\\gh.exe\" -ErrorAction SilentlyContinue\\).FullName)",
+      "Bash(git ls-tree *)"
     ]
   }
 }

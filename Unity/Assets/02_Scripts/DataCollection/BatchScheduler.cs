@@ -5,6 +5,10 @@ using OntologyMetaverse.DataCollection.Step;
 using OntologyMetaverse.DataCollection.AppUsage;
 using OntologyMetaverse.DataCollection.Gallery;
 using OntologyMetaverse.DataCollection.Weather;
+using OntologyMetaverse.DataCollection.Geocoding;
+using OntologyMetaverse.DataCollection.Health;
+using OntologyMetaverse.DataCollection.Calendar;
+using OntologyMetaverse.DataCollection.Spotify;
 
 namespace OntologyMetaverse.DataCollection
 {
@@ -62,6 +66,46 @@ namespace OntologyMetaverse.DataCollection
 
         // weather 마지막 수집 시각 (수집 주기 조절용)
         private System.DateTime _lastWeatherCollectedAt = System.DateTime.MinValue;
+
+        [Header("Geocoding (Reverse Geocoder)")]
+        [Tooltip("카카오 로컬 API로 최신 GPS의 placeName/placeType 추론. 같은 위치 반복 호출은 ReverseGeocoder가 자동 스킵.")]
+        public ReverseGeocoder geocoder;
+
+        [Header("Geocoding 수집 주기 (분)")]
+        [Tooltip("위치는 자주 안 바뀌므로 10분이면 충분. 일 호출 144건 (카카오 무료 10만건 한도 대비 무시 가능).")]
+        public int geocodeIntervalMinutes = 10;
+
+        private System.DateTime _lastGeocodedAt = System.DateTime.MinValue;
+
+        [Header("Health Connect (Sleep/Steps/HeartRate)")]
+        [Tooltip("androidx.health.connect SDK로 수면·걸음·심박수 수집. 권한 없으면 첫 호출 시 자동으로 Health Connect 앱 띄움.")]
+        public HealthConnectCollector healthCollector;
+
+        [Header("Health 수집 주기 (분)")]
+        [Tooltip("Health Connect는 24시간 윈도우로 read하므로 30분이면 충분. 너무 잦으면 배터리·중복.")]
+        public int healthIntervalMinutes = 30;
+
+        private System.DateTime _lastHealthCollectedAt = System.DateTime.MinValue;
+
+        [Header("Calendar Collector")]
+        [Tooltip("로컬 캘린더(CalendarContract) 이벤트 수집. 첫 호출 시 READ_CALENDAR 권한 자동 요청.")]
+        public CalendarCollector calendarCollector;
+
+        [Header("Calendar 수집 주기 (분)")]
+        [Tooltip("캘린더는 자주 안 바뀜. 60분이면 충분. 14일~7일 윈도우 한 번에 조회.")]
+        public int calendarIntervalMinutes = 60;
+
+        private System.DateTime _lastCalendarCollectedAt = System.DateTime.MinValue;
+
+        [Header("Spotify Collector (OAuth + Web API)")]
+        [Tooltip("Spotify 최근 재생 50건 조회. 첫 호출 시 시스템 브라우저로 OAuth 인증.")]
+        public SpotifyCollector spotifyCollector;
+
+        [Header("Spotify 수집 주기 (분)")]
+        [Tooltip("recently-played는 최대 50건 보관. 30분 주기면 거의 모든 재생 캡처. 너무 잦으면 rate limit.")]
+        public int spotifyIntervalMinutes = 30;
+
+        private System.DateTime _lastSpotifyCollectedAt = System.DateTime.MinValue;
 
         [Header("변환 + 업로드 (Inspector에서 드래그)")]
         public RawDataToTripleConverter converter;
@@ -175,6 +219,50 @@ namespace OntologyMetaverse.DataCollection
                 }
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Weather 수집 실패: {e.Message}"); }
+
+            // Geocoding은 10분 간격. ReverseGeocoder가 source_gps_id 중복 자동 스킵.
+            try
+            {
+                if (geocoder != null && (System.DateTime.UtcNow - _lastGeocodedAt).TotalMinutes >= geocodeIntervalMinutes)
+                {
+                    StartCoroutine(geocoder.GeocodeLatestLocation());
+                    _lastGeocodedAt = System.DateTime.UtcNow;
+                }
+            }
+            catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Geocoding 실패: {e.Message}"); }
+
+            // Health Connect는 30분 간격. 24h 윈도우라 자주 호출할 필요 없음.
+            try
+            {
+                if (healthCollector != null && (System.DateTime.UtcNow - _lastHealthCollectedAt).TotalMinutes >= healthIntervalMinutes)
+                {
+                    StartCoroutine(healthCollector.CollectHealthData());
+                    _lastHealthCollectedAt = System.DateTime.UtcNow;
+                }
+            }
+            catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Health 수집 실패: {e.Message}"); }
+
+            // Calendar는 60분 간격. event_id 중복 체크 자동.
+            try
+            {
+                if (calendarCollector != null && (System.DateTime.UtcNow - _lastCalendarCollectedAt).TotalMinutes >= calendarIntervalMinutes)
+                {
+                    StartCoroutine(calendarCollector.CollectCalendarEvents());
+                    _lastCalendarCollectedAt = System.DateTime.UtcNow;
+                }
+            }
+            catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Calendar 수집 실패: {e.Message}"); }
+
+            // Spotify는 30분 간격. (track_id + played_at) 기반 중복 자동 스킵.
+            try
+            {
+                if (spotifyCollector != null && (System.DateTime.UtcNow - _lastSpotifyCollectedAt).TotalMinutes >= spotifyIntervalMinutes)
+                {
+                    StartCoroutine(spotifyCollector.CollectRecentTracks());
+                    _lastSpotifyCollectedAt = System.DateTime.UtcNow;
+                }
+            }
+            catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Spotify 수집 실패: {e.Message}"); }
         }
 
         /// <summary>
