@@ -41,11 +41,8 @@ namespace OntologyMetaverse.DataCollection.Geocoding
         /// </summary>
         public IEnumerator GeocodeLatestLocation()
         {
-            if (string.IsNullOrWhiteSpace(restApiKey))
-            {
-                Debug.LogWarning("[ReverseGeocoder] restApiKey 미설정 → 수집 스킵. Inspector에서 입력하세요.");
-                yield break;
-            }
+            // OSM(Overpass+Nominatim)은 API 키 불필요 — 키 체크 없이 바로 진행.
+            // (restApiKey 필드는 카카오 심사 통과 시 KakaoLocalClient 복귀용으로 남겨둠)
 
             // 1. 최근 GPS raw_data 1건 가져오기
             RawData latestGps = GetLatestGpsRaw();
@@ -71,11 +68,11 @@ namespace OntologyMetaverse.DataCollection.Geocoding
                 yield break;
             }
 
-            // 4. 카카오 API 호출
+            // 4. OSM 역지오코딩 (Overpass POI → Nominatim 주소 폴백)
             GeocodeResult result = null;
             string error = null;
-            yield return StartCoroutine(KakaoLocalClient.Fetch(
-                restApiKey, lat, lng, latestGps.Id,
+            yield return StartCoroutine(OsmGeocodingClient.Fetch(
+                lat, lng, latestGps.Id,
                 onSuccess: r => result = r,
                 onFailure: e => error = e
             ));
