@@ -42,10 +42,10 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
-    // quests/{uid}/userQuests/{questId} — 퀘스트
+    // quests/{uid} — 퀘스트 (단일 문서 + quests 배열 필드)
     // 본인만 읽기/쓰기
     // ───────────────────────────────────────
-    match /quests/{uid}/userQuests/{questId} {
+    match /quests/{uid} {
       allow read, write: if isOwner(uid);
     }
 
@@ -66,11 +66,11 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
-    // room_objects/{uid}/objects/{objectId} — 방 오브젝트
+    // room_objects/{uid} — 방 오브젝트 (단일 문서 + objects 배열 필드)
     // 본인: 읽기/쓰기
     // 팔로워: 읽기
     // ───────────────────────────────────────
-    match /room_objects/{uid}/objects/{objectId} {
+    match /room_objects/{uid} {
       allow read: if isOwner(uid) || isAcceptedFollower(uid);
       allow write: if isOwner(uid);
     }
