@@ -193,7 +193,10 @@ namespace OntologyMetaverse.DataCollection
 
             try
             {
-                if (stepCollector != null) stepCollector.CollectCurrentSteps();
+                // Health Connect가 정확한 일별 걸음수를 제공하면 센서 기반 StepCollector는 스킵.
+                // (센서는 "부팅 후 누적값"이라 Rule 3/P1의 일별 임계값과 안 맞음 — 이중 수집·오발동 방지)
+                bool healthHandlesSteps = healthCollector != null && healthCollector.HasProvidedSteps;
+                if (stepCollector != null && !healthHandlesSteps) stepCollector.CollectCurrentSteps();
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Step 수집 실패: {e.Message}"); }
 

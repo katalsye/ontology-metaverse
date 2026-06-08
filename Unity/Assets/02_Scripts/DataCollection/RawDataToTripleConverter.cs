@@ -160,6 +160,7 @@ namespace OntologyMetaverse.DataCollection
                 case "weather":   return ConvertWeather(raw);
                 case "geocode":   return ConvertGeocode(raw);
                 case "heart_rate": return ConvertHeartRate(raw);
+                case "hrv":       return ConvertHrv(raw);
                 case "calendar":  return ConvertCalendar(raw);
                 case "music":     return ConvertMusicListening(raw);
                 default:
@@ -184,7 +185,7 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = userUri, p = OntologyBaseUri + "hasLocation", o = locUri, datatype = null },
                 new TripleJson { s = locUri,  p = OntologyBaseUri + "latitude",    o = json.lat.ToString("F6"), datatype = "xsd:float" },
                 new TripleJson { s = locUri,  p = OntologyBaseUri + "longitude",   o = json.lng.ToString("F6"), datatype = "xsd:float" },
-                new TripleJson { s = locUri,  p = OntologyBaseUri + "visitTime",   o = raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = locUri,  p = OntologyBaseUri + "visitTime",   o = KstTime.ToKstNaive(raw.Timestamp), datatype = "xsd:dateTime" },
                 // placeName, placeType 의도적으로 누락 → 무성님 시스템이 보완형 퀘스트 자동 생성
             };
         }
@@ -205,7 +206,7 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = userUri, p = OntologyBaseUri + "hasStepCount", o = stepUri, datatype = null },
                 new TripleJson { s = stepUri, p = OntologyBaseUri + "count",        o = json.count.ToString(), datatype = "xsd:integer" },
                 new TripleJson { s = stepUri, p = OntologyBaseUri + "date",         o = json.date, datatype = "xsd:date" },
-                new TripleJson { s = stepUri, p = OntologyBaseUri + "timestamp",    o = raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = stepUri, p = OntologyBaseUri + "timestamp",    o = KstTime.ToKstNaive(raw.Timestamp), datatype = "xsd:dateTime" },
             };
         }
 
@@ -246,7 +247,7 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = sleepUri, p = OntologyBaseUri + "duration",       o = json.duration.ToString("F2"), datatype = "xsd:float" },
                 new TripleJson { s = sleepUri, p = OntologyBaseUri + "quality",        o = json.quality.ToString(), datatype = "xsd:integer" },
                 new TripleJson { s = sleepUri, p = OntologyBaseUri + "deepSleepRatio", o = json.deepSleepRatio.ToString("F2"), datatype = "xsd:float" },
-                new TripleJson { s = sleepUri, p = OntologyBaseUri + "timestamp",      o = raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = sleepUri, p = OntologyBaseUri + "timestamp",      o = KstTime.ToKstNaive(raw.Timestamp), datatype = "xsd:dateTime" },
             };
         }
 
@@ -269,7 +270,7 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = userUri,  p = OntologyBaseUri + "hasGalleryPhoto", o = photoUri, datatype = null },
                 new TripleJson { s = photoUri, p = OntologyBaseUri + "latitude",        o = json.lat.ToString("F6"), datatype = "xsd:float" },
                 new TripleJson { s = photoUri, p = OntologyBaseUri + "longitude",       o = json.lng.ToString("F6"), datatype = "xsd:float" },
-                new TripleJson { s = photoUri, p = OntologyBaseUri + "timestamp",       o = json.capture_time ?? raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = photoUri, p = OntologyBaseUri + "timestamp",       o = KstTime.ToKstNaive(json.capture_time ?? raw.Timestamp), datatype = "xsd:dateTime" },
                 // foodType, placeType, analyzedBy 는 multimodal Gemma 처리 후 추가 (P3b)
             };
         }
@@ -297,7 +298,7 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = userUri,    p = OntologyBaseUri + "hasWeather",  o = weatherUri, datatype = null },
                 new TripleJson { s = weatherUri, p = OntologyBaseUri + "temperature", o = json.temperature.ToString("F2", System.Globalization.CultureInfo.InvariantCulture), datatype = "xsd:float" },
                 new TripleJson { s = weatherUri, p = OntologyBaseUri + "condition",   o = json.condition ?? "unknown", datatype = "xsd:string" },
-                new TripleJson { s = weatherUri, p = OntologyBaseUri + "recordedAt",  o = json.recordedAt ?? raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = weatherUri, p = OntologyBaseUri + "recordedAt",  o = KstTime.ToKstNaive(json.recordedAt ?? raw.Timestamp), datatype = "xsd:dateTime" },
             };
         }
 
@@ -385,7 +386,31 @@ namespace OntologyMetaverse.DataCollection
                 new TripleJson { s = userUri, p = OntologyBaseUri + "hasHeartRate", o = hrUri, datatype = null },
                 new TripleJson { s = hrUri,   p = OntologyBaseUri + "bpm",          o = json.avgBpm.ToString("F1", System.Globalization.CultureInfo.InvariantCulture), datatype = "xsd:float" },
                 new TripleJson { s = hrUri,   p = OntologyBaseUri + "sampleCount",  o = json.sampleCount.ToString(), datatype = "xsd:integer" },
-                new TripleJson { s = hrUri,   p = OntologyBaseUri + "timestamp",    o = json.timestamp ?? raw.Timestamp, datatype = "xsd:dateTime" },
+                new TripleJson { s = hrUri,   p = OntologyBaseUri + "timestamp",    o = KstTime.ToKstNaive(json.timestamp ?? raw.Timestamp), datatype = "xsd:dateTime" },
+            };
+        }
+
+        /// <summary>
+        /// Health Connect HRV(RMSSD) → HeartRateVariability 노드. (옵션 A — Health Connect RMSSD 직접 읽기)
+        /// JSON: {"avgRmssd":42.5,"sampleCount":12,"timestamp":"..."}
+        ///
+        /// ⚠️ 무성님 prod:hrv 명세 확정 전 잠정 구조.
+        ///    제안: (user, hasHrv, hrv_X) / (hrv_X, rmssd, float) / (hrv_X, sampleCount, int) / (hrv_X, timestamp)
+        ///    무성님 Rule P7 (HRV 낮음 → 회복 부족 페르소나)에서 사용 예정.
+        ///    RMSSD 낮을수록 회복 부족/스트레스 ↑ (일반적으로 20ms 미만이 낮은 편).
+        /// </summary>
+        private List<TripleJson> ConvertHrv(RawData raw)
+        {
+            var json = JsonUtility.FromJson<HrvContent>(raw.Content);
+            string hrvUri = OntologyBaseUri + $"hrv_{raw.Id}";
+            string userUri = OntologyBaseUri + "user_001";
+
+            return new List<TripleJson>
+            {
+                new TripleJson { s = userUri, p = OntologyBaseUri + "hasHrv",      o = hrvUri, datatype = null },
+                new TripleJson { s = hrvUri,  p = OntologyBaseUri + "rmssd",       o = json.avgRmssd.ToString("F1", System.Globalization.CultureInfo.InvariantCulture), datatype = "xsd:float" },
+                new TripleJson { s = hrvUri,  p = OntologyBaseUri + "sampleCount", o = json.sampleCount.ToString(), datatype = "xsd:integer" },
+                new TripleJson { s = hrvUri,  p = OntologyBaseUri + "timestamp",   o = KstTime.ToKstNaive(json.timestamp ?? raw.Timestamp), datatype = "xsd:dateTime" },
             };
         }
 
@@ -429,12 +454,12 @@ namespace OntologyMetaverse.DataCollection
 
             if (!string.IsNullOrWhiteSpace(json.startTime))
             {
-                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "startTime", o = json.startTime, datatype = "xsd:dateTime" });
+                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "startTime", o = KstTime.ToKstNaive(json.startTime), datatype = "xsd:dateTime" });
             }
 
             if (!string.IsNullOrWhiteSpace(json.endTime))
             {
-                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "endTime", o = json.endTime, datatype = "xsd:dateTime" });
+                triples.Add(new TripleJson { s = evtUri, p = OntologyBaseUri + "endTime", o = KstTime.ToKstNaive(json.endTime), datatype = "xsd:dateTime" });
             }
 
             // isRecurring은 false라도 명시적으로 보냄 (Rule 8/29가 boolean 체크 안 하지만 도큐멘트로 유의미)
@@ -489,7 +514,7 @@ namespace OntologyMetaverse.DataCollection
                 triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "genre", o = json.genre, datatype = "xsd:string" });
 
             if (!string.IsNullOrWhiteSpace(json.playedAt))
-                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "playedAt", o = json.playedAt, datatype = "xsd:dateTime" });
+                triples.Add(new TripleJson { s = mlUri, p = OntologyBaseUri + "playedAt", o = KstTime.ToKstNaive(json.playedAt), datatype = "xsd:dateTime" });
 
             // listenDuration 1+ (minCardinality, Rule 9 SUM 필수)
             int dur = json.listenDuration > 0 ? json.listenDuration : 1;
@@ -537,6 +562,7 @@ namespace OntologyMetaverse.DataCollection
         [Serializable] private class WeatherContent  { public float temperature; public string condition; public string recordedAt; }
         [Serializable] private class GeocodeContent  { public string placeName; public string placeType; public float lat; public float lng; public int source_gps_id; public string recordedAt; }
         [Serializable] private class HeartRateContent { public float avgBpm; public int sampleCount; public string timestamp; }
+        [Serializable] private class HrvContent       { public float avgRmssd; public int sampleCount; public string timestamp; }
         [Serializable] private class CalendarContent  { public long event_id; public string title; public string startTime; public string endTime; public bool isRecurring; public string location; }
         [Serializable] private class MusicContent     { public string track_id; public string trackName; public string artist; public string genre; public string playedAt; public int listenDuration; }
     }

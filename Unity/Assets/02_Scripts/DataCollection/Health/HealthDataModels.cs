@@ -49,6 +49,16 @@ namespace OntologyMetaverse.DataCollection.Health
         public int sampleCount;
     }
 
+    // ─── HRV (RMSSD) ──────────────────────────────────────
+    // Kotlin 반환: {"avgRmssd":42.5,"sampleCount":12}
+
+    [Serializable]
+    public class HrvResultJson
+    {
+        public float avgRmssd;
+        public int sampleCount;
+    }
+
     // ─── SDK Status (HealthConnectClient.getSdkStatus 매칭) ──
     public enum HealthConnectSdkStatus
     {

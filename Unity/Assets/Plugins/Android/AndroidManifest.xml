@@ -22,11 +22,9 @@
   <!-- 인터넷 (Firestore 통신) -->
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
   <!-- 캘린더: CalendarCollector — 로컬 캘린더(Google/Samsung 동기화 포함) ContentResolver 조회
        Android 9+ runtime permission. Java CalendarHelper.java가 사용. -->
   <uses-permission android:name="android.permission.READ_CALENDAR" />
-
   <!-- ────────────────────────────────────────────────────── -->
   <!-- Health Connect 권한 (P4: HealthConnectCollector)
        androidx.health.connect:connect-client SDK가 요구하는 권한들.
@@ -35,9 +33,9 @@
   <uses-permission android:name="android.permission.health.READ_SLEEP" />
   <uses-permission android:name="android.permission.health.READ_STEPS" />
   <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+  <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
   <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
   <uses-permission android:name="android.permission.health.READ_EXERCISE" />
-
   <!-- Health Connect 앱 visibility (Android 11+ 패키지 가시성 제한 회피) -->
   <queries>
     <package android:name="com.google.android.apps.healthdata" />
@@ -45,7 +43,6 @@
       <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
     </intent>
   </queries>
-
   <application android:label="@string/app_name" android:icon="@drawable/app_icon">
     <!-- The MessagingUnityPlayerActivity is a class that extends
          UnityPlayerActivity to work around a known issue when receiving
@@ -58,29 +55,19 @@
       <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
     </activity>
     <service android:name="com.google.firebase.messaging.MessageForwardingService" android:exported="false" tools:replace="android:exported" />
-
     <!-- Health Connect 권한 rationale Activity (요구 사항):
          사용자가 Health Connect 앱에서 "이 앱은 왜 데이터가 필요한지?" 클릭 시 표시.
          일단 메인 Activity로 라우팅 (Unity 표준 패턴, 별도 Privacy Activity 만들면 더 깔끔). -->
-    <activity-alias
-        android:name="com.ontology.metaverse.HealthConnectPermissionsRationale"
-        android:exported="true"
-        android:targetActivity="com.google.firebase.MessagingUnityPlayerActivity">
+    <activity-alias android:name="com.ontology.metaverse.HealthConnectPermissionsRationale" android:exported="true" android:targetActivity="com.google.firebase.MessagingUnityPlayerActivity">
       <intent-filter>
         <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
       </intent-filter>
     </activity-alias>
-
     <!-- Spotify OAuth callback Activity (Custom URL Scheme: ontologyapp://spotify-callback).
          사용자가 Spotify 인증 페이지에서 로그인 + 권한 허용 후 이 URI로 리다이렉트됨.
          singleTask + Translucent → callback intent 받자마자 finish() 호출해 dismiss.
          Spotify Developer Dashboard의 Redirect URI에 정확히 같은 값 등록 필수. -->
-    <activity
-        android:name="com.ontology.metaverse.spotify.SpotifyCallbackActivity"
-        android:exported="true"
-        android:launchMode="singleTask"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        android:excludeFromRecents="true">
+    <activity android:name="com.ontology.metaverse.spotify.SpotifyCallbackActivity" android:exported="true" android:launchMode="singleTask" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true">
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />

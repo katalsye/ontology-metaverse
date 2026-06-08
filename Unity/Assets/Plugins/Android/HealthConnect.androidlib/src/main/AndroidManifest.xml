@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 라이브러리 모듈 매니페스트.
+     namespace는 build.gradle에서 지정 (AGP 8+ 방식).
+     Health Connect 권한(READ_SLEEP 등)은 앱 메인 매니페스트
+     (Assets/Plugins/Android/AndroidManifest.xml)에 선언됨. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

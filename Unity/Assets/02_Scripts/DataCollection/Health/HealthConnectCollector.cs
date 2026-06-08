@@ -44,6 +44,13 @@ namespace OntologyMetaverse.DataCollection.Health
         private bool _availabilityWarningLogged = false;
 
         /// <summary>
+        /// Health Connect가 걸음수를 한 번이라도 제공했는지.
+        /// BatchScheduler가 이 플래그로 센서 기반 StepCollector 이중 수집을 차단.
+        /// (센서는 "부팅 후 누적값"이라 Rule 3/P1의 일별 임계값과 안 맞음)
+        /// </summary>
+        public bool HasProvidedSteps { get; private set; }
+
+        /// <summary>
         /// 한 번의 수집 사이클. BatchScheduler가 주기적으로 호출.
         /// </summary>
         public IEnumerator CollectHealthData()
@@ -83,19 +90,21 @@ namespace OntologyMetaverse.DataCollection.Health
             long endMillis = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
             long startMillis = endMillis - (long)readWindowHours * 3600L * 1000L;
 
-            // 4. Sleep / Steps / HeartRate 병렬 요청
+            // 4. Sleep / Steps / HeartRate / HRV 병렬 요청
             HealthConnectBridge.RequestRead("sleep", startMillis, endMillis);
             HealthConnectBridge.RequestRead("steps", startMillis, endMillis);
             HealthConnectBridge.RequestRead("heart_rate", startMillis, endMillis);
+            HealthConnectBridge.RequestRead("hrv", startMillis, endMillis);
 
-            // 5. 폴링으로 3개 다 끝날 때까지 대기
+            // 5. 폴링으로 4개 다 끝날 때까지 대기
             float elapsed = 0;
             while (elapsed < pollTimeoutSeconds)
             {
-                bool sleepDone = HealthConnectBridge.IsReady("sleep");
-                bool stepsDone = HealthConnectBridge.IsReady("steps");
-                bool hrDone = HealthConnectBridge.IsReady("heart_rate");
-                if (sleepDone && stepsDone && hrDone) break;
+                if (HealthConnectBridge.IsReady("sleep")
+                    && HealthConnectBridge.IsReady("steps")
+                    && HealthConnectBridge.IsReady("heart_rate")
+                    && HealthConnectBridge.IsReady("hrv"))
+                    break;
                 yield return new WaitForSeconds(0.5f);
                 elapsed += 0.5f;
             }
@@ -104,6 +113,7 @@ namespace OntologyMetaverse.DataCollection.Health
             ProcessSleepResult();
             ProcessStepsResult();
             ProcessHeartRateResult();
+            ProcessHrvResult();
         }
 
         // ─────────────────────────────────────────────────────
@@ -206,6 +216,7 @@ namespace OntologyMetaverse.DataCollection.Health
                     Processed = 0
                 };
                 SQLiteManager.Instance.Connection.Insert(raw);
+                HasProvidedSteps = true; // 센서 StepCollector 이중 수집 차단용
                 Debug.Log($"[HealthConnect] step 저장: count={parsed.totalSteps}, date={dateStr}");
             }
             catch (Exception e)
@@ -262,6 +273,53 @@ namespace OntologyMetaverse.DataCollection.Health
             catch (Exception e)
             {
                 Debug.LogError($"[HealthConnect] heart_rate 파싱 실패: {e.Message}\nJSON: {json}");
+            }
+        }
+
+        // ─────────────────────────────────────────────────────
+        // HRV (RMSSD) — 옵션 (갤럭시워치 등 일부 기기만 기록)
+        // ─────────────────────────────────────────────────────
+
+        private void ProcessHrvResult()
+        {
+            string err = HealthConnectBridge.GetError("hrv");
+            if (!string.IsNullOrEmpty(err))
+            {
+                Debug.LogWarning($"[HealthConnect] hrv: {err}"); // HRV는 옵션 — 에러여도 경고만
+                return;
+            }
+
+            string json = HealthConnectBridge.GetResult("hrv");
+            if (string.IsNullOrEmpty(json)) return;
+
+            try
+            {
+                var parsed = JsonUtility.FromJson<HrvResultJson>(json);
+                if (parsed == null || parsed.sampleCount == 0)
+                {
+                    Debug.Log("[HealthConnect] hrv 샘플 없음 → 저장 스킵 (기기 미지원 가능)");
+                    return;
+                }
+
+                string content = "{" +
+                    $"\"avgRmssd\":{parsed.avgRmssd.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}," +
+                    $"\"sampleCount\":{parsed.sampleCount}," +
+                    $"\"timestamp\":\"{DateTime.UtcNow.ToString("o")}\"" +
+                    "}";
+
+                var raw = new RawData
+                {
+                    Type = "hrv",
+                    Content = content,
+                    Timestamp = DateTime.UtcNow.ToString("o"),
+                    Processed = 0
+                };
+                SQLiteManager.Instance.Connection.Insert(raw);
+                Debug.Log($"[HealthConnect] hrv 저장: avgRmssd={parsed.avgRmssd:F1}ms, samples={parsed.sampleCount}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[HealthConnect] hrv 파싱 실패: {e.Message}\nJSON: {json}");
             }
         }
 

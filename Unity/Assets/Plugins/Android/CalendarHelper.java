@@ -50,11 +50,14 @@ public class CalendarHelper {
         CalendarContract.Events.CALENDAR_DISPLAY_NAME,
     };
 
-    // ISO 8601 UTC formatter
+    // ISO 8601 naive KST formatter.
+    // 무성님 추론 규칙(Rule 8 routine 등)이 HOURS()로 시각을 추출하는데,
+    // test_rules.py가 타임존 없는 naive 시각을 KST로 가정하므로 거기 맞춤.
+    // (타임존 표기 'Z' 없이 Asia/Seoul 로컬 시각 출력)
     private static final SimpleDateFormat ISO_FORMAT;
     static {
-        ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        ISO_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        ISO_FORMAT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
     }
 
     /**
