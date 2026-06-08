@@ -386,6 +386,12 @@ prod:updatedAt a owl:DatatypeProperty ;
     rdfs:domain prod:Persona ;
     rdfs:range  xsd:dateTime .
 
+prod:recoveryLevel a owl:DatatypeProperty ;
+    rdfs:label   "recoveryLevel" ;
+    rdfs:comment "회복 수준. 추론 값: 'deficit'(회복 부족, Rule P7). HRV RMSSD < 20ms 기준. 형식: 문자열." ;
+    rdfs:domain prod:Persona ;
+    rdfs:range  xsd:string .
+
 # ─── Datatype Properties — RoomObject ────────────────────────────────────────
 
 prod:objectType a owl:DatatypeProperty ;
@@ -483,6 +489,21 @@ prod:ScheduleOverload a owl:Class ;
     rdfs:label   "ScheduleOverload" ;
     rdfs:comment "하루 일정 5개 이상 또는 연속 일정(휴식 30분 미만) 3개 이상일 때 추론된 일정 과부하 상태." .
 
+# ─── Classes — 바이오 데이터 소스 ────────────────────────────────────────────
+
+prod:HeartRate a owl:Class ;
+    rdfs:label   "HeartRate" ;
+    rdfs:comment "Health Connect 심박수 기록. 갤럭시워치 등 웨어러블 기기 데이터." .
+
+prod:HeartRateVariability a owl:Class ;
+    rdfs:label   "HeartRateVariability" ;
+    rdfs:comment "Health Connect RMSSD 기반 심박변동성. 갤럭시워치 있을 때만 데이터 존재." .
+
+# Inferred state class — 바이오 데이터 기반
+prod:HighRestingHR a owl:Class ;
+    rdfs:label   "HighRestingHR" ;
+    rdfs:comment "안정시 심박수 90 BPM 이상 + 운동 기록 없음일 때 추론된 스트레스 지표 상태(Rule 30)." .
+
 # ─── Object Properties — 확장 ───────────────────────────────────────────────
 
 prod:listensTo a owl:ObjectProperty ;
@@ -502,6 +523,18 @@ prod:hasWeather a owl:ObjectProperty ;
     rdfs:comment "User → Weather 연결. 사용자 위치 기반 날씨 기록 참조." ;
     rdfs:domain prod:User ;
     rdfs:range  prod:Weather .
+
+prod:hasHeartRate a owl:ObjectProperty ;
+    rdfs:label   "hasHeartRate" ;
+    rdfs:comment "User → HeartRate 연결. 사용자의 심박수 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:HeartRate .
+
+prod:hasHrv a owl:ObjectProperty ;
+    rdfs:label   "hasHrv" ;
+    rdfs:comment "User → HeartRateVariability 연결. 사용자의 HRV 기록 참조." ;
+    rdfs:domain prod:User ;
+    rdfs:range  prod:HeartRateVariability .
 
 # ─── Datatype Properties — MusicListening ───────────────────────────────────
 
@@ -612,6 +645,26 @@ prod:moodGenre a owl:DatatypeProperty ;
     rdfs:comment "감정 상태와 연결된 음악 장르. MusicMood 노드에 기록. 형식: 문자열." ;
     rdfs:domain prod:MusicMood ;
     rdfs:range  xsd:string .
+
+# ─── Datatype Properties — HeartRate / HeartRateVariability ─────────────────
+
+prod:bpm a owl:DatatypeProperty ;
+    rdfs:label   "bpm" ;
+    rdfs:comment "심박수 BPM. 안정시 기준. 90.0 이상이면 스트레스 지표(Rule 30) 조건. 단위: float." ;
+    rdfs:domain prod:HeartRate ;
+    rdfs:range  xsd:float .
+
+prod:sampleCount a owl:DatatypeProperty ;
+    rdfs:label   "sampleCount" ;
+    rdfs:comment "측정 샘플 수. HeartRate·HeartRateVariability 공통 재사용. 단위: 정수." ;
+    rdfs:domain prod:HeartRate ;
+    rdfs:range  xsd:integer .
+
+prod:rmssd a owl:DatatypeProperty ;
+    rdfs:label   "rmssd" ;
+    rdfs:comment "RMSSD 밀리초 단위. 20ms 미만이면 회복 부족으로 판단(Rule P7). 단위: float." ;
+    rdfs:domain prod:HeartRateVariability ;
+    rdfs:range  xsd:float .
 
 # ─── OWL 제약조건 ────────────────────────────────────────────────────────────
 

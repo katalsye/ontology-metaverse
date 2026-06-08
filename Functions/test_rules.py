@@ -1,6 +1,6 @@
 """
 test_rules.py
-추론 규칙 단위 테스트 — 29개 규칙 전체 + 엣지케이스
+추론 규칙 단위 테스트 — 31개 규칙 전체 + 엣지케이스
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -38,6 +38,7 @@ ALL_RULE_IDS = [
     "persona_solitary", "persona_routine", "persona_night_owl",
     "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
     "schedule_overload",
+    "high_resting_hr_stress", "recovery_deficit_persona",
 ]
 
 
@@ -131,12 +132,12 @@ def _add_cafe_location(g: Graph, user: URIRef, uid: str,
 # ── Test 1: rule_parser ───────────────────────────────────────────────────────
 
 def test_rule_parser(rules: dict[str, str]) -> bool:
-    print("\n[Test P] 규칙 파서 — 29개 RULE_ID 추출 확인")
+    print("\n[Test P] 규칙 파서 — 31개 RULE_ID 추출 확인")
     expected = set(ALL_RULE_IDS)
     extracted = set(rules.keys())
     missing = sorted(expected - extracted)
     extra   = sorted(extracted - expected)
-    ok = check(f"29개 규칙 추출됨 (실제 {len(extracted)}개)",
+    ok = check(f"31개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
     assert ok
@@ -2162,11 +2163,127 @@ def testdeduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
     assert ok4, f"남은 Quest title 불일치: {title}"
 
 
+# ── Test 30 / Rule P7 ─────────────────────────────────────────────────────────
+
+def test_high_resting_hr_stress(rules: dict[str, str]) -> bool:
+    print("\n[Test 30] high_resting_hr_stress — 안정시 심박 스트레스 감지")
+    results = []
+
+    # 정례: bpm >= 90.0, 운동 기록 없음 → HighRestingHR + Quest + stress_ball
+    g = load_base_graph()
+    user = _add_user(g, "r30a")
+    hr = PROD["hr_r30a"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(95.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=95 → HighRestingHR 상태 부여",
+                         (user, PROD.hasState, PROD.HighRestingHR) in g))
+    results.append(check("→ 휴식 권장 퀘스트 생성",
+                         any("오늘 심박수가 높네요" in t for t in quest_titles(g))))
+    results.append(check("→ stress_ball RoomObject 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "stress_ball"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ stress_ball inferredFrom='HighRestingHR'",
+                         any(str(g.value(obj, PROD.inferredFrom)) == "HighRestingHR"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "stress_ball")))
+    results.append(check("→ stress_ball placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "stress_ball")))
+
+    # 반례: bpm >= 90 이지만 stepCount >= 8000 (운동함) → HighRestingHR 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r30b")
+    hr = PROD["hr_r30b"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(92.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    sc = PROD["sc_r30b"]
+    g.add((sc, RDF.type, PROD.StepCount))
+    g.add((sc, PROD["count"], Literal(9000, datatype=XSD.integer)))
+    g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=92 + stepCount=9000 → HighRestingHR 미생성 (운동 예외)",
+                         (user, PROD.hasState, PROD.HighRestingHR) not in g))
+
+    # 반례: bpm < 90 → HighRestingHR 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r30c")
+    hr = PROD["hr_r30c"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(75.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=75 → HighRestingHR 미생성",
+                         (user, PROD.hasState, PROD.HighRestingHR) not in g))
+
+    assert all(results)
+
+
+def test_recovery_deficit_persona(rules: dict[str, str]) -> bool:
+    print("\n[Test P7] recovery_deficit_persona — HRV 회복 부족 페르소나 감지")
+    results = []
+
+    # 정례: rmssd < 20.0 → Persona(recoveryLevel=deficit) + meditation_cushion
+    g = load_base_graph()
+    user = _add_user(g, "rP7a")
+    hrv = PROD["hrv_rP7a"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(15.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    persona_nodes = list(g.objects(user, PROD.hasPersona))
+    results.append(check("rmssd=15 → Persona 노드 생성",
+                         len(persona_nodes) > 0))
+    results.append(check("→ recoveryLevel='deficit'",
+                         any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                             for p in persona_nodes)))
+    results.append(check("→ meditation_cushion RoomObject 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "meditation_cushion"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ meditation_cushion placementZone='floor'",
+                         any(str(g.value(obj, PROD.placementZone)) == "floor"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "meditation_cushion")))
+    results.append(check("→ meditation_cushion inferredFrom='Persona:recovery_deficit'",
+                         any(str(g.value(obj, PROD.inferredFrom)) == "Persona:recovery_deficit"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "meditation_cushion")))
+
+    # 경계값: rmssd = 19.9 (< 20.0) → 발동
+    g = load_base_graph()
+    user = _add_user(g, "rP7b")
+    hrv = PROD["hrv_rP7b"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(19.9, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    results.append(check("rmssd=19.9 (경계-1) → Persona 생성",
+                         any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                             for p in g.objects(user, PROD.hasPersona))))
+
+    # 반례: rmssd >= 20.0 → Persona 미생성
+    g = load_base_graph()
+    user = _add_user(g, "rP7c")
+    hrv = PROD["hrv_rP7c"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(25.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    results.append(check("rmssd=25.0 → Persona(deficit) 미생성",
+                         not any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                                 for p in g.objects(user, PROD.hasPersona))))
+
+    assert all(results)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     print("=" * 60)
-    print("inference_rules.sparql 단위 테스트 (29개 규칙 전체 + Persona 엣지케이스)")
+    print("inference_rules.sparql 단위 테스트 (31개 규칙 전체 + Persona 엣지케이스)")
     print("=" * 60)
 
     rules_text = RULES_PATH.read_text(encoding="utf-8")
@@ -2187,6 +2304,8 @@ def main() -> None:
         ("persona_edge",  lambda: test_persona_edge_cases(rules)),
         ("spotify_music",     lambda: test_spotify_music_patterns(rules)),
         ("schedule_overload", lambda: test_schedule_overload(rules)),
+        ("high_resting_hr",  lambda: test_high_resting_hr_stress(rules)),
+        ("recovery_deficit", lambda: test_recovery_deficit_persona(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
         ("다중 규칙 중복 Quest 제거", lambda: testdeduplicate_quests_multi_rule(rules)),
         # E63 함수들은 pytest로도 실행 가능 (python test_rules.py와 동일 커버리지)

@@ -71,6 +71,9 @@ RULE_ORDER = [
     "persona_solitary",             # Rule P4
     "persona_routine",              # Rule P5  (routine_detection 의존)
     "persona_night_owl",            # Rule P6
+    "recovery_deficit_persona",     # Rule P7  (HRV 회복 부족 페르소나)
+    # 바이오 데이터 기반 상태 추론
+    "high_resting_hr_stress",       # Rule 30  (안정시 심박 스트레스)
 ]
 
 
@@ -497,13 +500,15 @@ def _save_results_to_firestore(
     persona_nodes = list(g.objects(user_uri, PROD.hasPersona))
     if persona_nodes:
         persona: dict[str, str] = {
-            "energyType": "", "socialPreference": "", "lifePattern": "", "updatedAt": "",
+            "energyType": "", "socialPreference": "", "lifePattern": "",
+            "recoveryLevel": "", "updatedAt": "",
         }
         for pnode in persona_nodes:
             for key, prop in [
                 ("energyType",       PROD.energyType),
                 ("socialPreference", PROD.socialPreference),
                 ("lifePattern",      PROD.lifePattern),
+                ("recoveryLevel",    PROD.recoveryLevel),
                 ("updatedAt",        PROD.updatedAt),
             ]:
                 if not persona[key]:
