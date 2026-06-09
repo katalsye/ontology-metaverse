@@ -53,17 +53,10 @@ public class GoogleFirebaseLogin : MonoBehaviour
         userIdTMP.text = "Google UserId: " + user.UserId;
         userNameTMP.text = "User Name: " + user.DisplayName;
 
-                    GetComponent<UserManager>().CreateUserIfNotExists();
-                    GetComponent<UserManager>().RestorePersonaOnLogin();
-                    FcmManager.Instance?.RegisterToken();
-                    FcmManager.Instance?.StartNotificationListener();
-                }
-            }
-            else
-            {
-                Debug.LogError("Could not resolve Firebase dependencies: " + task.Result);
-            }
-        });
+        GetComponent<UserManager>().CreateUserIfNotExists();
+        GetComponent<UserManager>().RestorePersonaOnLogin();
+        FcmManager.Instance?.RegisterToken();
+        FcmManager.Instance?.StartNotificationListener();
     }
     
     private void GoogleSignInClick()
