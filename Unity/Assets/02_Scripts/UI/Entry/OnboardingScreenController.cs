@@ -281,6 +281,8 @@ public class OnboardingScreenController : MonoBehaviour
 
     private void NavigateToLogin()
     {
+        PlayerPrefs.SetInt("onboarding_complete", 1);
+        PlayerPrefs.Save();
         Debug.Log("[Onboarding] → LoginFlowScreen");
         ScreenManager.Instance.GoTo("login");
     }
