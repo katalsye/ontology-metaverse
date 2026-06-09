@@ -1385,7 +1385,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 019bdab79cdeb024780661198c72691a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.OnDeviceAI.Gemma.GemmaOnDeviceManager
-  modelFileName: gemma-3n-E2B-it-int4.task
   isModelLoaded: 0
 --- !u!114 &960036147
 MonoBehaviour:
@@ -1787,6 +1786,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OnboardingScreenController
   uiDocument: {fileID: 1474422012}
   slideTransitionDuration: 0.3
+  gemmaStoragePath: models/gemma-3n-E2B-it-int4.task
 --- !u!114 &1474422012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1925,6 +1925,7 @@ GameObject:
   - component: {fileID: 1850901947}
   - component: {fileID: 1850901946}
   - component: {fileID: 1850901945}
+  - component: {fileID: 1850901950}
   m_Layer: 0
   m_Name: CommonUIDocument
   m_TagString: Untagged
@@ -2022,6 +2023,19 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &1850901950
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1850901943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6404a9f83657c4c458d9f502c4d4cd59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFXController
+  buttonTapSfxIndex: 7
 --- !u!1 &2028554411
 GameObject:
   m_ObjectHideFlags: 0
@@ -2131,6 +2145,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 38578b71bcc6d4b4eb3ded56b10c6950, type: 3}
   - {fileID: 8300000, guid: 5eaec8bd2ee75114fb80cc65449e8626, type: 3}
   - {fileID: 8300000, guid: 5f2261f4dc904e84c93639f95227508e, type: 3}
+  - {fileID: 8300000, guid: eeef56942e552c64cb90fdc5d2560fdb, type: 3}
 --- !u!4 &2034386090
 Transform:
   m_ObjectHideFlags: 0
