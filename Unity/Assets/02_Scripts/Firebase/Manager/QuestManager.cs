@@ -22,6 +22,12 @@ public class QuestManager : MonoBehaviour
 
     private ListenerRegistration _questListener;
 
+    // false → true 전환이 감지된 퀘스트에 대해 발생 (자동 완료 추론 결과)
+    public event Action<Quest> OnQuestAutoCompleted;
+
+    private Dictionary<int, bool> _previousStates = new Dictionary<int, bool>();
+    private bool _questListenerInitialized;
+
     void Awake()
     {
         if (Instance != null) { Destroy(this); return; }
@@ -145,7 +151,8 @@ public class QuestManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
-    // 퀘스트 완료 처리 — quests 배열의 index번째 항목을 갱신 후 전체를 다시 저장
+    // 퀘스트 완료 처리 (DEBUG 전용)
+    // 운영 시에는 ontology_engine.py가 자동으로 isCompleted=true를 기록한다.
     // ───────────────────────────────────────
     public void CompleteQuest(int index, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
@@ -273,6 +280,8 @@ public class QuestManager : MonoBehaviour
 
         StopQuestListener();
         string uid = auth.CurrentUser.UserId;
+        _questListenerInitialized = false;
+        _previousStates.Clear();
 
         _questListener = db.Collection("quests")
             .Document(uid)
@@ -280,6 +289,19 @@ public class QuestManager : MonoBehaviour
             {
                 List<Quest> quests = ParseQuests(snapshot);
                 int unread = quests.Count(q => !q.IsCompleted);
+
+                // 초기 로드 이후부터 false → true 전환 감지
+                if (_questListenerInitialized)
+                {
+                    foreach (var quest in quests)
+                    {
+                        bool wasDone = _previousStates.TryGetValue(quest.Index, out var prev) && prev;
+                        if (!wasDone && quest.IsCompleted)
+                            OnQuestAutoCompleted?.Invoke(quest);
+                    }
+                }
+                _questListenerInitialized = true;
+                _previousStates = quests.ToDictionary(q => q.Index, q => q.IsCompleted);
 
                 OnQuestsChanged?.Invoke(quests);
                 OnUnreadQuestCountChanged?.Invoke(unread);  // 뱃지용
@@ -294,6 +316,8 @@ public class QuestManager : MonoBehaviour
         {
             _questListener.Stop();
             _questListener = null;
+            _questListenerInitialized = false;
+            _previousStates.Clear();
             Debug.Log("퀘스트 리스너 해제");
         }
     }

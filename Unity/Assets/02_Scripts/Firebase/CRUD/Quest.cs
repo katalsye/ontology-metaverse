@@ -17,6 +17,11 @@ public class Quest
     public bool IsCompleted { get; set; }
     public string CreatedAt { get; set; }
 
+    // 자동 완료 추론 시 엔진이 기록하는 필드
+    public string CompletedAt { get; set; }       // ISO 8601, 완료 시각
+    public string TargetEntityUri { get; set; }   // 완료 판정에 쓰인 엔티티 URI
+    public string TargetValue { get; set; }        // 완료 판정에 쓰인 값
+
     // 엔진 스키마에는 없는 Unity 측 부가 필드 — 보상 중복 수령 방지용
     public bool Claimed { get; set; }
 
@@ -24,13 +29,16 @@ public class Quest
     {
         return new Quest
         {
-            Index        = index,
-            Title        = map.TryGetValue("title", out var title) ? title as string ?? "" : "",
-            QuestType    = map.TryGetValue("questType", out var questType) ? questType as string ?? "" : "",
-            RewardAmount = map.TryGetValue("rewardAmount", out var reward) ? Convert.ToInt32(reward) : 0,
-            IsCompleted  = map.TryGetValue("isCompleted", out var completed) && completed is bool b1 && b1,
-            CreatedAt    = map.TryGetValue("createdAt", out var createdAt) ? createdAt?.ToString() ?? "" : "",
-            Claimed      = map.TryGetValue("claimed", out var claimed) && claimed is bool b2 && b2,
+            Index           = index,
+            Title           = map.TryGetValue("title", out var title) ? title as string ?? "" : "",
+            QuestType       = map.TryGetValue("questType", out var questType) ? questType as string ?? "" : "",
+            RewardAmount    = map.TryGetValue("rewardAmount", out var reward) ? Convert.ToInt32(reward) : 0,
+            IsCompleted     = map.TryGetValue("isCompleted", out var completed) && completed is bool b1 && b1,
+            CreatedAt       = map.TryGetValue("createdAt", out var createdAt) ? createdAt?.ToString() ?? "" : "",
+            CompletedAt     = map.TryGetValue("completedAt", out var completedAt) ? completedAt?.ToString() ?? "" : "",
+            TargetEntityUri = map.TryGetValue("targetEntityUri", out var uri) ? uri as string ?? "" : "",
+            TargetValue     = map.TryGetValue("targetValue", out var val) ? val as string ?? "" : "",
+            Claimed         = map.TryGetValue("claimed", out var claimed) && claimed is bool b2 && b2,
         };
     }
 
@@ -43,6 +51,9 @@ public class Quest
             { "rewardAmount", RewardAmount },
             { "isCompleted", IsCompleted },
             { "createdAt", CreatedAt },
+            { "completedAt", CompletedAt ?? "" },
+            { "targetEntityUri", TargetEntityUri ?? "" },
+            { "targetValue", TargetValue ?? "" },
             { "claimed", Claimed },
         };
     }
