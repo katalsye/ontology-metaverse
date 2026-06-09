@@ -908,6 +908,8 @@ public class FurnitureEditController : MonoBehaviour
         }
 
 
+        AudioManager.Instance?.PlaySFX(5);
+
         if (RoomObjectManager.Instance != null && editableItems != null)
         {
             var objects   = new System.Collections.Generic.List<RoomObject>();

@@ -180,13 +180,13 @@ public class ShopScreenController : MonoBehaviour
                 string name = selectedItem.name;
                 CloseDetail();
                 RenderItems();
-                rewardPopup?.Show(name, 1, null);
+                rewardPopup?.Show(name, 1, null);  // RewardPopup.Show 내부에서 SFX(1) 재생
             },
             onFailure: err =>
             {
                 buyBtn.SetEnabled(true);
+                AudioManager.Instance?.PlaySFX(2);
                 Debug.LogError($"[Shop] 구매 실패: {err}");
-                // err == "재화 부족" 일 때 토스트 등 안내 가능
             }
         );
     }

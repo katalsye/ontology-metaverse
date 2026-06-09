@@ -95,6 +95,7 @@ public class DiaryScreenController : MonoBehaviour
             onSuccess: () =>
             {
                 UpdateStreakLocally(today);
+                AudioManager.Instance?.PlaySFX(3);
 
                 DiaryManager.Instance.ClaimDiaryReward(today,
                     onSuccess: () =>

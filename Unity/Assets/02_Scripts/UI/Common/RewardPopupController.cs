@@ -38,5 +38,6 @@ public class RewardPopupController : MonoBehaviour
         rewardAmount.text = $"× {amount}";
         onClose = callback;
         overlay.style.display = DisplayStyle.Flex;
+        AudioManager.Instance?.PlaySFX(1);
     }
 }
