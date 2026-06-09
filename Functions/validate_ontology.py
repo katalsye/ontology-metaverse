@@ -125,6 +125,10 @@ RULE_IDS = [
     "persona_solitary", "persona_routine", "persona_night_owl",
     "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
     "schedule_overload",
+    "high_resting_hr_stress", "recovery_deficit_persona",
+    "complete_missing_companion", "complete_missing_emotion",
+    "complete_missing_purpose", "complete_missing_music_mood",
+    "complete_missing_sleep_cause", "complete_missing_event_review",
 ]
 
 

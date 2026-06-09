@@ -170,19 +170,21 @@ WHERE {
 
     BIND(STR(?pt) AS ?ptStr)
     BIND(
-        IF(?ptStr = "cafe",    "coffee_cup",
-        IF(?ptStr = "gym",     "dumbbell",
-        IF(?ptStr = "library", "bookshelf",
-        IF(?ptStr = "park",    "tree_pot",
-        "generic_marker")))) AS ?objType
+        IF(?ptStr = "cafe",       "coffee_cup",
+        IF(?ptStr = "gym",        "dumbbell",
+        IF(?ptStr = "library",    "bookshelf",
+        IF(?ptStr = "park",       "tree_pot",
+        IF(?ptStr = "restaurant", "dish_plate",
+        "generic_marker"))))) AS ?objType
     )
     BIND(CONCAT("PlaceHabit:", STR(?pt)) AS ?inferredLabel)
     BIND(
-        IF(?ptStr = "cafe",    "desk",
-        IF(?ptStr = "gym",     "floor",
-        IF(?ptStr = "library", "wall",
-        IF(?ptStr = "park",    "floor",
-        "floor")))) AS ?zone
+        IF(?ptStr = "cafe",       "desk",
+        IF(?ptStr = "gym",        "floor",
+        IF(?ptStr = "library",    "wall",
+        IF(?ptStr = "park",       "floor",
+        IF(?ptStr = "restaurant", "desk",
+        "floor"))))) AS ?zone
     )
 }
 
@@ -228,7 +230,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?loc .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -255,7 +258,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?atype .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -289,7 +293,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?place .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -328,7 +333,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?genre .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -363,7 +369,8 @@ CONSTRUCT {
         prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?sleep .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -392,7 +399,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?evt .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -407,6 +415,116 @@ WHERE {
 
     BIND(COALESCE(STR(?evtTitle), "최근 일정") AS ?displayEvent)
     BIND(CONCAT(?displayEvent, " 어땠어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 1 — 데이터 보완형 퀘스트 자동 완료 (complete_* 페어 규칙)
+# 사용자가 빈 노드를 채우면 대응하는 missing_* 퀘스트를 isCompleted=true로 전환
+# ══════════════════════════════════════════════════════════════════════════════
+
+# RULE_ID: complete_missing_companion
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?loc .
+    ?user prod:hasLocation ?loc .
+    ?loc prod:companion ?companion .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_emotion
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?atype .
+    ?user prod:hasActivity ?act .
+    ?act prod:activityType ?atype ;
+         prod:emotion ?emotion .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_purpose
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?place .
+    ?user prod:hasLocation ?loc .
+    ?loc prod:placeName ?place ;
+         prod:purpose ?purpose .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_music_mood
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?genre .
+    ?user prod:listensTo ?ml .
+    ?ml prod:genre ?genre ;
+        prod:mood ?mood .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_sleep_cause
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?sleep .
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:cause ?cause .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_event_review
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?evt .
+    ?user prod:hasCalendarEvent ?evt .
+    ?evt prod:review ?review .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1028,4 +1146,71 @@ WHERE {
         GROUP BY ?user ?evtDate
     }
     FILTER (?evtCnt >= 5)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule 30 — HighRestingHR + 스트레스 알림 퀘스트
+# 안정시 심박수 90 BPM 이상 + 운동 기록(StepCount 8000보 이상) 없음
+# → prod:HighRestingHR 상태 부여 + 스트레스 알림 퀘스트 생성
+# ── Rule 27(StressIndicator)과 다른 인과 경로 (음악 장르 vs 심박수)
+# ── 같은 stress_ball objectType 재활용 — 두 규칙이 동시 발동 시 2개 노드 생성 가능
+#    (Unity팀: inferredFrom으로 구분 가능)
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: high_resting_hr_stress
+CONSTRUCT {
+    ?user prod:hasState prod:HighRestingHR .
+    _:q a prod:Quest ;
+        prod:title "오늘 심박수가 높네요. 잠깐 쉬어볼까요?" ;
+        prod:questType "삶 개선형" ;
+        prod:rewardAmount 50 ;
+        prod:isCompleted false .
+    ?user prod:receivesQuest _:q .
+    _:obj a prod:RoomObject ;
+          prod:objectType "stress_ball" ;
+          prod:inferredFrom "HighRestingHR" ;
+          prod:inferredFromConcept prod:HighRestingHR ;
+          prod:placementZone "desk" .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+
+    # 안정시 심박수 90 BPM 이상
+    ?user prod:hasHeartRate ?hr .
+    ?hr   prod:bpm ?bpm .
+    FILTER (?bpm >= 90.0)
+
+    # 운동 기록(StepCount 8000보 이상) 없음
+    FILTER NOT EXISTS {
+        ?user prod:hasStepCount ?sc .
+        ?sc   prod:count ?cnt .
+        FILTER (?cnt >= 8000)
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── Rule P7 — HRV 회복 부족 페르소나 ─────────────────────────────────────────
+# 최근 HRV RMSSD < 20ms (회복 부족 임계값)
+# → Persona에 recoveryLevel = "deficit" 추가
+# ── 갤럭시워치 등 웨어러블 기기가 있는 사용자에게만 발동
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: recovery_deficit_persona
+CONSTRUCT {
+    _:p a prod:Persona ;
+        prod:recoveryLevel "deficit" ;
+        prod:updatedAt ?now .
+    ?user prod:hasPersona _:p .
+    _:obj a prod:RoomObject ;
+          prod:objectType "meditation_cushion" ;
+          prod:inferredFrom "Persona:recovery_deficit" ;
+          prod:inferredFromConcept prod:Persona ;
+          prod:placementZone "floor" .
+    ?user prod:hasRoomObject _:obj .
+}
+WHERE {
+    ?user a prod:User .
+    BIND(NOW() AS ?now)
+    ?user prod:hasHrv ?hrv .
+    ?hrv  prod:rmssd  ?rmssd .
+    FILTER (?rmssd < 20.0)
 }

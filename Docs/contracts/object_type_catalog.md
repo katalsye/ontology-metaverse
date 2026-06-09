@@ -3,8 +3,8 @@
 > 유니티팀(노성민, 이서윤) 합의 미팅용 — 추론 엔진이 생성하는 3D 에셋 목록
 >
 > 출처: `Functions/ontology/rules/inference_rules.sparql`  
-> 최종 갱신: 2026-05-21 (페르소나 기반 RoomObject 6종 추가, 합계 20종)  
-> v0.2 (2026-05-21): positionX/Y/Z → placementZone 변경 (유니티팀 요청 반영)
+> 최종 갱신: 2026-06-08 (HeartRate/HRV 기반 Rule 30/P7 추가, 합계 22종)  
+> v0.3 (2026-06-08): dish_plate(restaurant 전용), meditation_cushion(HRV 회복 부족) 추가
 
 ---
 
@@ -320,6 +320,44 @@
 
 ---
 
+## 장소 습관 기반 objectType 추가 (1종) — Rule 4 restaurant 매핑
+
+---
+
+### 21. `dish_plate`
+
+| 항목 | 내용 |
+|------|------|
+| **값** | `"dish_plate"` |
+| **규칙 ID** | `place_habit` (Rule 4) |
+| **생성 조건** | `placeType = "restaurant"` 인 Location을 주 3회 이상 방문 |
+| **인퍼런스 소스** | `prod:PlaceHabit` |
+| **inferredFrom** | `"PlaceHabit:restaurant"` |
+| **배치 영역** | `"desk"` |
+| **설명** | 식당을 자주 방문하는 습관을 상징하는 접시 오브젝트 |
+
+---
+
+## 바이오 데이터 기반 페르소나 objectType (1종) — Rule P7
+
+---
+
+### 22. `meditation_cushion`
+
+| 항목 | 내용 |
+|------|------|
+| **값** | `"meditation_cushion"` |
+| **규칙 ID** | `recovery_deficit_persona` (Rule P7) |
+| **생성 조건** | HRV RMSSD < 20ms (회복 부족 임계값) |
+| **인퍼런스 소스** | `prod:Persona` (recoveryLevel=deficit) |
+| **inferredFrom** | `"Persona:recovery_deficit"` |
+| **배치 영역** | `"floor"` |
+| **설명** | HRV 기반 회복 부족 페르소나 감지 시 바닥에 배치되는 명상 쿠션 오브젝트 |
+
+> **Unity팀 참고:** 갤럭시워치 등 웨어러블 기기가 있는 사용자에게만 HRV 데이터가 존재하므로, 이 오브젝트는 조건부 생성됨.
+
+---
+
 ## placeType → objectType 매핑 요약 (Rule 4)
 
 | placeType | objectType | inferredFrom | placementZone |
@@ -328,6 +366,7 @@
 | `gym` | `dumbbell` | `PlaceHabit:gym` | `"floor"` |
 | `library` | `bookshelf` | `PlaceHabit:library` | `"wall"` |
 | `park` | `tree_pot` | `PlaceHabit:park` | `"floor"` |
+| `restaurant` | `dish_plate` | `PlaceHabit:restaurant` | `"desk"` |
 | 그 외 모두 | `generic_marker` | `PlaceHabit:{값}` | `"floor"` |
 
 ---
@@ -351,6 +390,8 @@
 | `Persona` (socialPreference=solitary) | `single_chair` | Rule P4 | `"floor"` |
 | `Persona` (lifePattern=routine) | `organized_shelf` | Rule P5 | `"wall"` |
 | `Persona` (lifePattern=night_owl) | `moon_lamp` | Rule P6 | `"ceiling"` |
+| `HighRestingHR` | `stress_ball` | Rule 30 | `"desk"` |
+| `Persona` (recoveryLevel=deficit) | `meditation_cushion` | Rule P7 | `"floor"` |
 
 ---
 
@@ -372,7 +413,7 @@
 | `window_rain` | 1 (Rule 7만) | 중복 없음 |
 | `alarm_clock` | 1 (Rule 8만) | 중복 없음 |
 | `music_speaker` | 1 (Rule 9만) | 중복 없음 |
-| `stress_ball` | 1 (Rule 27만) | 중복 없음 |
+| `stress_ball` | 2 (Rule 27, Rule 30) | ⚠️ 중복 발생 — `inferredFrom`으로 구분 (`"StressIndicator"` vs `"HighRestingHR"`) |
 | `calendar_wall` | 1 (Rule 29만) | 중복 없음 |
 | `sports_trophy` | 1 (Rule P1만) | 중복 없음 |
 | `cozy_blanket` | 1 (Rule P2만) | 중복 없음 |
@@ -380,6 +421,8 @@
 | `single_chair` | 1 (Rule P4만) | 중복 없음 |
 | `organized_shelf` | 1 (Rule P5만) | 중복 없음 |
 | `moon_lamp` | 1 (Rule P6만) | 중복 없음 |
+| `dish_plate` | 1 (Rule 4만) | 중복 없음 |
+| `meditation_cushion` | 1 (Rule P7만) | 중복 없음 |
 
 **주의: 간접 중복 가능 시나리오**
 
@@ -393,7 +436,7 @@ Unity팀은 복수 오브젝트 동시 배치 상황을 처리해야 한다.
 
 | 구분 | 개수 |
 |------|------|
-| Rule 4 (place_habit) objectType | **5종** (`coffee_cup`, `dumbbell`, `bookshelf`, `tree_pot`, `generic_marker`) |
+| Rule 4 (place_habit) objectType | **6종** (`coffee_cup`, `dumbbell`, `bookshelf`, `tree_pot`, `dish_plate`, `generic_marker`) |
 | Rule 26 (focus_music_pattern) objectType | **1종** (`desk_light_bright`) |
 | Rule 28 (social_music_pattern) objectType | **1종** (`party_light`) |
 | Rule 1 (fatigue_risk) objectType | **1종** (`tired_pillow`) |
@@ -403,14 +446,16 @@ Unity팀은 복수 오브젝트 동시 배치 상황을 처리해야 한다.
 | Rule 9 (music_mood) objectType | **1종** (`music_speaker`) |
 | Rule 27 (stress_music_pattern) objectType | **1종** (`stress_ball`) |
 | Rule 29 (schedule_overload) objectType | **1종** (`calendar_wall`) |
+| Rule 30 (high_resting_hr_stress) objectType | **1종** (`stress_ball` — Rule 27과 공유, `inferredFrom`으로 구분) |
 | Rule P1 (persona_active) objectType | **1종** (`sports_trophy`) |
 | Rule P2 (persona_indoor) objectType | **1종** (`cozy_blanket`) |
 | Rule P3 (persona_social) objectType | **1종** (`photo_frame_friends`) |
 | Rule P4 (persona_solitary) objectType | **1종** (`single_chair`) |
 | Rule P5 (persona_routine) objectType | **1종** (`organized_shelf`) |
 | Rule P6 (persona_night_owl) objectType | **1종** (`moon_lamp`) |
-| **총 objectType 유형** | **20종 (전부 고정 문자열)** |
-| RoomObject를 생성하는 규칙 수 | **16개** (Rule 1, 3, 4, 7, 8, 9, 26, 27, 28, 29, P1~P6) |
+| Rule P7 (recovery_deficit_persona) objectType | **1종** (`meditation_cushion`) |
+| **총 objectType 유형** | **22종 (전부 고정 문자열)** |
+| RoomObject를 생성하는 규칙 수 | **18개** (Rule 1, 3, 4, 7, 8, 9, 26, 27, 28, 29, 30, P1~P7) |
 | 동적 objectType | **없음** |
 | placementZone 종류 | **6종** (`desk`, `floor`, `wall`, `ceiling`, `window`, `shelf`) |
 
