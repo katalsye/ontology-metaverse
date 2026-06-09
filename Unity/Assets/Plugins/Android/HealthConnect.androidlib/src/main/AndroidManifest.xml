@@ -2,5 +2,17 @@
 <!-- 라이브러리 모듈 매니페스트.
      namespace는 build.gradle에서 지정 (AGP 8+ 방식).
      Health Connect 권한(READ_SLEEP 등)은 앱 메인 매니페스트
-     (Assets/Plugins/Android/AndroidManifest.xml)에 선언됨. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+     (Assets/Plugins/Android/AndroidManifest.xml)에 선언됨.
+
+     아래 HealthPermissionActivity는 권한 요청 전용 투명 Activity.
+     Unity Activity가 ComponentActivity가 아니라 registerForActivityResult를
+     쓸 수 없는 문제를 우회한다. AGP 매니페스트 머지로 앱에 합쳐진다. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="com.ontology.metaverse.health.HealthPermissionActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false"
+            android:excludeFromRecents="true" />
+    </application>
+</manifest>

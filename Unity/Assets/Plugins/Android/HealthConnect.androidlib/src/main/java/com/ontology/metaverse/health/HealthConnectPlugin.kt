@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
@@ -116,21 +115,23 @@ object HealthConnectPlugin {
     }
 
     /**
-     * Health Connect 권한 요청 화면을 띄움.
-     * PermissionController의 ActivityResultContract intent를 직접 생성해 startActivity.
-     * (Unity Activity가 ComponentActivity가 아니라 registerForActivityResult 못 쓰므로
-     *  결과는 받지 않고, 다음 batch 사이클에서 hasAllPermissions로 재확인하는 패턴)
+     * Health Connect 권한 요청 — 전용 HealthPermissionActivity 를 띄운다.
+     * (Unity Activity 가 androidx.activity.ComponentActivity 가 아니라 권한 contract 를
+     *  직접 launch 할 수 없으므로, ComponentActivity 인 HealthPermissionActivity 에 위임.
+     *  결과는 그 Activity 의 onPermissionResult 콜백 → 다음 batch 의 hasAllPermissions 로 재확인)
      */
     @JvmStatic
     fun openHealthConnectSettings(activity: Activity) {
+        // 권한 요청은 ActivityResultContract 기반이라 androidx.activity.ComponentActivity 가 필요하다.
+        // Unity Activity 는 그게 아니므로, 전용 HealthPermissionActivity 를 띄워 표준 팝업을 표시한다.
+        // (intent 직접 startActivity 는 통합형 Health Connect 기기에서 'No Activity found' 로 실패)
         try {
-            val contract = PermissionController.createRequestPermissionResultContract()
-            val intent = contract.createIntent(activity, allRequestablePermissions)
+            val intent = Intent(activity, HealthPermissionActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
-            Log.i(TAG, "Health Connect 권한 요청 화면 띄움")
+            Log.i(TAG, "권한 요청 Activity 띄움 (HealthPermissionActivity)")
         } catch (e: Exception) {
-            Log.w(TAG, "권한 컨트랙트 intent 실패, 설정 화면으로 폴백: ${e.message}")
+            Log.w(TAG, "권한 Activity 실패, Health Connect 설정 화면으로 폴백: ${e.message}")
             try {
                 val settings = Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
                 settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -139,6 +140,15 @@ object HealthConnectPlugin {
                 Log.e(TAG, "설정 화면도 실패: ${e2.message}", e2)
             }
         }
+    }
+
+    /** HealthPermissionActivity 가 요청할 권한 집합 (필수 + 옵션). */
+    internal fun getAllRequestablePermissions(): Set<String> = allRequestablePermissions
+
+    /** HealthPermissionActivity 의 권한 요청 결과 콜백. 다음 batch 에서 hasAllPermissions 로 재확인된다. */
+    internal fun onPermissionResult(granted: Set<String>) {
+        val ok = granted.containsAll(requiredPermissions)
+        Log.i(TAG, "권한 결과: ${granted.size}개 grant, 필수 권한 충족=$ok")
     }
 
     // ─────────────────────────────────────────────────────

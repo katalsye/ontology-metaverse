@@ -55,12 +55,23 @@
       <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
     </activity>
     <service android:name="com.google.firebase.messaging.MessageForwardingService" android:exported="false" tools:replace="android:exported" />
-    <!-- Health Connect 권한 rationale Activity (요구 사항):
-         사용자가 Health Connect 앱에서 "이 앱은 왜 데이터가 필요한지?" 클릭 시 표시.
-         일단 메인 Activity로 라우팅 (Unity 표준 패턴, 별도 Privacy Activity 만들면 더 깔끔). -->
+    <!-- Health Connect 권한 rationale Activity (Android 13 / API 33 방식):
+         사용자가 Health Connect 권한 화면에서 "이 앱은 왜 데이터가 필요한지?" 클릭 시 표시.
+         메인 Activity로 라우팅 (Unity 표준 패턴). -->
     <activity-alias android:name="com.ontology.metaverse.HealthConnectPermissionsRationale" android:exported="true" android:targetActivity="com.google.firebase.MessagingUnityPlayerActivity">
       <intent-filter>
         <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+      </intent-filter>
+    </activity-alias>
+    <!-- Health Connect 권한 rationale Activity (Android 14+ / API 34+ 방식 — 필수):
+         Android 14+ 통합형 Health Connect는 권한 요청 시 앱이 이 ViewPermissionUsageActivity를
+         선언했는지 검사한다. 없으면 정책상 권한 화면을 띄우지 않고 즉시 빈 결과(grant [])로 닫는다.
+         삼성 S24(API 36)처럼 OS 통합형 기기에서 권한 팝업이 0.26초만에 사라지는 원인.
+         android:permission=START_VIEW_PERMISSION_USAGE로 시스템만 이 alias를 호출하도록 제한. -->
+    <activity-alias android:name="ViewPermissionUsageActivity" android:exported="true" android:targetActivity="com.google.firebase.MessagingUnityPlayerActivity" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+        <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
       </intent-filter>
     </activity-alias>
     <!-- Spotify OAuth callback Activity (Custom URL Scheme: ontologyapp://spotify-callback).

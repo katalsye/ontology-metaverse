@@ -366,9 +366,8 @@ namespace OntologyMetaverse.DataCollection
         /// Health Connect heart rate → HeartRate 노드.
         /// JSON 형식: {"avgBpm":72.5,"sampleCount":42,"timestamp":"..."}
         ///
-        /// ⚠️ 무성님 core.ttl에 prod:HeartRate 클래스/속성 아직 없음 (2026-06-08 기준).
-        ///    트리플은 생성해서 보내되, 무성님 SPARQL은 무시함.
-        ///    무성님께 prod:HeartRate, prod:hasHeartRate, prod:bpm, prod:sampleCount 추가 요청 필요.
+        /// 무성님 core.ttl에 prod:HeartRate/hasHeartRate/bpm/sampleCount 정의됨 (bb725ed, 전체 레포 확인).
+        ///    Rule 30 (StressIndicator): 안정시 bpm 90 이상 + 운동 기록 없음 → 스트레스 지표.
         ///
         /// 잠재 Rule 후보 (무성님과 협의):
         ///   - 평균 안정시 bpm 90 이상 + 운동 기록 없음 → 스트레스 지표
@@ -394,10 +393,9 @@ namespace OntologyMetaverse.DataCollection
         /// Health Connect HRV(RMSSD) → HeartRateVariability 노드. (옵션 A — Health Connect RMSSD 직접 읽기)
         /// JSON: {"avgRmssd":42.5,"sampleCount":12,"timestamp":"..."}
         ///
-        /// ⚠️ 무성님 prod:hrv 명세 확정 전 잠정 구조.
-        ///    제안: (user, hasHrv, hrv_X) / (hrv_X, rmssd, float) / (hrv_X, sampleCount, int) / (hrv_X, timestamp)
-        ///    무성님 Rule P7 (HRV 낮음 → 회복 부족 페르소나)에서 사용 예정.
-        ///    RMSSD 낮을수록 회복 부족/스트레스 ↑ (일반적으로 20ms 미만이 낮은 편).
+        /// 무성님 core.ttl에 prod:HeartRateVariability/hasHrv/rmssd/sampleCount 정의됨 (bb725ed, 전체 레포 확인).
+        ///    구조: (user, hasHrv, hrv_X) / (hrv_X, rmssd, float) / (hrv_X, sampleCount, int) / (hrv_X, timestamp)
+        ///    Rule P7 (HRV RMSSD < 20ms → 회복 부족 페르소나)에서 사용. RMSSD 낮을수록 회복 부족↑.
         /// </summary>
         private List<TripleJson> ConvertHrv(RawData raw)
         {

@@ -49,16 +49,24 @@ namespace OntologyMetaverse.DataCollection.Spotify
         [Tooltip("true면 저장된 토큰 삭제 후 OAuth 다시. 사용 후 false로.")]
         public bool forceReauth = false;
 
+        [Header("Last.fm API Key (genre 보강용)")]
+        [Tooltip("https://www.last.fm/api/account/create 에서 무료 발급. Spotify가 신규 앱에서 genre를 안 줘서 " +
+                 "아티스트 장르를 Last.fm으로 조회. 비우면 genre 없이 수집(음악 추론 규칙 비활성).")]
+        public string lastFmApiKey = "";
+
         private SpotifyAuthManager _auth;
         private SpotifyApiClient _api;
+        private LastFmGenreClient _lastFm;
 
-        // artist_id → genre (메모리 캐시, 앱 재시작 시 초기화 OK — Spotify artist genre는 잘 안 바뀜)
+        // artist 이름 → genre (메모리 캐시, 앱 재시작 시 초기화 OK — 아티스트 장르는 잘 안 바뀜).
+        // 빈 문자열도 캐싱해 같은 아티스트 재조회를 막는다(Last.fm 호출 절약).
         private readonly Dictionary<string, string> _artistGenreCache = new Dictionary<string, string>();
 
         private void Awake()
         {
             _auth = new SpotifyAuthManager(clientId, redirectUri, scopes);
             _api = new SpotifyApiClient();
+            _lastFm = new LastFmGenreClient(lastFmApiKey);
         }
 
         /// <summary>
@@ -108,38 +116,28 @@ namespace OntologyMetaverse.DataCollection.Spotify
                 yield break;
             }
 
-            // 3. genre 미캐시 artist ID 수집
-            var missingArtistIds = new List<string>();
-            foreach (var item in items)
+            // 3. genre 캐시 확보 — Spotify는 신규 앱에서 genre를 못 줘(catalog /v1/artists 403,
+            //    user 우회 /v1/me/top/artists는 200이지만 인디/보컬로이드 genres가 빈 값).
+            //    → Last.fm artist.getTopTags로 아티스트별 장르 조회. 아티스트 이름 단위 캐싱.
+            if (_lastFm != null && _lastFm.HasKey)
             {
-                string aid = GetPrimaryArtistId(item.track);
-                if (!string.IsNullOrEmpty(aid) && !_artistGenreCache.ContainsKey(aid))
+                foreach (var item in items)
                 {
-                    if (!missingArtistIds.Contains(aid)) missingArtistIds.Add(aid);
+                    string aName = (item.track?.artists != null && item.track.artists.Count > 0)
+                        ? item.track.artists[0].name : null;
+                    if (string.IsNullOrWhiteSpace(aName) || _artistGenreCache.ContainsKey(aName))
+                        continue;
+
+                    string g = "";
+                    yield return _lastFm.GetArtistGenre(aName, res => g = res);
+                    _artistGenreCache[aName] = g;  // 빈 값도 캐싱(재조회 방지)
+                    if (!string.IsNullOrEmpty(g))
+                        Debug.Log($"[SpotifyCollector] Last.fm genre: {aName} → {g}");
                 }
             }
-
-            if (missingArtistIds.Count > 0)
+            else
             {
-                List<SpotifyArtist> fetched = null;
-                string artistErr = null;
-                yield return _api.FetchArtists(_auth.AccessToken, missingArtistIds,
-                    onSuccess: list => fetched = list,
-                    onError: e => artistErr = e);
-
-                if (fetched != null)
-                {
-                    foreach (var a in fetched)
-                    {
-                        string g = (a.genres != null && a.genres.Count > 0) ? a.genres[0] : "";
-                        _artistGenreCache[a.id] = g;
-                    }
-                    Debug.Log($"[SpotifyCollector] genre 캐시 추가: {fetched.Count}명");
-                }
-                else
-                {
-                    Debug.LogWarning($"[SpotifyCollector] artists 조회 실패: {artistErr}");
-                }
+                Debug.LogWarning("[SpotifyCollector] Last.fm API Key 미설정 → genre 없이 수집 (Inspector에 입력)");
             }
 
             // 4. 트랙별 중복 체크 + 저장
@@ -159,10 +157,9 @@ namespace OntologyMetaverse.DataCollection.Spotify
                     continue;
                 }
 
-                string artistId = GetPrimaryArtistId(item.track);
-                string genre = _artistGenreCache.TryGetValue(artistId, out string g) ? g : "";
                 string artistName = (item.track.artists != null && item.track.artists.Count > 0)
                     ? item.track.artists[0].name : "";
+                string genre = _artistGenreCache.TryGetValue(artistName, out string g) ? g : "";
 
                 var record = new MusicListeningRecord
                 {
@@ -231,12 +228,6 @@ namespace OntologyMetaverse.DataCollection.Spotify
         }
 
         // ─────────────────────────────────────────────────────
-
-        private static string GetPrimaryArtistId(SpotifyTrack t)
-        {
-            if (t?.artists == null || t.artists.Count == 0) return null;
-            return t.artists[0].id;
-        }
 
         private static string EscapeJson(string s)
         {

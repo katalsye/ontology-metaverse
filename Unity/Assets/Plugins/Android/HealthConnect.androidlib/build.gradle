@@ -58,4 +58,7 @@ dependencies {
     implementation 'androidx.health.connect:connect-client:1.1.0'
     // suspend 함수 호출용 코루틴 (Kotlin 2.0 호환)
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
+    // 권한 요청용 ComponentActivity(registerForActivityResult) — HealthPermissionActivity 가 사용.
+    // Unity Activity 가 androidx.activity.ComponentActivity 가 아니라 직접 권한 contract 를 못 launch 하는 문제 회피.
+    implementation 'androidx.activity:activity-ktx:1.9.3'
 }

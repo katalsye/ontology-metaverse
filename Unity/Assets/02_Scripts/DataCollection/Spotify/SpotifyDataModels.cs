@@ -37,24 +37,6 @@ namespace OntologyMetaverse.DataCollection.Spotify
     }
 
     // ────────────────────────────────────────────────────
-    // /v1/artists?ids=... 응답 모델 (genre 조회용)
-    // ────────────────────────────────────────────────────
-
-    [Serializable]
-    public class ArtistsResponse
-    {
-        public List<SpotifyArtist> artists;
-    }
-
-    [Serializable]
-    public class SpotifyArtist
-    {
-        public string id;
-        public string name;
-        public List<string> genres;  // 비어있을 수 있음 (작은 아티스트)
-    }
-
-    // ────────────────────────────────────────────────────
     // 우리 도메인 — 트리플 발행 위한 정규화 모델
     // ────────────────────────────────────────────────────
 
