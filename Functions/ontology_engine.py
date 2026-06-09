@@ -49,7 +49,14 @@ RULE_ORDER = [
     "missing_purpose",          # Rule 6-C (의도 빈 노드)
     "missing_music_mood",       # Rule 6-D (음악 맥락 빈 노드)
     "missing_sleep_cause",      # Rule 6-E (수면 원인 빈 노드)
-    "missing_event_review",     # Rule 6-F (일정 후기 빈 노드)
+    "missing_event_review",      # Rule 6-F (일정 후기 빈 노드)
+    # 데이터 보완형 퀘스트 자동 완료 (Phase 1, #116)
+    "complete_missing_companion",    # Rule C1
+    "complete_missing_emotion",      # Rule C2
+    "complete_missing_purpose",      # Rule C3
+    "complete_missing_music_mood",   # Rule C4
+    "complete_missing_sleep_cause",  # Rule C5
+    "complete_missing_event_review", # Rule C6
     "indoor_day_pattern",       # Rule 7
     "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
     "routine_detection",        # Rule 8
@@ -381,6 +388,10 @@ def _apply_rules(g: Graph, rules: dict[str, str]) -> list[tuple]:
             logger.info("Rule %s → %d new triples", rule_id, len(result))
         except Exception as exc:
             logger.error("Rule %s failed: %s", rule_id, exc)
+    # complete_* 규칙 실행 후 isCompleted 충돌 해소:
+    # isCompleted=True가 생성된 Quest의 isCompleted=False 제거 (멱등성)
+    for quest in list(g.subjects(PROD.isCompleted, Literal(True))):
+        g.remove((quest, PROD.isCompleted, Literal(False)))
     return new_triples
 
 
@@ -442,15 +453,19 @@ def _save_results_to_firestore(
             created  = g.value(quest, PROD.createdAt)
             title_str = str(title) if title else ""
             reward_amt = g.value(quest, PROD.rewardAmount)
+            is_done_bool = is_done.toPython() if is_done is not None else False
             quests_payload.append({
-                "title":        title_str,
-                "questType":    str(q_type) if q_type else "",
-                "rewardAmount": int(reward_amt.toPython()) if reward_amt is not None else 0,
-                # Literal.toPython() → Python bool/int/float 변환 (str 변환 금지)
-                "isCompleted":  is_done.toPython() if is_done is not None else False,
-                "createdAt":    str(created) if created else "",
+                "title":           title_str,
+                "questType":       str(q_type) if q_type else "",
+                "rewardAmount":    int(reward_amt.toPython()) if reward_amt is not None else 0,
+                "isCompleted":     is_done_bool,
+                "createdAt":       str(created) if created else "",
+                "targetEntityUri": str(g.value(quest, PROD.targetEntity)) if g.value(quest, PROD.targetEntity) else "",
+                "targetValue":     str(g.value(quest, PROD.targetValue)) if g.value(quest, PROD.targetValue) else "",
+                "completedAt":     str(g.value(quest, PROD.completedAt)) if g.value(quest, PROD.completedAt) else "",
             })
-            new_quest_titles.append(title_str)
+            if not is_done_bool:  # 완료된 퀘스트는 FCM 알림 제외
+                new_quest_titles.append(title_str)
         db.collection("quests").document(uid).set(
             {"quests": quests_payload}, merge=True
         )

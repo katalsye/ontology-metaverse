@@ -230,7 +230,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?loc .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -257,7 +258,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?atype .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -291,7 +293,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?place .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -330,7 +333,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetValue ?genre .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -365,7 +369,8 @@ CONSTRUCT {
         prod:title "어젯밤 잠이 잘 안 왔어? 이유가 있었어?" ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?sleep .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -394,7 +399,8 @@ CONSTRUCT {
         prod:title ?questTitle ;
         prod:questType "데이터 보완형" ;
         prod:rewardAmount 30 ;
-        prod:isCompleted false .
+        prod:isCompleted false ;
+        prod:targetEntity ?evt .
     ?user prod:receivesQuest _:q .
 }
 WHERE {
@@ -409,6 +415,116 @@ WHERE {
 
     BIND(COALESCE(STR(?evtTitle), "최근 일정") AS ?displayEvent)
     BIND(CONCAT(?displayEvent, " 어땠어?") AS ?questTitle)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 1 — 데이터 보완형 퀘스트 자동 완료 (complete_* 페어 규칙)
+# 사용자가 빈 노드를 채우면 대응하는 missing_* 퀘스트를 isCompleted=true로 전환
+# ══════════════════════════════════════════════════════════════════════════════
+
+# RULE_ID: complete_missing_companion
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?loc .
+    ?user prod:hasLocation ?loc .
+    ?loc prod:companion ?companion .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_emotion
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?atype .
+    ?user prod:hasActivity ?act .
+    ?act prod:activityType ?atype ;
+         prod:emotion ?emotion .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_purpose
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?place .
+    ?user prod:hasLocation ?loc .
+    ?loc prod:placeName ?place ;
+         prod:purpose ?purpose .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_music_mood
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetValue ?genre .
+    ?user prod:listensTo ?ml .
+    ?ml prod:genre ?genre ;
+        prod:mood ?mood .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_sleep_cause
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?sleep .
+    ?user prod:hasSleepData ?sleep .
+    ?sleep prod:cause ?cause .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_missing_event_review
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?evt .
+    ?user prod:hasCalendarEvent ?evt .
+    ?evt prod:review ?review .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

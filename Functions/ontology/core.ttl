@@ -666,6 +666,26 @@ prod:rmssd a owl:DatatypeProperty ;
     rdfs:domain prod:HeartRateVariability ;
     rdfs:range  xsd:float .
 
+# ─── Object/Datatype Properties — Quest 확장 (데이터 보완형 자동 완료, Phase 1) ──────
+
+prod:targetEntity a owl:ObjectProperty ;
+    rdfs:label   "targetEntity" ;
+    rdfs:comment "데이터 보완형 퀘스트가 가리키는 엔티티 노드(Location/SleepData/CalendarEvent). complete_* 규칙의 조인 키." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  owl:Thing .
+
+prod:targetValue a owl:DatatypeProperty ;
+    rdfs:label   "targetValue" ;
+    rdfs:comment "데이터 보완형 퀘스트가 가리키는 Literal 값(activityType/genre/placeName). complete_* 규칙의 Literal 조인 키." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:string .
+
+prod:completedAt a owl:DatatypeProperty ;
+    rdfs:label   "completedAt" ;
+    rdfs:comment "퀘스트 자동 완료 시각. complete_* 규칙에서 BIND(STR(NOW()) AS ?now)로 설정." ;
+    rdfs:domain prod:Quest ;
+    rdfs:range  xsd:dateTime .
+
 # ─── OWL 제약조건 ────────────────────────────────────────────────────────────
 
 # ── 클래스 분리 선언 (owl:disjointWith) ──────────────────────────────────────
