@@ -32,7 +32,10 @@ public class MyRoomScreenController : MonoBehaviour
             SceneManager.LoadScene(RoomScene, LoadSceneMode.Additive);
 
         if (QuestManager.Instance != null)
+        {
             QuestManager.Instance.OnUnreadQuestCountChanged += OnUnreadQuestChanged;
+            QuestManager.Instance.StartQuestListener();
+        }
     }
 
     private void OnDisable()
@@ -54,7 +57,6 @@ public class MyRoomScreenController : MonoBehaviour
 
     private void OnUnreadQuestChanged(int count)
     {
-        // 하단 BottomNav 뱃지는 BottomNavController 에서 처리
-        // 여기서 필요한 추가 처리 있으면 구현
+        // badge-quest 업데이트는 BottomNavController가 같은 이벤트를 구독해 처리
     }
 }
