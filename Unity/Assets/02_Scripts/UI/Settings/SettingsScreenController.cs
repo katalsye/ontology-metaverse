@@ -17,11 +17,33 @@ public class SettingsScreenController : MonoBehaviour
 
     private TextField editNickname, editStatus;
 
+    // 페르소나 표시 레이블
+    private VisualElement _personaSection;
+    private Label _labelEnergyType;
+    private Label _labelSocialPref;
+    private Label _labelLifePattern;
+
     private void OnEnable()
     {
         root = uiDocument.rootVisualElement;
 
         root.Q<Button>("btn-back").clicked += () => ScreenManager.Instance.GoBack();
+
+        // 페르소나 섹션 바인딩
+        _personaSection  = root.Q("persona-section");
+        _labelEnergyType = root.Q<Label>("label-energy-type");
+        _labelSocialPref = root.Q<Label>("label-social-pref");
+        _labelLifePattern = root.Q<Label>("label-life-pattern");
+
+        if (_personaSection != null)
+            _personaSection.style.display = DisplayStyle.None;
+
+        // 페르소나 이벤트 구독 + 초기 로드
+        if (UserManager.Instance != null)
+        {
+            UserManager.Instance.OnPersonaRestored += RefreshPersonaUI;
+            UserManager.Instance.GetPersona(RefreshPersonaUI);
+        }
 
         // 프로필 편집
         profileEditOverlay = root.Q("profile-edit-overlay");
@@ -50,7 +72,8 @@ public class SettingsScreenController : MonoBehaviour
         bgmSlider.RegisterValueChangedCallback(evt =>
         {
             PlayerPrefs.SetFloat("bgm_volume", evt.newValue);
-            // TODO: AudioManager.Instance.SetBGMVolume(evt.newValue / 100f);
+            AudioManager.Instance.SetBGMVolume(evt.newValue / 100f);
+            AudioManager.Instance.SaveVolumesToFirestore();
         });
 
         var sfxSlider = root.Q<Slider>("slider-sfx");
@@ -58,7 +81,8 @@ public class SettingsScreenController : MonoBehaviour
         sfxSlider.RegisterValueChangedCallback(evt =>
         {
             PlayerPrefs.SetFloat("sfx_volume", evt.newValue);
-            // TODO: AudioManager.Instance.SetSFXVolume(evt.newValue / 100f);
+            AudioManager.Instance.SetSFXVolume(evt.newValue / 100f);
+            AudioManager.Instance.SaveVolumesToFirestore();
         });
 
         // 세그먼트: 해상도
@@ -76,6 +100,24 @@ public class SettingsScreenController : MonoBehaviour
         root.Q<Button>("btn-confirm-delete").clicked += OnDeleteAccount;
         root.Q<Button>("btn-cancel-delete").clicked += () =>
             deleteConfirmOverlay.style.display = DisplayStyle.None;
+    }
+
+    private void OnDisable()
+    {
+        if (UserManager.Instance != null)
+            UserManager.Instance.OnPersonaRestored -= RefreshPersonaUI;
+    }
+
+    private void RefreshPersonaUI(Persona p)
+    {
+        if (p == null) return;
+
+        if (_labelEnergyType  != null) _labelEnergyType.text  = p.EnergyType      ?? "-";
+        if (_labelSocialPref  != null) _labelSocialPref.text  = p.SocialPreference ?? "-";
+        if (_labelLifePattern != null) _labelLifePattern.text = p.LifePattern      ?? "-";
+
+        if (_personaSection != null)
+            _personaSection.style.display = DisplayStyle.Flex;
     }
 
     private void SetupToggle(string toggleName, string prefKey)
@@ -122,7 +164,6 @@ public class SettingsScreenController : MonoBehaviour
         buttons.Add(root.Q<Button>(btn2Name));
         if (btn3Name != null) buttons.Add(root.Q<Button>(btn3Name));
 
-        // 초기 상태
         for (int i = 0; i < buttons.Count; i++)
         {
             if (values[i] == current)

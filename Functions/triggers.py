@@ -66,7 +66,7 @@ def _try_acquire_run_slot(uid: str) -> bool:
         transaction.set(meta_ref, {"lastInferenceAt": now}, merge=True)
         return True
 
-    return _txn(firestore.transaction(db))
+    return _txn(db.transaction())
 
 
 def _handle_triple_written(event: Any) -> None:

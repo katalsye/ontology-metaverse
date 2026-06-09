@@ -14,8 +14,8 @@
 
         <!-- 상단 바 -->
         <ui:VisualElement class="top-bar row">
-            <ui:Button name="btn-back" class="icon-btn">
-                <ui:Label text="←" class="icon-btn-text" />
+            <ui:Button name="btn-back" class="btn-back">
+                <ui:Label text="←" class="btn-back-text" />
             </ui:Button>
             <ui:Label text="설정" class="text-heading" />
             <ui:VisualElement style="width: 40px;" />
@@ -34,6 +34,23 @@
                         <ui:Label text="프로필 편집" class="profile-mini-action" />
                     </ui:VisualElement>
                     <ui:Label text="›" class="row-chevron" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- 페르소나 (온톨로지 추론 결과, 데이터 있을 때만 표시) -->
+            <ui:VisualElement name="persona-section" class="settings-group" style="display: none;">
+                <ui:Label text="나의 페르소나" class="group-title" />
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="에너지 유형" class="setting-label" />
+                    <ui:Label name="label-energy-type" text="-" class="setting-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="사회 선호도" class="setting-label" />
+                    <ui:Label name="label-social-pref" text="-" class="setting-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="생활 패턴" class="setting-label" />
+                    <ui:Label name="label-life-pattern" text="-" class="setting-value" />
                 </ui:VisualElement>
             </ui:VisualElement>
 

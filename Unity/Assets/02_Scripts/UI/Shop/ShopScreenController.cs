@@ -178,6 +178,7 @@ public class ShopScreenController : MonoBehaviour
             {
                 ownedItems.Add(selectedItem.id);
                 string name = selectedItem.name;
+                AudioManager.Instance?.PlaySFX(2);
                 CloseDetail();
                 RenderItems();
                 rewardPopup?.Show(name, 1, null);
@@ -185,8 +186,8 @@ public class ShopScreenController : MonoBehaviour
             onFailure: err =>
             {
                 buyBtn.SetEnabled(true);
+                AudioManager.Instance?.PlaySFX(3);
                 Debug.LogError($"[Shop] 구매 실패: {err}");
-                // err == "재화 부족" 일 때 토스트 등 안내 가능
             }
         );
     }

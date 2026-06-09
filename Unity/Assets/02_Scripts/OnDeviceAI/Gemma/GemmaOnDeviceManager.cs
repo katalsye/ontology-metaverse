@@ -22,50 +22,49 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
     /// </summary>
     public class GemmaOnDeviceManager : MonoBehaviour
     {
-        [Header("모델 파일 이름")]
-        public string modelFileName = "gemma-3n-E2B-it-int4.task";
+        public const string ModelFileName = "gemma-3n-E2B-it-int4.task";
+        public static string ModelDestPath => Path.Combine(Application.persistentDataPath, ModelFileName);
 
         public bool isModelLoaded { get; private set; }
-
-        // ModelDownloader가 채워주는 실제 모델 파일 절대 경로
-        private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // com.ontology.metaverse.gemma.GemmaInference 인스턴스
         private AndroidJavaObject nativeBridge;
 #endif
 
-        /// <summary>
-        /// 모델 파일 경로를 받아 네이티브 초기화. ModelDownloader 완료 콜백에서 호출.
-        /// 실기기에서 수 초 ~ 십수 초 걸릴 수 있음 (메인 스레드 OK, MediaPipe 내부 처리).
-        /// </summary>
-        public void InitWithModelPath(string absolutePath)
+        void Start()
         {
-            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
-            {
-                Debug.LogError($"[GemmaManager] 모델 파일을 찾을 수 없습니다: {absolutePath}");
-                isModelLoaded = false;
-                return;
-            }
+            StartCoroutine(InitGemmaModel());
+        }
 
-            modelPath = absolutePath;
-            Debug.Log($"[GemmaManager] 모델 초기화 시작: {modelPath}");
+        private IEnumerator InitGemmaModel()
+        {
+            Debug.Log("[GemmaManager] AI 모델 로딩 시작! (Gemma 3n 멀티모달)");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+            // 온보딩에서 Firebase Storage로 다운로드한 파일을 그대로 사용
+            if (!File.Exists(ModelDestPath))
+            {
+                Debug.LogError("[GemmaManager] 모델 파일 없음 — 온보딩 다운로드가 완료되지 않았습니다.");
+                yield break;
+            }
+
             try
             {
-                nativeBridge = new AndroidJavaObject("com.ontology.metaverse.gemma.GemmaInference");
-                bool ok = nativeBridge.Call<bool>("init", modelPath);
-                if (!ok)
+                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
+                bool success = gemmaBridge.Call<bool>("initialize", ModelDestPath);
+
+                if (success)
                 {
-                    Debug.LogError("[GemmaManager] 네이티브 init 실패 - logcat의 GemmaInference TAG 확인");
-                    nativeBridge.Dispose();
-                    nativeBridge = null;
-                    isModelLoaded = false;
-                    return;
+                    isModelLoaded = true;
+                    Debug.Log("[GemmaManager] 안드로이드 AI 로딩 성공!");
                 }
-                isModelLoaded = true;
-                Debug.Log("[GemmaManager] 네이티브 모델 로딩 성공");
+                else
+                {
+                    Debug.LogError("[GemmaManager] AI 로딩 실패");
+                }
             }
             catch (Exception e)
             {
@@ -73,7 +72,7 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
                 isModelLoaded = false;
             }
 #else
-            // PC 에디터: 네이티브 호출 불가, mock 모드
+            yield return new WaitForSeconds(1.0f);
             isModelLoaded = true;
             Debug.Log("[GemmaManager] Editor 모드: mock 응답 활성");
 #endif

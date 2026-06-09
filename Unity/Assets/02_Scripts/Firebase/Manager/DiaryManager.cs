@@ -3,6 +3,7 @@ using Firebase.Auth;
 using Firebase.Firestore;
 using Firebase.Extensions;
 using System.Collections.Generic;
+using OntologyMetaverse.OnDeviceAI.TripleExtraction;
 
 public class DiaryManager : MonoBehaviour
 {
@@ -11,6 +12,18 @@ public class DiaryManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private RewardManager rewardManager;
+
+    // 지연 탐색 — Gemma 미준비 시 ExtractAndSaveTriples가 0 반환하고 조용히 실패
+    private TextTripleExtractor _tripleExtractor;
+    private TextTripleExtractor TripleExtractor
+    {
+        get
+        {
+            if (_tripleExtractor == null)
+                _tripleExtractor = FindObjectOfType<TextTripleExtractor>();
+            return _tripleExtractor;
+        }
+    }
 
     private const int DiaryRewardAmount = 10;
 
@@ -28,6 +41,7 @@ public class DiaryManager : MonoBehaviour
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
+        rewardManager = RewardManager.Instance;
     }
 
     // ───────────────────────────────────────
@@ -75,6 +89,8 @@ public class DiaryManager : MonoBehaviour
                 }
 
                 Debug.Log("일기 저장 완료");
+                TripleExtractor?.ExtractAndSaveTriples(content);
+                TempTripleSyncManager.Instance?.SyncUnsyncedTriples();
                 onSuccess?.Invoke();
             });
         });

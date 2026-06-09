@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 /// <summary>
 /// 4-4. DiaryHistoryScreen 컨트롤러
@@ -49,51 +50,61 @@ public class DiaryHistoryScreenController : MonoBehaviour
     private void LoadMonth()
     {
         currentMonthLabel.text = $"{viewYear}년 {viewMonth}월";
-
-        // 기존 카드 제거
         diaryList.contentContainer.Clear();
 
-        // TODO: Firestore에서 해당 월 일기 목록 가져오기
+        string yearMonth = $"{viewYear}-{viewMonth:D2}";
 
-        // 로컬 데이터에서 로드 (테스트)
-        var entries = new List<(string date, string text)>();
-        int daysInMonth = DateTime.DaysInMonth(viewYear, viewMonth);
-
-        for (int d = daysInMonth; d >= 1; d--)
-        {
-            string key = $"diary_{viewYear}{viewMonth:D2}{d:D2}";
-            string text = PlayerPrefs.GetString(key, "");
-            if (!string.IsNullOrEmpty(text))
+        DiaryManager.Instance.GetMonthlyDiaries(yearMonth,
+            onSuccess: entries =>
             {
-                var dt = new DateTime(viewYear, viewMonth, d);
-                entries.Add((dt.ToString("M월 d일 dddd"), text));
+                if (entries == null || entries.Count == 0)
+                {
+                    emptyState.AddToClassList("empty-state--visible");
+                    diaryList.style.display = DisplayStyle.None;
+                    return;
+                }
+
+                // 날짜 내림차순 정렬
+                entries.Sort((a, b) => string.Compare(b.Date, a.Date, StringComparison.Ordinal));
+
+                emptyState.RemoveFromClassList("empty-state--visible");
+                diaryList.style.display = DisplayStyle.Flex;
+
+                foreach (var entry in entries)
+                {
+                    diaryList.contentContainer.Add(CreateEntryCard(entry));
+                }
+            },
+            onFailure: err =>
+            {
+                Debug.LogWarning($"[DiaryHistory] 일기 목록 로드 실패: {err}");
+                emptyState.AddToClassList("empty-state--visible");
+                diaryList.style.display = DisplayStyle.None;
             }
-        }
+        );
+    }
 
-        if (entries.Count == 0)
+    private VisualElement CreateEntryCard(DiaryEntry entry)
+    {
+        var card = new VisualElement();
+        card.AddToClassList("diary-entry");
+
+        string dateDisplay = entry.Date;
+        if (DateTime.TryParseExact(entry.Date, "yyyy-MM-dd",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
         {
-            emptyState.AddToClassList("empty-state--visible");
-            diaryList.style.display = DisplayStyle.None;
-            return;
+            dateDisplay = dt.ToString("M월 d일 dddd", new CultureInfo("ko-KR"));
         }
 
-        emptyState.RemoveFromClassList("empty-state--visible");
-        diaryList.style.display = DisplayStyle.Flex;
+        var dateLabel = new Label(dateDisplay);
+        dateLabel.AddToClassList("diary-entry-date");
 
-        foreach (var entry in entries)
-        {
-            var card = new VisualElement();
-            card.AddToClassList("diary-entry");
+        var textLabel = new Label(entry.Content);
+        textLabel.AddToClassList("diary-entry-text");
 
-            var dateLabel = new Label(entry.date);
-            dateLabel.AddToClassList("diary-entry-date");
+        card.Add(dateLabel);
+        card.Add(textLabel);
 
-            var textLabel = new Label(entry.text);
-            textLabel.AddToClassList("diary-entry-text");
-
-            card.Add(dateLabel);
-            card.Add(textLabel);
-            diaryList.contentContainer.Add(card);
-        }
+        return card;
     }
 }

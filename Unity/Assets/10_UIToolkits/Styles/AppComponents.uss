@@ -128,6 +128,31 @@
     width: 100%;
 }
 
+/* ── 화면 상단 뒤로가기 버튼 (모든 화면 공통) ── */
+.btn-back {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-lg);
+    background-color: var(--rose);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    transition-property: scale, opacity;
+    transition-duration: 120ms;
+}
+
+.btn-back:active {
+    scale: 0.93;
+    opacity: 0.8;
+}
+
+.btn-back-text {
+    font-size: var(--fs-body);
+    -unity-font-style: bold;
+    color: var(--white);
+    -unity-text-align: middle-center;
+}
+
 /* ── 텍스트 스타일 ── */
 .text-hero {
     font-size: var(--fs-hero);

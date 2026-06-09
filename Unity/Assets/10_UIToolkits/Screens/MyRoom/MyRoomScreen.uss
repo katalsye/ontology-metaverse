@@ -1,0 +1,91 @@
+/* ============================================
+ * MyRoomScreen.uss
+ * ============================================ */
+
+.myroom-header {
+    padding: var(--sp-lg) var(--sp-xl);
+    justify-content: space-between;
+    background-color: var(--bg);
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-full);
+    background-color: var(--card-soft);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn-text {
+    font-size: var(--fs-body);
+    -unity-text-align: middle-center;
+}
+
+.myroom-scroll {
+    flex-grow: 1;
+    padding: 0 var(--sp-xl) var(--sp-2xl);
+    background-color: var(--bg);
+}
+
+.myroom-enter-btn {
+    height: 64px;
+    border-radius: var(--r-xl);
+    margin-bottom: var(--sp-xl);
+}
+
+.myroom-enter-label {
+    font-size: var(--fs-subhead);
+    -unity-font-style: bold;
+    color: #FFFFFF;
+}
+
+.menu-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.menu-card {
+    width: 48%;
+    background-color: var(--card);
+    border-radius: var(--r-xl);
+    border-width: 1px;
+    border-color: var(--line-faint);
+    padding: var(--sp-xl) var(--sp-lg);
+    margin-bottom: var(--sp-lg);
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.menu-card:active {
+    scale: 0.97;
+    opacity: 0.85;
+}
+
+.menu-card-icon {
+    font-size: 32px;
+    margin-bottom: var(--sp-sm);
+    -unity-text-align: middle-center;
+}
+
+.menu-card-label {
+    font-size: var(--fs-body-sm);
+    -unity-font-style: bold;
+    color: var(--ink);
+    -unity-text-align: middle-center;
+}
+
+.menu-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--rose);
+    color: #FFFFFF;
+    border-radius: var(--r-full);
+    font-size: var(--fs-tiny);
+    -unity-font-style: bold;
+    padding: 2px 6px;
+}

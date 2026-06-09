@@ -42,6 +42,18 @@ public class ScreenManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // 씬 시작 시 모든 화면 비활성화 — 중복 OnEnable 방지
+        foreach (var entry in screens)
+        {
+            if (entry.document != null)
+                entry.document.gameObject.SetActive(false);
+        }
+    }
+
+    private void Start()
+    {
+        GoTo("splash", false);
     }
 
     /// <summary>
@@ -59,9 +71,9 @@ public class ScreenManager : MonoBehaviour
                 history.Push(currentScreen);
         }
 
-        // 새 화면 활성화
-        SetScreenActive(screenKey, true);
+        // 새 화면 활성화 (currentScreen을 먼저 설정해 OnEnable 재진입 방지)
         currentScreen = screenKey;
+        SetScreenActive(screenKey, true);
 
         OnScreenChanged?.Invoke(screenKey);
         Debug.Log($"[ScreenManager] → {screenKey}");
@@ -102,12 +114,16 @@ public class ScreenManager : MonoBehaviour
     /// </summary>
     public string GetCurrentScreen() => currentScreen;
 
+    /// <summary>
+    /// 내비게이션 히스토리 초기화 — 엔트리 플로우(스플래시/온보딩/로그인)에서
+    /// 메인 앱으로 전환할 때 호출해 과거 화면으로 되돌아가는 것을 방지
+    /// </summary>
+    public void ClearHistory() => history.Clear();
+
     private void SetScreenActive(string key, bool active)
     {
         var entry = screens.Find(s => s.key == key);
         if (entry != null && entry.document != null)
-        {
             entry.document.gameObject.SetActive(active);
-        }
     }
 }

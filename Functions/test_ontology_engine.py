@@ -211,6 +211,17 @@ class TestOntologyPipeline(unittest.TestCase):
             for v in g.objects(p, prop)
         ]
 
+    def _clear_room_objects(self, g: Graph, user: URIRef) -> int:
+        """_clear_existing_room_objects 로직 복제 — Firestore 의존 없이 그래프 내 RoomObject 제거"""
+        removed = 0
+        for obj in list(g.objects(user, PROD.hasRoomObject)):
+            for p, o in list(g.predicate_objects(obj)):
+                g.remove((obj, p, o))
+                removed += 1
+            g.remove((user, PROD.hasRoomObject, obj))
+            removed += 1
+        return removed
+
     # ══════════════════════════════════════════════════════════════════════════════
     # 시나리오 테스트
     # ══════════════════════════════════════════════════════════════════════════════
@@ -311,6 +322,9 @@ class TestOntologyPipeline(unittest.TestCase):
         obj = room_objects[0]
         obj_type = str(g.value(obj, PROD.objectType))
         self.assertEqual(obj_type, "dumbbell", "RoomObject.objectType 오류")
+        inferred_from = str(g.value(obj, PROD.inferredFrom) or "")
+        self.assertNotEqual(inferred_from, "",
+                            "RoomObject.inferredFrom 빈값 — blank node ID 불일치 버그 재발")
         print(f"  [{PASS}] PlaceHabit → RoomObject 생성 성공 (objectType=dumbbell)")
 
     def test_scenario_4_late_caffeine_sleep_quality(self):
@@ -670,6 +684,16 @@ class TestOntologyPipeline(unittest.TestCase):
                           f"RoomObject objectType '{ot}' 생성 실패 (발동된 규칙 기반)\n"
                           f"실제 objectTypes: {obj_types}")
 
+        # objectType 있는 노드에서 inferredFrom 비어있지 않음 확인 (blank node 버그 회귀 방지)
+        typed_objs = [obj for obj in room_objects if g.value(obj, PROD.objectType)]
+        self.assertGreater(len(typed_objs), 0, "RoomObject objectType 있는 노드 없음")
+        for obj in typed_objs:
+            self.assertNotEqual(
+                str(g.value(obj, PROD.inferredFrom) or ""), "",
+                f"RoomObject.inferredFrom 빈값: objectType={g.value(obj, PROD.objectType)} "
+                f"(blank node ID 불일치 버그 재발)"
+            )
+
         # placementZone 존재 확인 + positionX/Y/Z 없음 확인
         for obj in room_objects:
             if g.value(obj, PROD.objectType):
@@ -695,6 +719,103 @@ class TestOntologyPipeline(unittest.TestCase):
         print(f"  [{PASS}] 전체 파이프라인 {len(fired_rules)}개 규칙 발동 성공")
         print(f"    발동된 규칙: {', '.join(fired_rules)}")
         print(f"    생성된 RoomObject objectTypes: {sorted(obj_types)}")
+
+
+    def test_scenario_12_room_objects_no_accumulation(self):
+        """시나리오 12: RoomObject 누적 방지 — 2차 추론 시 이전 오브젝트 제거"""
+        print("\n[Scenario 12] RoomObject 누적 방지 (_clear_room_objects 동작 검증)")
+
+        g = self._load_base_graph()
+        user = self._add_user(g, "s12")
+
+        # 1차 추론: cafe 3회 → coffee_cup 생성
+        self._add_location(g, user, "카페", n=3, place_type="cafe")
+        self._apply_rules_in_order(g, ["place_habit"])
+
+        obj_types_1st = {
+            str(g.value(obj, PROD.objectType))
+            for obj in g.objects(user, PROD.hasRoomObject)
+            if g.value(obj, PROD.objectType)
+        }
+        self.assertIn("coffee_cup", obj_types_1st,
+                      "1차 추론: coffee_cup 생성 실패")
+
+        # 2차 추론 전: RoomObject 전체 정리
+        removed = self._clear_room_objects(g, user)
+        self.assertGreater(removed, 0, "_clear_room_objects: 제거된 트리플 없음")
+        objs_after_clear = list(g.objects(user, PROD.hasRoomObject))
+        self.assertEqual(len(objs_after_clear), 0,
+                         "clear 후에도 hasRoomObject 트리플이 남아있음")
+
+        # cafe Location 제거 후 gym 3회 추가
+        for loc in list(g.objects(user, PROD.hasLocation)):
+            if str(g.value(loc, PROD.placeType)) in ("cafe",):
+                for p, o in list(g.predicate_objects(loc)):
+                    g.remove((loc, p, o))
+                g.remove((user, PROD.hasLocation, loc))
+        self._add_location(g, user, "헬스장", n=3, place_type="gym")
+
+        # 2차 추론: gym → dumbbell
+        self._apply_rules_in_order(g, ["place_habit"])
+
+        obj_types_2nd = {
+            str(g.value(obj, PROD.objectType))
+            for obj in g.objects(user, PROD.hasRoomObject)
+            if g.value(obj, PROD.objectType)
+        }
+        self.assertIn("dumbbell", obj_types_2nd,
+                      "2차 추론: dumbbell 생성 실패")
+        self.assertNotIn("coffee_cup", obj_types_2nd,
+                         "누적 방지 실패: coffee_cup이 여전히 그래프에 존재")
+        print(f"  [{PASS}] RoomObject 누적 방지 성공 (coffee_cup 제거 후 dumbbell만 존재)")
+
+    def test_scenario_13_room_snapshots_data(self):
+        """시나리오 13: room_snapshots 저장 데이터 형식 검증"""
+        print("\n[Scenario 13] room_snapshots 저장 데이터 검증")
+        from datetime import datetime, timezone
+        import re
+
+        g = self._load_base_graph()
+        user = self._add_user(g, "s13")
+        self._add_location(g, user, "카페", n=3, place_type="cafe")
+        self._apply_rules_in_order(g, ["place_habit"])
+
+        # 스냅샷에 저장될 데이터 추출 (room_snapshots 저장 로직과 동일)
+        user_uri = PROD["user_s13"]
+        all_objs = [
+            obj for obj in g.objects(user_uri, PROD.hasRoomObject)
+            if g.value(obj, PROD.objectType)
+        ]
+        self.assertGreater(len(all_objs), 0, "RoomObject 생성 실패")
+
+        snapshot_objects = [
+            {
+                "objectType":   str(g.value(obj, PROD.objectType) or ""),
+                "inferredFrom": str(g.value(obj, PROD.inferredFrom) or ""),
+                "placementZone": str(g.value(obj, PROD.placementZone) or "floor"),
+            }
+            for obj in all_objs
+        ]
+
+        # 각 오브젝트 필드 검증
+        for item in snapshot_objects:
+            self.assertNotEqual(item["objectType"], "",
+                                "objectType 빈값 — 스냅샷에 저장 불가")
+            self.assertNotEqual(item["inferredFrom"], "",
+                                "inferredFrom 빈값 — blank node 버그 재발")
+            self.assertIn(
+                item["placementZone"],
+                ("desk", "floor", "wall", "ceiling", "window", "shelf"),
+                f"허용되지 않는 placementZone: {item['placementZone']}"
+            )
+
+        # 날짜 키 형식 검증 (YYYY-MM-DD)
+        snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.assertRegex(snapshot_date, r"^\d{4}-\d{2}-\d{2}$",
+                         "snapshot_date 형식 오류")
+
+        print(f"  [{PASS}] room_snapshots 데이터 검증 성공 "
+              f"(date={snapshot_date}, {len(snapshot_objects)}개 오브젝트)")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

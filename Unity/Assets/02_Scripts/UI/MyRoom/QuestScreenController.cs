@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 /// <summary>
@@ -14,6 +16,10 @@ public class QuestScreenController : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private RewardPopupController rewardPopup;
+
+    [Header("Audio")]
+    [Tooltip("AudioManager.sfxClips 배열 내 퀘스트 완료 SFX 인덱스")]
+    [SerializeField] private int questCompleteSfxIndex = 0;
 
     private VisualElement root;
     private ScrollView questList;
@@ -66,20 +72,75 @@ public class QuestScreenController : MonoBehaviour
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         btnClaim.clicked += OnClaimReward;
 
-        QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
-        QuestManager.Instance.StartQuestListener();
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.OnQuestsChanged += OnQuestsUpdated;
+            QuestManager.Instance.OnQuestAutoCompleted += OnQuestAutoCompleted;
+            QuestManager.Instance.StartQuestListener();
+        }
+
+        // Firebase 응답 전에도 빈 상태를 즉시 표시
+        RenderQuests();
     }
 
     private void OnDisable()
     {
         if (QuestManager.Instance != null)
+        {
             QuestManager.Instance.OnQuestsChanged -= OnQuestsUpdated;
+            QuestManager.Instance.OnQuestAutoCompleted -= OnQuestAutoCompleted;
+        }
     }
 
     private void OnQuestsUpdated(System.Collections.Generic.List<Quest> quests)
     {
         allQuests = quests.ConvertAll(MapToQuestData);
         RenderQuests();
+    }
+
+    private void OnQuestAutoCompleted(Quest quest)
+    {
+        AudioManager.Instance?.PlaySFX(questCompleteSfxIndex);
+        SetTab("done");
+        ShowCompletionToast(quest.Title);
+    }
+
+    private void ShowCompletionToast(string questTitle)
+    {
+        // 중복 토스트 방지
+        root.Q("quest-completion-toast")?.RemoveFromHierarchy();
+
+        var toast = new VisualElement { name = "quest-completion-toast" };
+        toast.style.position = Position.Absolute;
+        toast.style.top = 80;
+        toast.style.left = Length.Percent(10);
+        toast.style.right = Length.Percent(10);
+        toast.style.backgroundColor = new StyleColor(new Color(0.18f, 0.72f, 0.42f, 0.95f));
+        toast.style.borderTopLeftRadius = toast.style.borderTopRightRadius =
+        toast.style.borderBottomLeftRadius = toast.style.borderBottomRightRadius = 12;
+        toast.style.paddingTop = toast.style.paddingBottom = 10;
+        toast.style.paddingLeft = toast.style.paddingRight = 16;
+        toast.style.flexDirection = FlexDirection.Row;
+        toast.style.alignItems = Align.Center;
+
+        var icon = new Label("✓");
+        icon.style.fontSize = 18;
+        icon.style.color = new StyleColor(Color.white);
+        icon.style.marginRight = 10;
+
+        var text = new Label($"퀘스트 완료!\n{questTitle}");
+        text.style.color = new StyleColor(Color.white);
+        text.style.whiteSpace = WhiteSpace.Normal;
+        text.style.flexGrow = 1;
+
+        toast.Add(icon);
+        toast.Add(text);
+        root.Add(toast);
+
+        root.schedule.Execute(() =>
+        {
+            toast.RemoveFromHierarchy();
+        }).ExecuteLater(3500);
     }
 
     private QuestData MapToQuestData(Quest q)
@@ -94,7 +155,7 @@ public class QuestScreenController : MonoBehaviour
         var status = q.IsCompleted ? QuestStatus.Done : QuestStatus.Active;
         float progress = q.IsCompleted ? 1f : 0f;
 
-        return new QuestData(q.QuestId, q.Title, "", type, status, progress, q.RewardAmount);
+        return new QuestData(q.Index, q.Title, "", type, status, progress, q.RewardAmount, q.Claimed, q.CompletedAt ?? "");
     }
 
     private void SetTab(string tab)
@@ -121,8 +182,18 @@ public class QuestScreenController : MonoBehaviour
 
         var filtered = currentTab switch
         {
-            "active" => allQuests.Where(q => q.status == QuestStatus.Active && q.type != QuestType.Daily).ToList(),
-            "done" => allQuests.Where(q => q.status == QuestStatus.Done).ToList(),
+            "active" => allQuests
+                .Where(q => q.status == QuestStatus.Active && q.type != QuestType.Daily)
+                .ToList(),
+            "done" => allQuests
+                .Where(q => q.status == QuestStatus.Done)
+                .OrderByDescending(q =>
+                {
+                    DateTime.TryParse(q.completedAt, CultureInfo.InvariantCulture,
+                        DateTimeStyles.None, out var dt);
+                    return dt;
+                })
+                .ToList(),
             "daily" => allQuests.Where(q => q.type == QuestType.Daily).ToList(),
             _ => allQuests,
         };
@@ -246,7 +317,7 @@ public class QuestScreenController : MonoBehaviour
         detailTypePill.Add(pillLabel);
 
         // 보상 수령 버튼 (완료 + 미수령일 때만)
-        btnClaim.style.display = (quest.status == QuestStatus.Done)
+        btnClaim.style.display = (quest.status == QuestStatus.Done && !quest.claimed)
             ? DisplayStyle.Flex : DisplayStyle.None;
 
         detailOverlay.style.display = DisplayStyle.Flex;
@@ -268,6 +339,7 @@ public class QuestScreenController : MonoBehaviour
             onSuccess: () =>
             {
                 int coins = selectedQuest.rewardCoins;
+                AudioManager.Instance?.PlaySFX(1);
                 CloseDetail();
                 rewardPopup?.Show("코인", coins, null);
             },
@@ -285,16 +357,19 @@ public enum QuestStatus { Active, Done }
 
 public class QuestData
 {
-    public string id;
+    public int id;            // quests 배열 내 위치 (Index)
     public string title;
     public string description;
     public QuestType type;
     public QuestStatus status;
     public float progress;
     public int rewardCoins;
+    public bool claimed;
+    public string completedAt;  // ISO 8601, done탭 정렬용
 
-    public QuestData(string id, string title, string description,
-                     QuestType type, QuestStatus status, float progress, int rewardCoins)
+    public QuestData(int id, string title, string description,
+                     QuestType type, QuestStatus status, float progress,
+                     int rewardCoins, bool claimed, string completedAt = "")
     {
         this.id = id;
         this.title = title;
@@ -303,5 +378,7 @@ public class QuestData
         this.status = status;
         this.progress = progress;
         this.rewardCoins = rewardCoins;
+        this.claimed = claimed;
+        this.completedAt = completedAt;
     }
 }

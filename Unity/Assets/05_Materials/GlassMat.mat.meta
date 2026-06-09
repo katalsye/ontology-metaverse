@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 263b8a5d2edad5a4188aa17c71130418
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 366130
+  packageName: FlexibleGlassDestructor
+  packageVersion: 1.0
+  assetPath: Assets/05_Materials/GlassMat.mat
+  uploadId: 881340
