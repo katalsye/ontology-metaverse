@@ -2,18 +2,15 @@ using System;
 using System.IO;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace OntologyMetaverse.OnDeviceAI.Gemma
 {
     public class GemmaOnDeviceManager : MonoBehaviour
     {
-        [Header("모델 파일 이름")]
-        public string modelFileName = "gemma-3n-E2B-it-int4.task";
+        public const string ModelFileName = "gemma-3n-E2B-it-int4.task";
+        public static string ModelDestPath => Path.Combine(Application.persistentDataPath, ModelFileName);
 
         public bool isModelLoaded = false;
-
-        private string modelPath = "";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // Kotlin GemmaBridge 인스턴스 (AAR에서 가져옴)
@@ -30,48 +27,19 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             Debug.Log("[GemmaManager] AI 모델 로딩 시작! (Gemma 3n 멀티모달)");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // 1. 안드로이드: StreamingAssets는 APK 안에 있어서 바로 못 읽음
-            //    persistentDataPath로 복사한 다음에 사용해야 함
-            string sourcePath = Path.Combine(Application.streamingAssetsPath, modelFileName);
-            string destPath = Path.Combine(Application.persistentDataPath, modelFileName);
-
-            if (!File.Exists(destPath))
+            // 온보딩에서 Firebase Storage로 다운로드한 파일을 그대로 사용
+            if (!File.Exists(ModelDestPath))
             {
-                Debug.Log("[GemmaManager] 모델 파일 복사 시작 (시간 걸림)");
-
-                UnityWebRequest www = UnityWebRequest.Get(sourcePath);
-                yield return www.SendWebRequest();
-
-                if (www.result == UnityWebRequest.Result.Success)
-                {
-                    File.WriteAllBytes(destPath, www.downloadHandler.data);
-                    Debug.Log("[GemmaManager] 모델 파일 복사 완료");
-                }
-                else
-                {
-                    Debug.LogError("[GemmaManager] 모델 파일 복사 실패: " + www.error);
-                    yield break;
-                }
-            }
-            else
-            {
-                Debug.Log("[GemmaManager] 모델 파일 이미 있음. 복사 생략.");
+                Debug.LogError("[GemmaManager] 모델 파일 없음 — 온보딩 다운로드가 완료되지 않았습니다.");
+                yield break;
             }
 
-            modelPath = destPath;
-
-            // 2. Kotlin GemmaBridge 인스턴스 생성 + 모델 초기화
             try
             {
-                // 현재 Activity context 가져오기
                 AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
                 AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-
-                // GemmaBridge 인스턴스 생성 (context 전달)
                 gemmaBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
-
-                // 모델 초기화
-                bool success = gemmaBridge.Call<bool>("initialize", modelPath);
+                bool success = gemmaBridge.Call<bool>("initialize", ModelDestPath);
 
                 if (success)
                 {
@@ -88,8 +56,6 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
                 Debug.LogError("[GemmaManager] AI 로딩 실패: " + e.Message);
             }
 #else
-            // PC 에디터: 가짜로 1초 대기하고 로딩됐다고 치기
-            modelPath = Path.Combine(Application.streamingAssetsPath, modelFileName);
             yield return new WaitForSeconds(1.0f);
             isModelLoaded = true;
             Debug.Log("[GemmaManager] PC 에디터 모드: AI 로딩 완료 (가짜)");

@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.Networking;
 using System.Collections;
+using System.IO;
+using Firebase.Storage;
+using OntologyMetaverse.OnDeviceAI.Gemma;
 
 /// <summary>
 /// 1-2. OnboardingScreen 컨트롤러
@@ -14,6 +18,9 @@ public class OnboardingScreenController : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float slideTransitionDuration = 0.3f;
+
+    [Header("Gemma 모델")]
+    [SerializeField] private string gemmaStoragePath = "models/gemma-3n-E2B-it-int4.task";
 
     private VisualElement root;
     private VisualElement slideContainer;
@@ -80,7 +87,7 @@ public class OnboardingScreenController : MonoBehaviour
             }
             else if (!isDownloading)
             {
-                StartCoroutine(SimulateDownload());
+                StartCoroutine(DownloadGemmaModel());
             }
             return;
         }
@@ -183,47 +190,79 @@ public class OnboardingScreenController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Gemma 모델 다운로드 시뮬레이션
-    /// 실제 구현 시 MediaPipe 다운로드 로직으로 교체
-    /// </summary>
-    private IEnumerator SimulateDownload()
+    private IEnumerator DownloadGemmaModel()
     {
         isDownloading = true;
         UpdateButtons();
 
-        float progress = 0f;
-        float downloadTime = 5f; // 시뮬레이션용 5초
+        string destPath = GemmaOnDeviceManager.ModelDestPath;
 
-        downloadStatus.text = "다운로드 중...";
-
-        while (progress < 1f)
+        if (File.Exists(destPath))
         {
-            progress += Time.deltaTime / downloadTime;
-            progress = Mathf.Clamp01(progress);
+            OnModelDownloadComplete();
+            yield break;
+        }
 
-            // 프로그래스 바 업데이트
-            progressFill.style.width = Length.Percent(progress * 100f);
+        downloadStatus.text = "다운로드 준비 중...";
+        progressFill.style.width = Length.Percent(0f);
 
-            // 상태 텍스트 업데이트
-            float downloadedMB = progress * 1500f; // 1.5GB
-            downloadStatus.text = $"다운로드 중... {downloadedMB:F0}MB / 1,500MB";
-            downloadSize.text = $"{(progress * 100f):F0}%";
+        // Firebase Storage 다운로드 URL 취득
+        var urlTask = FirebaseStorage.DefaultInstance
+            .GetReference(gemmaStoragePath)
+            .GetDownloadUrlAsync();
 
+        yield return new WaitUntil(() => urlTask.IsCompleted);
+
+        if (urlTask.IsFaulted || urlTask.IsCanceled)
+        {
+            OnModelDownloadFailed(urlTask.Exception?.GetBaseException().Message ?? "URL 취득 실패");
+            yield break;
+        }
+
+        // DownloadHandlerFile: 파일에 직접 기록 — 2.91GB를 메모리에 올리지 않음
+        using var www = new UnityWebRequest(urlTask.Result.ToString(), UnityWebRequest.kHttpVerbGET);
+        www.downloadHandler = new DownloadHandlerFile(destPath);
+        www.SendWebRequest();
+
+        const float totalMB = 2910f;
+        while (!www.isDone)
+        {
+            float p = Mathf.Max(0f, www.downloadProgress);
+            progressFill.style.width = Length.Percent(p * 100f);
+            downloadStatus.text = $"다운로드 중... {p * totalMB:F0}MB / 2,910MB";
+            downloadSize.text = $"{p * 100f:F0}%";
             yield return null;
         }
 
-        // 다운로드 완료
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            if (File.Exists(destPath)) File.Delete(destPath); // 불완전한 파일 제거
+            OnModelDownloadFailed(www.error);
+            yield break;
+        }
+
+        OnModelDownloadComplete();
+    }
+
+    private void OnModelDownloadComplete()
+    {
         isDownloading = false;
         downloadComplete = true;
+        progressFill.style.width = Length.Percent(100f);
+        progressFill.style.backgroundColor = new StyleColor(AppColors.Mint);
         downloadStatus.text = "다운로드 완료!";
         downloadSize.text = "AI 엔진 준비 완료";
-
-        // 버튼을 "시작하기"로 변경
         UpdateButtons();
+    }
 
-        // rose 색상으로 프로그래스 바 변경 (완료 표시)
-        progressFill.style.backgroundColor = new StyleColor(AppColors.Mint);
+    private void OnModelDownloadFailed(string error)
+    {
+        isDownloading = false;
+        progressFill.style.width = Length.Percent(0f);
+        downloadStatus.text = "다운로드 실패. 다시 시도해주세요.";
+        downloadSize.text = "";
+        Debug.LogError($"[Onboarding] Gemma 모델 다운로드 실패: {error}");
+        UpdateButtons();
     }
 
     private void NavigateToLogin()
