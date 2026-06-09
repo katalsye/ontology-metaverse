@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using UnityEngine.Networking;
 using System.Collections;
 using System.IO;
+using Firebase.Auth;
 using Firebase.Storage;
 using OntologyMetaverse.OnDeviceAI.Gemma;
 
@@ -205,6 +206,19 @@ public class OnboardingScreenController : MonoBehaviour
 
         downloadStatus.text = "다운로드 준비 중...";
         progressFill.style.width = Length.Percent(0f);
+
+        // Storage 규칙이 auth != null — 온보딩은 로그인 전이므로 익명 인증 먼저
+        if (FirebaseAuth.DefaultInstance.CurrentUser == null)
+        {
+            var anonTask = FirebaseAuth.DefaultInstance.SignInAnonymouslyAsync();
+            yield return new WaitUntil(() => anonTask.IsCompleted);
+
+            if (anonTask.IsFaulted)
+            {
+                OnModelDownloadFailed("인증 실패: " + anonTask.Exception?.GetBaseException().Message);
+                yield break;
+            }
+        }
 
         // Firebase Storage 다운로드 URL 취득
         var urlTask = FirebaseStorage.DefaultInstance
