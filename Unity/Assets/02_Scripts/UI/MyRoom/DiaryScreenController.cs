@@ -95,11 +95,12 @@ public class DiaryScreenController : MonoBehaviour
             onSuccess: () =>
             {
                 UpdateStreakLocally(today);
-                AudioManager.Instance?.PlaySFX(3);
+                AudioManager.Instance?.PlaySFX(4);
 
                 DiaryManager.Instance.ClaimDiaryReward(today,
                     onSuccess: () =>
                     {
+                        AudioManager.Instance?.PlaySFX(1);
                         if (rewardPopup != null)
                             rewardPopup.Show("코인", 10, () => ScreenManager.Instance.GoBack());
                         else

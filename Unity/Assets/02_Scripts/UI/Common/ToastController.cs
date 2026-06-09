@@ -71,7 +71,7 @@ public class ToastController : MonoBehaviour
         toastBody.text = body;
         targetScreen = screen;
         toastContainer.style.display = DisplayStyle.Flex;
-        AudioManager.Instance?.PlaySFX(4);
+        AudioManager.Instance?.PlaySFX(5);
 
         StartCoroutine(AutoHide(duration));
     }

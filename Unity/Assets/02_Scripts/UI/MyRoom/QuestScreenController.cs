@@ -339,6 +339,7 @@ public class QuestScreenController : MonoBehaviour
             onSuccess: () =>
             {
                 int coins = selectedQuest.rewardCoins;
+                AudioManager.Instance?.PlaySFX(1);
                 CloseDetail();
                 rewardPopup?.Show("코인", coins, null);
             },

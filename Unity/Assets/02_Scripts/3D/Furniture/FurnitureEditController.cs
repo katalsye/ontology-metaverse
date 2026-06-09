@@ -908,7 +908,7 @@ public class FurnitureEditController : MonoBehaviour
         }
 
 
-        AudioManager.Instance?.PlaySFX(5);
+        AudioManager.Instance?.PlaySFX(6);
 
         if (RoomObjectManager.Instance != null && editableItems != null)
         {

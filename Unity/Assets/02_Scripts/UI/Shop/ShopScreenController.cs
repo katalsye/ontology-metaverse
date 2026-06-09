@@ -178,14 +178,15 @@ public class ShopScreenController : MonoBehaviour
             {
                 ownedItems.Add(selectedItem.id);
                 string name = selectedItem.name;
+                AudioManager.Instance?.PlaySFX(2);
                 CloseDetail();
                 RenderItems();
-                rewardPopup?.Show(name, 1, null);  // RewardPopup.Show 내부에서 SFX(1) 재생
+                rewardPopup?.Show(name, 1, null);
             },
             onFailure: err =>
             {
                 buyBtn.SetEnabled(true);
-                AudioManager.Instance?.PlaySFX(2);
+                AudioManager.Instance?.PlaySFX(3);
                 Debug.LogError($"[Shop] 구매 실패: {err}");
             }
         );
