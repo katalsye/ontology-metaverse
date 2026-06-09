@@ -16,13 +16,18 @@ public class FriendsScreenController : MonoBehaviour
     private VisualElement requestSection;
     private VisualElement searchResultSection;
     private VisualElement friendsListSection;
+    private Button btnSearch;
+
+    private int _searchGen;
+    private int _friendsLoadGen;
 
     private void OnEnable()
     {
         root = uiDocument.rootVisualElement;
 
         root.Q<Button>("btn-back").clicked += OnBackClicked;
-        root.Q<Button>("btn-search").clicked += OnSearchClicked;
+        btnSearch = root.Q<Button>("btn-search");
+        btnSearch.clicked += OnSearchClicked;
 
         inputSearch = root.Q<TextField>("input-search");
         requestSection = root.Q("request-section");
@@ -44,12 +49,14 @@ public class FriendsScreenController : MonoBehaviour
         FollowManager.Instance.GetPendingRequests(
             onSuccess: relations =>
             {
+                if (!isActiveAndEnabled) return;
                 requestSection.Clear();
                 foreach (var rel in relations)
                 {
                     UserManager.Instance.GetUserProfileForFollow(rel.FromUid,
                         onSuccess: profile =>
                         {
+                            if (!isActiveAndEnabled) return;
                             var row = CreateRequestRow(rel.FromUid, profile.Nickname);
                             requestSection.Add(row);
                         },
@@ -64,15 +71,18 @@ public class FriendsScreenController : MonoBehaviour
     private void LoadFriendsList()
     {
         friendsListSection.Clear();
+        int gen = ++_friendsLoadGen;
 
         FollowManager.Instance.GetFollowings(
             onSuccess: relations =>
             {
+                if (!isActiveAndEnabled || _friendsLoadGen != gen) return;
                 foreach (var rel in relations)
                 {
                     UserManager.Instance.GetUserProfileForFollow(rel.ToUid,
                         onSuccess: profile =>
                         {
+                            if (!isActiveAndEnabled || _friendsLoadGen != gen) return;
                             var row = CreateFriendRow(rel.ToUid, profile.Nickname, true);
                             friendsListSection.Add(row);
                         },
@@ -222,6 +232,9 @@ public class FriendsScreenController : MonoBehaviour
         string query = inputSearch.value.Trim();
         if (string.IsNullOrEmpty(query)) return;
 
+        int gen = ++_searchGen;
+        btnSearch.SetEnabled(false);
+
         var toRemove = new List<VisualElement>();
         foreach (var child in searchResultSection.Children())
         {
@@ -233,6 +246,9 @@ public class FriendsScreenController : MonoBehaviour
         UserManager.Instance.SearchUserByNickname(query,
             onSuccess: profiles =>
             {
+                if (!isActiveAndEnabled || _searchGen != gen) return;
+                btnSearch.SetEnabled(true);
+
                 if (profiles.Count == 0)
                 {
                     Debug.Log($"[Friends] 검색 결과 없음: {query}");
@@ -244,13 +260,18 @@ public class FriendsScreenController : MonoBehaviour
                     FollowManager.Instance.CheckIsFollowing(profile.Uid,
                         onResult: isFollowing =>
                         {
+                            if (!isActiveAndEnabled || _searchGen != gen) return;
                             var row = CreateFriendRow(profile.Uid, profile.Nickname, isFollowing);
                             searchResultSection.Add(row);
                         }
                     );
                 }
             },
-            onFailure: err => Debug.LogWarning($"[Friends] 검색 실패: {err}")
+            onFailure: err =>
+            {
+                if (isActiveAndEnabled) btnSearch.SetEnabled(true);
+                Debug.LogWarning($"[Friends] 검색 실패: {err}");
+            }
         );
     }
 
