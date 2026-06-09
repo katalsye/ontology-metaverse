@@ -28,8 +28,6 @@ public class SplashScreenController : MonoBehaviour
 
     private void OnEnable()
     {
-
-        ScreenManager.Instance.GoTo("splash", false);
         root = uiDocument.rootVisualElement;
 
         // 요소 바인딩

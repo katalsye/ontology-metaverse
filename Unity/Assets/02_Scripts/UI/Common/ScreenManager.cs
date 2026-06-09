@@ -71,9 +71,9 @@ public class ScreenManager : MonoBehaviour
                 history.Push(currentScreen);
         }
 
-        // 새 화면 활성화
-        SetScreenActive(screenKey, true);
+        // 새 화면 활성화 (currentScreen을 먼저 설정해 OnEnable 재진입 방지)
         currentScreen = screenKey;
+        SetScreenActive(screenKey, true);
 
         OnScreenChanged?.Invoke(screenKey);
         Debug.Log($"[ScreenManager] → {screenKey}");
