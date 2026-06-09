@@ -946,6 +946,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestScreenController
   uiDocument: {fileID: 631082438}
   rewardPopup: {fileID: 1850901947}
+  questCompleteSfxIndex: 0
 --- !u!114 &631082438
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2122,7 +2123,14 @@ MonoBehaviour:
   bgmSource: {fileID: 2061795784}
   sfxSource: {fileID: 1309941197}
   bgmClips: []
-  sfxClips: []
+  sfxClips:
+  - {fileID: 8300000, guid: 331a138689acc3e40a734c5edb7056e7, type: 3}
+  - {fileID: 8300000, guid: 15dbeea728920e14a9b43da412c859f6, type: 3}
+  - {fileID: 8300000, guid: 78a1533452583834298b4f9b2c70f454, type: 3}
+  - {fileID: 8300000, guid: 9eafea71201c32d4e96a0f787537b6d9, type: 3}
+  - {fileID: 8300000, guid: 38578b71bcc6d4b4eb3ded56b10c6950, type: 3}
+  - {fileID: 8300000, guid: 5eaec8bd2ee75114fb80cc65449e8626, type: 3}
+  - {fileID: 8300000, guid: 5f2261f4dc904e84c93639f95227508e, type: 3}
 --- !u!4 &2034386090
 Transform:
   m_ObjectHideFlags: 0
