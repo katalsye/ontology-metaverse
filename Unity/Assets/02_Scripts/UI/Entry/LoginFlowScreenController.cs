@@ -75,11 +75,17 @@ public class LoginFlowScreenController : MonoBehaviour
         // 닉네임 유효성 실시간 체크
         inputNickname.RegisterValueChangedCallback(OnNicknameChanged);
 
-        // 이미 로그인된 상태면 로그인 단계 스킵
-        if (AuthService.Instance != null && AuthService.Instance.IsLoggedIn)
+        // 익명 인증(온보딩 중 다운로드용)은 "로그인 완료"로 취급하지 않음
+        var currentUser = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser;
+        bool isProperlyLoggedIn = currentUser != null && !currentUser.IsAnonymous;
+
+        if (isProperlyLoggedIn)
         {
             if (PlayerPrefs.HasKey("onboarding_complete"))
+            {
+                ScreenManager.Instance.ClearHistory();
                 ScreenManager.Instance.GoTo("myroom");
+            }
             else
                 GoToStep(1); // 권한 요청 단계부터
             return;
@@ -254,11 +260,16 @@ public class LoginFlowScreenController : MonoBehaviour
 
         // Firestore에 프로필 저장 후 화면 전환
         UserManager.Instance.UpdateProfile(nickname, status,
-            onSuccess: () => ScreenManager.Instance.GoTo("myroom"),
+            onSuccess: () =>
+            {
+                ScreenManager.Instance.ClearHistory();
+                ScreenManager.Instance.GoTo("myroom");
+            },
             onFailure: err =>
             {
                 Debug.LogError($"[LoginFlow] 프로필 저장 실패: {err}");
                 // Firestore 실패해도 로컬 저장 완료됐으므로 진행
+                ScreenManager.Instance.ClearHistory();
                 ScreenManager.Instance.GoTo("myroom");
             }
         );
