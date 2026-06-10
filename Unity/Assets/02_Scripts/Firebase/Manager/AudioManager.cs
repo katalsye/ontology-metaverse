@@ -29,8 +29,10 @@ public class AudioManager : MonoBehaviour
         SetBGMVolume(PlayerPrefs.GetFloat("bgm_volume", 70f) / 100f);
         SetSFXVolume(PlayerPrefs.GetFloat("sfx_volume", 80f) / 100f);
 
-        // Firestore 값으로 덮어쓰기 (비동기 — 로그인 완료 후 호출됨)
-        LoadVolumesFromFirestore();
+        // Firestore 값으로 덮어쓰기 — CheckDependencies 완료 전 DefaultInstance 접근 시
+        // "Don't call Firebase functions before CheckDependencies has finished" 예외 발생하므로
+        // FirebaseBootstrap을 통해 초기화 완료 후 호출
+        FirebaseBootstrap.RunWhenReady(LoadVolumesFromFirestore);
     }
 
     public void SetBGMVolume(float volume)

@@ -45,7 +45,7 @@ public class QuestScreenController : MonoBehaviour
     {
         root = uiDocument.rootVisualElement;
 
-        root.Q<Button>("btn-back").clicked += () => ScreenManager.Instance.GoBack();
+        root.Q<Button>("btn-back").clicked += () => ScreenManager.Instance.GoTo("myroom", false);
 
         questList = root.Q<ScrollView>("quest-list");
         emptyState = root.Q("empty-state");
