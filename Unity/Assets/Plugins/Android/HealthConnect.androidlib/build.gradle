@@ -1,0 +1,64 @@
+// HealthConnect.androidlib — Kotlin 기반 Health Connect 플러그인 모듈.
+//
+// 왜 별도 androidlib + Kotlin인가:
+//   Health Connect 1.1.0 SDK는 Kotlin suspend 함수만 제공 (readRecords, getGrantedPermissions).
+//   ListenableFuture/Java API가 제거되어 Java에서 직접 호출 불가.
+//   → Kotlin 모듈로 suspend 함수를 네이티브 호출하고, @JvmStatic으로 C#(AndroidJavaClass)에 노출.
+//
+// 자기완결형 설계:
+//   - 이 모듈의 buildscript에 kotlin-gradle-plugin classpath를 직접 선언
+//     → Unity 루트 build.gradle / settingsTemplate / baseProjectTemplate 안 건드림.
+//   - com.android.library 플러그인은 Unity 루트 buildscript classpath에서 상속 (AGP).
+//   - kotlin-android는 이 모듈 자체 classpath에서 해결.
+//   - health-connect / coroutines 의존성도 이 모듈이 소유 (mainTemplate.gradle 불필요).
+//
+// C# 연동:
+//   HealthConnectBridge.cs가 AndroidJavaClass("com.ontology.metaverse.health.HealthConnectPlugin")로
+//   @JvmStatic 메서드를 그대로 호출 (변경 없음).
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace "com.ontology.metaverse.health"
+    compileSdk 36
+    // 메인 Unity 모듈과 동일한 build-tools 명시 (미지정 시 AGP가 미설치된 35.0.0을 끌어와 라이선스 에러)
+    buildToolsVersion = "36.0.0"
+
+    defaultConfig {
+        minSdk 26
+    }
+
+    // 메인 모듈(mainTemplate.gradle)과 동일하게 Java 21로 맞춤
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    kotlinOptions {
+        jvmTarget = "21"
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Health Connect 공식 SDK (수면/걸음/심박수 read)
+    implementation 'androidx.health.connect:connect-client:1.1.0'
+    // suspend 함수 호출용 코루틴 (Kotlin 2.0 호환)
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
+    // 권한 요청용 ComponentActivity(registerForActivityResult) — HealthPermissionActivity 가 사용.
+    // Unity Activity 가 androidx.activity.ComponentActivity 가 아니라 직접 권한 contract 를 못 launch 하는 문제 회피.
+    implementation 'androidx.activity:activity-ktx:1.9.3'
+}

@@ -124,3 +124,6 @@ Unity/Assets/04_Fonts/Pretendard-Regular SDF.asset.meta
 *.keystore
 *.jks
 keystore.properties
+
+# Unity 크래시 복구 캐시 (로컬 전용, 추적 제외)
+Unity/Assets/_Recovery/

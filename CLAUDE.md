@@ -155,3 +155,16 @@ Gemma 3n은 기기 raw 데이터를 아래 형태의 트리플로 변환함.
 - 이슈 등록: gh issue create --repo katalsye/ontology-metaverse
 - 이슈 목록: gh issue list --repo katalsye/ontology-metaverse
 - 이슈 닫기: gh issue close {번호} --repo katalsye/ontology-metaverse
+
+## 코드 판단 규칙 (반드시 지킬 것)
+- 코드를 보고 판단할 때 **현재 체크아웃된 브랜치만 보지 말 것.**
+  팀원(특히 무성님 온톨로지 core.ttl)의 최신 작업은 다른 브랜치에 먼저 들어와 있을 수 있음.
+  내 브랜치엔 아직 머지 안 됐을 뿐, 인터페이스(predicate/클래스)는 이미 확정됐을 수 있음.
+- predicate·클래스·인터페이스 정의 확인은 반드시 **전체 레포(모든 원격 브랜치)** 기준으로 검증:
+    git fetch origin
+    git grep -n "<패턴>" origin/feature/ontology origin/integration/ontology-data origin/main -- Functions/ontology/
+- 무성님 온톨로지 최신 권위 브랜치: origin/feature/ontology, origin/integration/ontology-data
+- 코드 주석에 적힌 "현재 없음 / 미정 / ~기준" 류 메모는 낡았을 수 있음.
+  주석을 그대로 믿지 말고 실제 원격 파일로 재확인 후 판단.
+- (교훈) HeartRate/HRV는 무성님이 bb725ed로 이미 추가했는데, 내 브랜치 미머지 상태의
+  옛 core.ttl과 낡은 코드 주석만 보고 "클래스 없어서 무시됨"이라 오판한 적 있음.

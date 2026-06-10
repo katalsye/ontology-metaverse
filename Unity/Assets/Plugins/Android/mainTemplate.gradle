@@ -27,6 +27,9 @@ dependencies {
     // Gemma 3n 온디바이스 추론 (Plugins/Android/GemmaInference.java가 사용).
     // Gemma 3n은 STABLEHLO_COMPOSITE opcode 사용 — 0.10.20+ 필요. 0.10.27이 가장 안정.
     implementation 'com.google.mediapipe:tasks-genai:0.10.27'
+    // Health Connect 의존성은 HealthConnect.androidlib (Kotlin 모듈)이 소유.
+    // (Health Connect 1.1.0은 Kotlin suspend API라 Kotlin 플러그인으로 구현 — HealthConnectPlugin.kt)
+    // Unity가 :unityLibrary:HealthConnect.androidlib 를 자동으로 implementation project 의존성에 추가함.
 **DEPS**}
 
 // Android Resolver Exclusions Start
