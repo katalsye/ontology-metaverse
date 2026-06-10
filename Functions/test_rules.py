@@ -2016,6 +2016,61 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("팝 10:00 + 외출 13:30 (3.5시간 차이) → SocialActivity 미생성 (반례, 경계 초과)",
                          (user, PROD.hasState, PROD.SocialActivity) not in g))
 
+    # ── 신규 장르 키워드 테스트 (준석님 Last.fm 태그 대응) ──────────────────────
+
+    # Rule 28 신규: k-pop → party_light (social)
+    g = load_base_graph()
+    user = _add_user(g, "r28_kpop")
+    ml = PROD["ml_r28_kpop"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("k-pop")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T15:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28_kpop"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("홍대")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T16:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("k-pop + 외출 → SocialActivity",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+    results.append(check("k-pop → party_light(ceiling) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "party_light" and
+                             str(g.value(obj, PROD.placementZone)) == "ceiling"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # Rule 26 신규: ballads 180분 → desk_light_bright (focus)
+    g = load_base_graph()
+    user = _add_user(g, "r26_ballads")
+    ml = PROD["ml_r26_ballads"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("ballads")))
+    g.add((ml, PROD.listenDuration, Literal(200, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("ballads 200분 → FocusMode",
+                         (user, PROD.hasState, PROD.FocusMode) in g))
+    results.append(check("ballads → desk_light_bright(desk) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "desk_light_bright" and
+                             str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # Rule 27 신규: vocaloid 야간 → stress_ball (stress)
+    g = load_base_graph()
+    user = _add_user(g, "r27_vocaloid")
+    ml = PROD["ml_r27_vocaloid"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("vocaloid")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("vocaloid 야간 → StressIndicator",
+                         (user, PROD.hasState, PROD.StressIndicator) in g))
+    results.append(check("vocaloid → stress_ball(desk) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "stress_ball" and
+                             str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
     assert all(results)
 
 

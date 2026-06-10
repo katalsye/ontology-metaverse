@@ -1000,7 +1000,8 @@ WHERE {
                 CONTAINS(LCASE(STR(?genre)), "lo-fi") ||
                 CONTAINS(LCASE(STR(?genre)), "lofi") ||
                 CONTAINS(LCASE(STR(?genre)), "클래식") ||
-                CONTAINS(LCASE(STR(?genre)), "로파이")
+                CONTAINS(LCASE(STR(?genre)), "로파이") ||
+                CONTAINS(LCASE(STR(?genre)), "ballads")
             )
         }
         GROUP BY ?user
@@ -1040,7 +1041,8 @@ WHERE {
         CONTAINS(LCASE(STR(?genre)), "metal") ||
         CONTAINS(LCASE(STR(?genre)), "rock") ||
         CONTAINS(LCASE(STR(?genre)), "메탈") ||
-        CONTAINS(LCASE(STR(?genre)), "록")
+        CONTAINS(LCASE(STR(?genre)), "록") ||
+        CONTAINS(LCASE(STR(?genre)), "vocaloid")
     )
 
     # 동일 퀘스트 중복 생성 방지
@@ -1079,7 +1081,9 @@ WHERE {
         CONTAINS(LCASE(STR(?genre)), "dance") ||
         CONTAINS(LCASE(STR(?genre)), "pop") ||
         CONTAINS(LCASE(STR(?genre)), "댄스") ||
-        CONTAINS(LCASE(STR(?genre)), "팝")
+        CONTAINS(LCASE(STR(?genre)), "팝") ||
+        CONTAINS(LCASE(STR(?genre)), "k-pop") ||
+        CONTAINS(LCASE(STR(?genre)), "kpop")
     )
 
     # 외출 위치(집 외) 방문
