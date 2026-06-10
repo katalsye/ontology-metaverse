@@ -19,6 +19,7 @@ Cloud Functions Python — Stateless 온톨로지 추론 엔진
 
 from __future__ import annotations
 
+import os
 import re
 import io
 import logging
@@ -28,13 +29,14 @@ from typing import Any
 import duckdb
 import firebase_admin
 from firebase_admin import firestore, messaging, storage
-from rdflib import Graph, Namespace, URIRef, Literal
+from rdflib import Graph, Namespace, URIRef, Literal, RDF
 from triple_validator import validate_required_properties, deduplicate_quests
 
 logger = logging.getLogger(__name__)
 
 PROD = Namespace("http://7team.dev/ontology#")
-RULES_PATH = "Functions/ontology/rules/inference_rules.sparql"
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RULES_PATH = os.path.join(_BASE_DIR, "ontology", "rules", "inference_rules.sparql")
 
 # 추론 규칙 ID 실행 순서 — Rule 2는 Rule 1 결과에 의존하므로 순서 고정
 RULE_ORDER = [
@@ -369,6 +371,45 @@ def _parse_rules(rules_sparql: str) -> dict[str, str]:
     return {m.group(1): m.group(2).strip() for m in pattern.finditer(rules_sparql)}
 
 
+def _clear_existing_persona_nodes(g: Graph) -> int:
+    """기존 Persona 노드와 관련 트리플 전체 제거.
+
+    CONSTRUCT 규칙이 매 사이클마다 새 blank node Persona를 생성하므로
+    이전 사이클 잔재를 정리하지 않으면 무한 누적된다.
+    """
+    removed_count = 0
+    for p_node in list(g.subjects(RDF.type, PROD.Persona)):
+        for p, o in list(g.predicate_objects(p_node)):
+            g.remove((p_node, p, o))
+            removed_count += 1
+        for s, p in list(g.subject_predicates(p_node)):
+            g.remove((s, p, p_node))
+            removed_count += 1
+    if removed_count > 0:
+        logger.info("Cleared %d Persona triples (pre-cycle cleanup)", removed_count)
+    return removed_count
+
+
+def _clear_empty_title_quests(g: Graph) -> int:
+    """title 없는 Quest 노드와 관련 트리플 제거.
+
+    Phase 1 이전 추론 사이클에서 생성된 빈 title Quest 잔재 및
+    비정상 CONSTRUCT 결과물을 그래프에서 제거한다.
+    """
+    removed_count = 0
+    for q in list(g.subjects(RDF.type, PROD.Quest)):
+        if g.value(q, PROD.title) is None:
+            for p, o in list(g.predicate_objects(q)):
+                g.remove((q, p, o))
+                removed_count += 1
+            for s, p in list(g.subject_predicates(q)):
+                g.remove((s, p, q))
+                removed_count += 1
+    if removed_count > 0:
+        logger.info("Cleared %d empty-title Quest triples (pre-cycle cleanup)", removed_count)
+    return removed_count
+
+
 def _apply_rules(g: Graph, rules: dict[str, str]) -> list[tuple]:
     """순서대로 CONSTRUCT 추론 실행 — 결과 트리플을 그래프에 누적.
 
@@ -466,6 +507,11 @@ def _save_results_to_firestore(
             })
             if not is_done_bool:  # 완료된 퀘스트는 FCM 알림 제외
                 new_quest_titles.append(title_str)
+        # 빈 title은 Firestore에 저장하지 않음 (그래프 정리 누락 시 이중 방어)
+        quests_payload = [q for q in quests_payload if q.get("title", "").strip()]
+        if not quests_payload:
+            logger.info("No valid quests to save for uid=%s (all filtered)", uid)
+            return new_quest_titles
         db.collection("quests").document(uid).set(
             {"quests": quests_payload}, merge=True
         )
@@ -477,9 +523,10 @@ def _save_results_to_firestore(
         room_objs = []
         for obj in all_obj_subjects:
             room_objs.append({
-                "objectType":  str(g.value(obj, PROD.objectType) or ""),
-                "inferredFrom": str(g.value(obj, PROD.inferredFrom) or ""),
-                "placementZone": str(g.value(obj, PROD.placementZone) or "floor"),
+                "objectType":           str(g.value(obj, PROD.objectType) or ""),
+                "inferredFrom":         str(g.value(obj, PROD.inferredFrom) or ""),
+                "placementZone":        str(g.value(obj, PROD.placementZone) or "floor"),
+                "inferredFromConcept":  str(g.value(obj, PROD.inferredFromConcept) or ""),
             })
         db.collection("room_objects").document(uid).set(
             {"objects": room_objs}, merge=True
@@ -655,9 +702,6 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
     # 1. Storage에서 그래프 로드
     g = _load_graph_from_storage(bucket_name, uid)
 
-    # 2-a. 이전 추론 RoomObject 정리 (유니티팀 합의 ⑥ — 매 추론마다 전체 재생성)
-    _clear_existing_room_objects(g, URIRef(f"http://7team.dev/ontology#user_{uid}"))
-
     # 2. Firestore temp_triples 확인
     temp_triples = _load_temp_triples(db, uid)
     if not temp_triples:
@@ -672,6 +716,16 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
     #     반드시 SPARQL 추론 전에 실행해야 함)
     for triple in _aggregate_with_duckdb(g):
         g.add(triple)
+
+    # 4-c. 기존 Persona 노드 정리 (CONSTRUCT가 매 사이클마다 새 blank node 생성)
+    _clear_existing_persona_nodes(g)
+
+    # 4-d. 빈 title Quest 정리 (Phase 1 이전 잔재 + 비정상 생성 방지)
+    _clear_empty_title_quests(g)
+
+    # 4-e. 이전 추론 RoomObject 정리 (유니티팀 합의 ⑥ — 매 추론마다 전체 재생성)
+    #      temp_triples 확인 이후에 실행해야 조기 종료 시 기존 RoomObject 보존
+    _clear_existing_room_objects(g, URIRef(f"http://7team.dev/ontology#user_{uid}"))
 
     # 5. SPARQL 추론 실행
     rules = _parse_rules(rules_sparql)

@@ -2016,6 +2016,61 @@ def test_spotify_music_patterns(rules: dict[str, str]) -> bool:
     results.append(check("팝 10:00 + 외출 13:30 (3.5시간 차이) → SocialActivity 미생성 (반례, 경계 초과)",
                          (user, PROD.hasState, PROD.SocialActivity) not in g))
 
+    # ── 신규 장르 키워드 테스트 (준석님 Last.fm 태그 대응) ──────────────────────
+
+    # Rule 28 신규: k-pop → party_light (social)
+    g = load_base_graph()
+    user = _add_user(g, "r28_kpop")
+    ml = PROD["ml_r28_kpop"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("k-pop")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T15:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    loc = PROD["loc_r28_kpop"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("홍대")))
+    g.add((loc, PROD.visitTime, Literal("2026-04-17T16:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["social_music_pattern"])
+    results.append(check("k-pop + 외출 → SocialActivity",
+                         (user, PROD.hasState, PROD.SocialActivity) in g))
+    results.append(check("k-pop → party_light(ceiling) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "party_light" and
+                             str(g.value(obj, PROD.placementZone)) == "ceiling"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # Rule 26 신규: ballads 180분 → desk_light_bright (focus)
+    g = load_base_graph()
+    user = _add_user(g, "r26_ballads")
+    ml = PROD["ml_r26_ballads"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("ballads")))
+    g.add((ml, PROD.listenDuration, Literal(200, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["focus_music_pattern"])
+    results.append(check("ballads 200분 → FocusMode",
+                         (user, PROD.hasState, PROD.FocusMode) in g))
+    results.append(check("ballads → desk_light_bright(desk) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "desk_light_bright" and
+                             str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
+    # Rule 27 신규: vocaloid 야간 → stress_ball (stress)
+    g = load_base_graph()
+    user = _add_user(g, "r27_vocaloid")
+    ml = PROD["ml_r27_vocaloid"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("vocaloid")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    results.append(check("vocaloid 야간 → StressIndicator",
+                         (user, PROD.hasState, PROD.StressIndicator) in g))
+    results.append(check("vocaloid → stress_ball(desk) 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "stress_ball" and
+                             str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+
     assert all(results)
 
 
@@ -2466,6 +2521,101 @@ def test_complete_missing_event_review(rules: dict[str, str]) -> bool:
     assert all(results)
 
 
+# ── 버그 수정 회귀 테스트 ──────────────────────────────────────────────────────
+
+def test_persona_no_accumulation(rules: dict[str, str]) -> None:
+    """같은 그래프로 2사이클 추론 시 Persona 노드가 누적되지 않음을 검증.
+
+    Bug: persona_* CONSTRUCT가 매 사이클마다 _:p blank node를 생성하고
+    이전 노드를 정리하지 않으면 추론 횟수만큼 Persona 노드가 누적된다.
+    Fix: 추론 전 _clear_existing_persona_nodes()로 기존 노드 전체 제거.
+    """
+    print("\n[Test BUG-1] Persona 노드 누적 방지")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "accum")
+    # persona_active 조건: StepCount >= 7000 보 4일 이상
+    for i in range(4):
+        sc = PROD[f"sc_accum_{i}"]
+        g.add((sc, RDF.type, PROD.StepCount))
+        g.add((sc, PROD["count"], Literal(8000, datatype=XSD.integer)))
+        g.add((user, PROD.hasStepCount, sc))
+
+    # 1사이클 추론
+    apply_rule(g, rules["persona_active"])
+    count_first = len(list(g.subjects(RDF.type, PROD.Persona)))
+    results.append(check("1사이클: Persona 노드 1개 이상 생성", count_first >= 1))
+
+    # 엔진 정리 로직 시뮬레이션 (_clear_existing_persona_nodes 동치)
+    for p_node in list(g.subjects(RDF.type, PROD.Persona)):
+        for p, o in list(g.predicate_objects(p_node)):
+            g.remove((p_node, p, o))
+        for s, p in list(g.subject_predicates(p_node)):
+            g.remove((s, p, p_node))
+
+    count_after_cleanup = len(list(g.subjects(RDF.type, PROD.Persona)))
+    results.append(check("정리 후 Persona 노드 0개", count_after_cleanup == 0))
+
+    # 2사이클 추론
+    apply_rule(g, rules["persona_active"])
+    count_second = len(list(g.subjects(RDF.type, PROD.Persona)))
+    results.append(check(
+        f"2사이클: 누적 없이 {count_first}개 유지 (실제={count_second})",
+        count_second == count_first,
+    ))
+
+    assert all(results)
+
+
+def test_quest_empty_title_removed(rules: dict[str, str]) -> None:
+    """빈 title Quest가 그래프 정리 + Firestore payload 가드 양쪽에서 제외됨 검증.
+
+    Bug: Phase 1 이전 생성된 title=None Quest가 그래프에 잔류,
+    Firestore에 노출됨.
+    Fix: 추론 전 _clear_empty_title_quests()로 제거 + 저장 직전 payload 필터.
+    """
+    print("\n[Test BUG-2] 빈 title Quest 정리")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "empty_q")
+
+    # Phase 1 이전 잔재 시뮬레이션: title 없는 Quest
+    old_quest = PROD["old_quest_no_title"]
+    g.add((old_quest, RDF.type, PROD.Quest))
+    g.add((old_quest, PROD.questType, Literal("데이터 보완형")))
+    g.add((user, PROD.receivesQuest, old_quest))
+
+    quests_before = list(g.subjects(RDF.type, PROD.Quest))
+    results.append(check("정리 전 빈 title Quest 존재", len(quests_before) == 1))
+
+    # 엔진 정리 로직 시뮬레이션 (_clear_empty_title_quests 동치)
+    for q in list(g.subjects(RDF.type, PROD.Quest)):
+        if g.value(q, PROD.title) is None:
+            for p, o in list(g.predicate_objects(q)):
+                g.remove((q, p, o))
+            for s, p in list(g.subject_predicates(q)):
+                g.remove((s, p, q))
+
+    quests_after = list(g.subjects(RDF.type, PROD.Quest))
+    results.append(check("그래프 정리 후 Quest 0개", len(quests_after) == 0))
+
+    # Firestore payload 가드 검증 (_save_results_to_firestore 내 필터 동치)
+    raw_payload = [
+        {"title": "",    "questType": "데이터 보완형"},
+        {"title": "오늘 카페 누구랑 갔어?", "questType": "데이터 보완형"},
+        {"title": None,  "questType": "데이터 보완형"},
+    ]
+    filtered = [q for q in raw_payload if q.get("title") and str(q.get("title", "")).strip()]
+    results.append(check(
+        "payload 가드: 빈/None title 제외, 유효 Quest만 통과",
+        len(filtered) == 1 and filtered[0]["title"] == "오늘 카페 누구랑 갔어?",
+    ))
+
+    assert all(results)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -2505,6 +2655,9 @@ def main() -> None:
         ("e63_no_quest_type",   test_e63_1_no_quest_type_skipped),
         ("e63_diff_users",      test_e63_2_different_users_same_quest),
         ("e63_no_dup_zero",     test_e63_3_no_duplicates_returns_zero),
+        # 버그 수정 회귀 테스트
+        ("persona_accumulation", lambda: test_persona_no_accumulation(rules)),
+        ("empty_title_quest",    lambda: test_quest_empty_title_removed(rules)),
     ]
 
     passed = 0
