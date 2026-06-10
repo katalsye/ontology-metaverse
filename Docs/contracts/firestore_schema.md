@@ -2,7 +2,7 @@
 
 > 유니티팀(노성민, 이서윤) 인터페이스 명세서  
 > 작성: 김무성 (온톨로지 담당)  
-> 최종 갱신: 2026-05-29 (rewardAmount 정책 확정 v0.2)
+> 최종 갱신: 2026-06-10 (targetEntityUri/targetValue/completedAt/recoveryLevel 필드 추가 v0.3)
 
 ---
 
@@ -79,7 +79,10 @@ Unity가 실시간 리스너(Firestore Snapshot)로 수신. 추론 실행 후 `m
       "questType": "데이터 보완형",
       "rewardAmount": 30,
       "isCompleted": false,
-      "createdAt": "2026-05-21T12:00:00"
+      "createdAt": "2026-05-21T12:00:00",
+      "targetEntityUri": "http://7team.dev/ontology#visit_starbucks_gangnam",
+      "targetValue": "",
+      "completedAt": ""
     }
   ]
 }
@@ -94,6 +97,9 @@ Unity가 실시간 리스너(Firestore Snapshot)로 수신. 추론 실행 후 `m
 | `rewardAmount` | `integer` | `30`, `50` | 완료 시 지급 코인. 데이터 보완형=30, 삶 개선형=50 ✅ |
 | `isCompleted` | `boolean` | `true`, `false` | Android 앱에서 완료 처리 후 `true`로 갱신 |
 | `createdAt` | `string` | ISO 8601 | 생성 시각 (`"2026-05-21T12:00:00"` 형식) |
+| `targetEntityUri` | `string` | URI 또는 `""` | 데이터 보완형 전용. 빈 노드 대상 엔티티 URI |
+| `targetValue` | `string` | Literal 또는 `""` | 데이터 보완형 전용. 빈 노드 대상 Literal 값 |
+| `completedAt` | `string` | ISO 8601 또는 `""` | 자동 완료 추론 처리 시각. 수동 완료 시 `""` |
 
 ---
 
@@ -107,6 +113,7 @@ persona는 `users` 문서 내 중첩 필드로 저장. `merge:true`.
     "energyType": "active",
     "socialPreference": "social",
     "lifePattern": "routine",
+    "recoveryLevel": "high",
     "updatedAt": "2026-05-21T12:00:00"
   }
 }
@@ -119,6 +126,7 @@ persona는 `users` 문서 내 중첩 필드로 저장. `merge:true`.
 | `energyType` | `string \| null` | `"active"`, `"indoor"`, `null` | 활동성 페르소나. P1/P2 규칙 발동 시 설정 |
 | `socialPreference` | `string \| null` | `"social"`, `"solitary"`, `null` | 사교성 페르소나. P3/P4 규칙 발동 시 설정 |
 | `lifePattern` | `string \| null` | `"routine"`, `"night_owl"`, `null` | 생활 패턴 페르소나. P5/P6 규칙 발동 시 설정 |
+| `recoveryLevel` | `string \| null` | `"high"`, `"low"`, `null` | 회복력 페르소나. Rule P7 발동 시 설정 |
 | `updatedAt` | `string` | ISO 8601 | 마지막 추론 시각 |
 
 > **합의 사항 🤝:** 복수 페르소나 규칙이 동시 발동되면 여러 값이 병합됨.  
