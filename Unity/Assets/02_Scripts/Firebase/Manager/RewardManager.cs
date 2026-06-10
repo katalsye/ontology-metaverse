@@ -17,6 +17,11 @@ public class RewardManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        FirebaseBootstrap.RunWhenReady(Init);
+    }
+
+    private void Init()
+    {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
     }
@@ -26,7 +31,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetCurrency(System.Action<int> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null)
+        if (auth?.CurrentUser == null)
         {
             onFailure?.Invoke("로그인 필요");
             return;
@@ -58,7 +63,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void AddCurrency(int amount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null)
+        if (auth?.CurrentUser == null)
         {
             onFailure?.Invoke("로그인 필요");
             return;
@@ -96,7 +101,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void PurchaseItem(string itemId, int price, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null)
+        if (auth?.CurrentUser == null)
         {
             onFailure?.Invoke("로그인 필요");
             return;
@@ -155,7 +160,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetGems(System.Action<int> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
         string uid = auth.CurrentUser.UserId;
         db.Collection("rewards").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -171,7 +176,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void AddGems(int amount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
+        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
         string uid = auth.CurrentUser.UserId;
         DocumentReference rewardDoc = db.Collection("rewards").Document(uid);
 
@@ -198,7 +203,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetItems(System.Action<List<string>> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null)
+        if (auth?.CurrentUser == null)
         {
             onFailure?.Invoke("로그인 필요");
             return;

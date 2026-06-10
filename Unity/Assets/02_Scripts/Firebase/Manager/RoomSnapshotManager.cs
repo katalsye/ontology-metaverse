@@ -14,9 +14,10 @@ public class RoomSnapshotManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        FirebaseBootstrap.RunWhenReady(Init);
     }
 
-    void Start()
+    private void Init()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;

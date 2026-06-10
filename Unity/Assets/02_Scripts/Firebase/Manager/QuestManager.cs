@@ -25,6 +25,12 @@ public class QuestManager : MonoBehaviour
     // false → true 전환이 감지된 퀘스트에 대해 발생 (자동 완료 추론 결과)
     public event Action<Quest> OnQuestAutoCompleted;
 
+    // 퀘스트 목록이 갱신될 때마다 발생 (실시간 리스너)
+    public event Action<List<Quest>> OnQuestsChanged;
+
+    // 미완료 퀘스트 개수가 변경될 때 발생 (뱃지용)
+    public event Action<int> OnUnreadQuestCountChanged;
+
     private Dictionary<int, bool> _previousStates = new Dictionary<int, bool>();
     private bool _questListenerInitialized;
 
@@ -33,11 +39,10 @@ public class QuestManager : MonoBehaviour
         if (Instance != null) { Destroy(this); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+    }
 
     void Start()
     {
-        auth = FirebaseAuth.DefaultInstance;
-        db = FirebaseFirestore.DefaultInstance;
         rewardManager = RewardManager.Instance;
 
         if (rewardManager == null)
