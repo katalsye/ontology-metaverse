@@ -26,9 +26,11 @@ public class TempTripleSyncManager : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        FirebaseBootstrap.RunWhenReady(Init);
     }
 
-    void Start()
+    private void Init()
     {
         _auth = FirebaseAuth.DefaultInstance;
         _db   = FirebaseFirestore.DefaultInstance;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Firebase;
 using Firebase.Extensions;
+using Firebase.Firestore;
 using UnityEngine;
 
 /// <summary>
@@ -76,6 +77,26 @@ public static class FirebaseBootstrap
             }
 
             IsReady = true;
+
+            // 오프라인 → 온라인 sync: 다른 콜백이 Firestore 인스턴스를 사용하기 전에
+            // (사용 후에는 PersistenceEnabled 변경 시 InvalidOperationException 발생) 가장 먼저 설정.
+            // Editor에서 Domain Reload 끈 채로 Play 재시작하면 이전 세션의 Firestore 인스턴스가
+            // 그대로 살아있어 "이미 사용됨" 예외가 나는데, 이 경우 설정은 첫 세션에 이미 적용된
+            // 상태이므로 무해함 — 경고만 남기고 진행한다.
+            try
+            {
+                FirebaseFirestoreSettings settings = FirebaseFirestore.DefaultInstance.Settings;
+                settings.PersistenceEnabled = true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.LogWarning("[FirebaseBootstrap] Firestore 설정 변경 불가(이미 사용 중인 인스턴스 — 무해함): " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("[FirebaseBootstrap] Firestore 설정 실패: " + ex);
+            }
+
             Debug.Log($"[FirebaseBootstrap] 초기화 완료, 대기 콜백 {pendingCallbacks.Count}건 실행");
 
             // 콜백 처리 중 RunWhenReady가 재귀 호출되어도 안전하도록 스왑

@@ -25,10 +25,6 @@ public class RoomObjectManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-    }
-
-    void Awake()
-    {
         FirebaseBootstrap.RunWhenReady(Init);
     }
 
