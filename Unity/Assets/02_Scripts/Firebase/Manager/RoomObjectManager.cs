@@ -7,12 +7,25 @@ using Firebase.Extensions;
 
 public class RoomObjectManager : MonoBehaviour
 {
+    public static RoomObjectManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private ListenerRegistration _roomListener;
     private string _listeningUid;
 
     public event Action<List<RoomObject>> OnRoomObjectsChanged;
+
+    // 온톨로지가 새로 추론해서 배치한 오브젝트가 감지될 때 발생
+    public event Action<List<RoomObject>> OnInferredObjectsAdded;
+
+    // 이미 알림을 보낸 추론 오브젝트 키 추적 (룸 전환 시 초기화)
+    private readonly HashSet<string> _knownInferredKeys = new HashSet<string>();
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Awake()
     {
@@ -23,6 +36,11 @@ public class RoomObjectManager : MonoBehaviour
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
+    }
+
+    public void ApplySnapshot(List<RoomObject> objects)
+    {
+        OnRoomObjectsChanged?.Invoke(objects);
     }
 
     void Update()
@@ -157,7 +175,9 @@ public class RoomObjectManager : MonoBehaviour
             .Document(uid)
             .Listen(snapshot =>
             {
-                OnRoomObjectsChanged?.Invoke(ParseObjects(snapshot));
+                var objects = ParseObjects(snapshot);
+                OnRoomObjectsChanged?.Invoke(objects);
+                NotifyNewInferredObjects(objects);
             });
 
         Debug.Log("내 방 리스너 시작: " + uid);
@@ -197,12 +217,34 @@ public class RoomObjectManager : MonoBehaviour
         {
             _roomListener.Stop();
             _roomListener = null;
+            _knownInferredKeys.Clear(); // 방 전환 시 초기화
             Debug.Log("룸 리스너 해제: " + _listeningUid);
             _listeningUid = null;
         }
     }
 
     void OnDestroy() => StopRoomListener();
+
+    // ── 추론 오브젝트 신규 감지 ──────────────────────────────────
+
+    private void NotifyNewInferredObjects(List<RoomObject> objects)
+    {
+        var newInferred = new List<RoomObject>();
+        foreach (var o in objects)
+        {
+            if (string.IsNullOrEmpty(o.InferredFrom)) continue;
+            string key = InferredKey(o);
+            if (_knownInferredKeys.Add(key)) // 처음 보는 키면 Add가 true 반환
+                newInferred.Add(o);
+        }
+        if (newInferred.Count > 0)
+            OnInferredObjectsAdded?.Invoke(newInferred);
+    }
+
+    private static string InferredKey(RoomObject o)
+        => string.IsNullOrEmpty(o.ObjectId)
+            ? $"{o.InferredFrom}:{o.ObjectType}"
+            : o.ObjectId;
 
     // ───────────────────────────────────────
     // 파싱 / 직렬화 헬퍼

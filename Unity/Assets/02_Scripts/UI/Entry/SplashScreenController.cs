@@ -28,8 +28,6 @@ public class SplashScreenController : MonoBehaviour
 
     private void OnEnable()
     {
-
-        ScreenManager.Instance.GoTo("splash", false);
         root = uiDocument.rootVisualElement;
 
         // 요소 바인딩
@@ -153,19 +151,35 @@ public class SplashScreenController : MonoBehaviour
     /// </summary>
     private void NavigateNext()
     {
-        bool isFirstLaunch = !PlayerPrefs.HasKey("onboarding_complete");
+        var user = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser;
+        bool isProperlyLoggedIn = user != null && !user.IsAnonymous;
 
-        if (isFirstLaunch)
+        bool hasOnboarding = PlayerPrefs.HasKey("onboarding_complete");
+        bool hasNickname   = PlayerPrefs.HasKey("nickname");
+        // 온보딩 + 로그인 + 프로필 설정까지 전체 플로우를 완료한 경우에만 "셋업 완료"
+        bool setupComplete = hasOnboarding && hasNickname;
+
+        Debug.Log($"[Splash] 상태 진단 — user={user?.UserId ?? "null"} isAnonymous={user?.IsAnonymous} " +
+                  $"onboarding_complete={hasOnboarding} nickname={hasNickname} " +
+                  $"→ properlyLoggedIn={isProperlyLoggedIn} setupComplete={setupComplete}");
+
+        if (isProperlyLoggedIn)
         {
-            // → 온보딩 화면
-            Debug.Log("[Splash] 첫 실행 → OnboardingScreen");
-            ScreenManager.Instance.GoTo("onboarding");
+            Debug.Log("[Splash] 로그인 상태 → MyRoomScreen");
+            ScreenManager.Instance.ClearHistory();
+            ScreenManager.Instance.GoTo("myroom");
+        }
+        else if (setupComplete)
+        {
+            // 셋업은 완료됐으나 로그인 세션 없음 → 재인증
+            Debug.Log("[Splash] 셋업 완료, 재인증 필요 → LoginFlowScreen");
+            ScreenManager.Instance.GoTo("login");
         }
         else
         {
-            // → 마이룸
-            Debug.Log("[Splash] 재실행 → MyRoomScreen");
-            ScreenManager.Instance.GoTo("myroom");
+            // 첫 실행이거나 셋업 미완료(온보딩만 했고 프로필 미설정 등)
+            Debug.Log("[Splash] 셋업 미완료 → OnboardingScreen");
+            ScreenManager.Instance.GoTo("onboarding");
         }
     }
 

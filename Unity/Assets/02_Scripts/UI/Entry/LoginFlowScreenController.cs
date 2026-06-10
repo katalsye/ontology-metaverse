@@ -23,7 +23,6 @@ public class LoginFlowScreenController : MonoBehaviour
 
     // 로그인 버튼
     private Button btnGoogle;
-    private Button btnKakao;
 
     // 권한
     private Button btnPermNext;
@@ -56,9 +55,7 @@ public class LoginFlowScreenController : MonoBehaviour
 
         // 로그인 버튼
         btnGoogle = root.Q<Button>("btn-google");
-        btnKakao = root.Q<Button>("btn-kakao");
-        btnGoogle.clicked += () => OnSocialLogin("google");
-        btnKakao.clicked += () => OnSocialLogin("kakao");
+        btnGoogle.clicked += () => OnSocialLogin();
 
         // 권한 토글
         btnPermNext = root.Q<Button>("btn-perm-next");
@@ -78,11 +75,17 @@ public class LoginFlowScreenController : MonoBehaviour
         // 닉네임 유효성 실시간 체크
         inputNickname.RegisterValueChangedCallback(OnNicknameChanged);
 
-        // 이미 로그인된 상태면 로그인 단계 스킵
-        if (AuthService.Instance != null && AuthService.Instance.IsLoggedIn)
+        // 익명 인증(온보딩 중 다운로드용)은 "로그인 완료"로 취급하지 않음
+        var currentUser = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser;
+        bool isProperlyLoggedIn = currentUser != null && !currentUser.IsAnonymous;
+
+        if (isProperlyLoggedIn)
         {
             if (PlayerPrefs.HasKey("onboarding_complete"))
+            {
+                ScreenManager.Instance.ClearHistory();
                 ScreenManager.Instance.GoTo("myroom");
+            }
             else
                 GoToStep(1); // 권한 요청 단계부터
             return;
@@ -172,16 +175,9 @@ public class LoginFlowScreenController : MonoBehaviour
     /// 소셜 로그인 버튼 클릭
     /// 실제 구현 시 Firebase Auth 호출
     /// </summary>
-    private void OnSocialLogin(string provider)
+    private void OnSocialLogin()
     {
-        if (provider == "kakao")
-        {
-            Debug.Log("[LoginFlow] 카카오 로그인은 아직 준비 중입니다.");
-            return;
-        }
-
         btnGoogle.SetEnabled(false);
-        btnKakao.SetEnabled(false);
 
         AuthService.Instance.SignInWithGoogle(
             onSuccess: () => GoToStep(1),
@@ -189,7 +185,6 @@ public class LoginFlowScreenController : MonoBehaviour
             {
                 Debug.LogError($"[LoginFlow] 로그인 실패: {err}");
                 btnGoogle.SetEnabled(true);
-                btnKakao.SetEnabled(true);
             }
         );
     }
@@ -265,11 +260,16 @@ public class LoginFlowScreenController : MonoBehaviour
 
         // Firestore에 프로필 저장 후 화면 전환
         UserManager.Instance.UpdateProfile(nickname, status,
-            onSuccess: () => ScreenManager.Instance.GoTo("myroom"),
+            onSuccess: () =>
+            {
+                ScreenManager.Instance.ClearHistory();
+                ScreenManager.Instance.GoTo("myroom");
+            },
             onFailure: err =>
             {
                 Debug.LogError($"[LoginFlow] 프로필 저장 실패: {err}");
                 // Firestore 실패해도 로컬 저장 완료됐으므로 진행
+                ScreenManager.Instance.ClearHistory();
                 ScreenManager.Instance.GoTo("myroom");
             }
         );

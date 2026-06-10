@@ -1,0 +1,276 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+
+/// <summary>
+/// EditMode에서 가구 선택 → 디자인 변경 / 위치 이동을 담당.
+/// 씬에 하나만 배치, RoomModeManager.ApplyMode()에서 EnterEditMode() 호출.
+/// </summary>
+public class FurnitureEditController : MonoBehaviour
+{
+    public static FurnitureEditController Instance { get; private set; }
+
+    [Header("편집 가능 가구 키워드 (오브젝트 이름에 포함되면 편집 가능)")]
+    public string[] editableKeywords = { "Door", "Board", "Drawer", "KitchenIsland", "LaunchTable", "SingleBed", "Chair" };
+
+    [Header("그리드")]
+    public float gridCellSize = 10f;
+    [Tooltip("바닥 높이 (보통 0 — 가구 Y 위치 기준)")]
+    public float floorY = 0f;
+
+    [Header("카메라 고정 뷰 (Inspector에서 튜닝)")]
+    // 창문 쪽(z>155)에서 문 방향(z≈0)을 바라봄 → 문이 화면 위에 위치
+    public Vector3 editCamPosition = new Vector3(-50f, 80f, 220f);
+    public Vector3 editCamLookAt   = new Vector3(-50f,  0f,  75f);
+
+    [Header("조이스틱")]
+    public GameObject joystickObject;
+
+    [Header("UI — 선택 팝업 (가구 선택 시 등장)")]
+    public GameObject editPopup;
+    public Button designChangeBtn;
+    public Button positionMoveBtn;
+
+    [Header("UI — 이동 확인 (위치이동 모드 중)")]
+    public GameObject confirmUI;
+    public Button confirmBtn;
+    public Button cancelBtn;
+
+    // ── 상태 ─────────────────────────────────────────────────
+    private Camera      _cam;
+    private GameObject  _selected;
+    private Vector3     _originalPos;
+    private bool        _movingMode;
+    private int         _dragFingerId = -1;
+
+    void Awake()
+    {
+        Instance = this;
+        _cam = Camera.main;
+
+        if (joystickObject == null)
+        {
+            var jc = FindObjectOfType<JoystickController>();
+            if (jc != null && jc.joystickArea != null)
+                joystickObject = jc.joystickArea.gameObject;
+        }
+
+        if (editPopup)  editPopup.SetActive(false);
+        if (confirmUI)  confirmUI.SetActive(false);
+    }
+
+    void Start()
+    {
+        if (designChangeBtn) designChangeBtn.onClick.AddListener(OnDesignChange);
+        if (positionMoveBtn) positionMoveBtn.onClick.AddListener(OnPositionMove);
+        if (confirmBtn)      confirmBtn.onClick.AddListener(Confirm);
+        if (cancelBtn)       cancelBtn.onClick.AddListener(Cancel);
+    }
+
+    void OnEnable()  { EnhancedTouchSupport.Enable(); }
+    void OnDisable() { EnhancedTouchSupport.Disable(); }
+
+    // ── EditMode 진입/퇴장 ────────────────────────────────────
+
+    public void EnterEditMode()
+    {
+        Deselect();
+        if (joystickObject != null) joystickObject.SetActive(false);
+
+        // 카메라 즉시 스냅 — -Vector3.up으로 뒤집힘 방지
+        if (_cam == null) _cam = Camera.main;
+        if (_cam != null)
+        {
+            _cam.transform.position = editCamPosition;
+            _cam.transform.LookAt(editCamLookAt, -Vector3.up);
+        }
+
+        Debug.Log("[Edit] EditMode 진입");
+    }
+
+    public void ExitEditMode()
+    {
+        Deselect();
+        CancelMove();
+        if (joystickObject != null) joystickObject.SetActive(true);
+        Debug.Log("[Edit] EditMode 종료");
+    }
+
+    // ── Update ────────────────────────────────────────────────
+
+    void Update()
+    {
+        if (RoomModeManager.CurrentMode != RoomMode.EditMode) return;
+
+        if (_movingMode) HandleDrag();
+    }
+
+    // ── 가구 클릭 (CameraController에서 호출) ─────────────────
+
+    /// <summary>EditMode에서 가구 클릭 시 CameraController가 호출</summary>
+    public void OnFurnitureClicked(GameObject furniture)
+    {
+        if (_movingMode) return;
+        if (!IsEditable(furniture)) { Deselect(); return; }
+        SelectFurniture(furniture);
+    }
+
+    /// <summary>EditMode에서 빈 곳 클릭 시 CameraController가 호출</summary>
+    public void OnEmptyClicked()
+    {
+        if (_movingMode) return;
+        Deselect();
+    }
+
+    // ── 선택 ─────────────────────────────────────────────────
+
+    void SelectFurniture(GameObject furniture)
+    {
+        _selected = furniture;
+        if (editPopup)
+        {
+            editPopup.SetActive(true);
+            PositionPopupAbove(furniture);
+        }
+        Debug.Log($"[Edit] 선택: {furniture.name}");
+    }
+
+    void Deselect()
+    {
+        _selected = null;
+        if (editPopup) editPopup.SetActive(false);
+    }
+
+    // ── 버튼 콜백 ────────────────────────────────────────────
+
+    void OnDesignChange()
+    {
+        if (_selected == null) return;
+        // TODO: 가구별 디자인 선택 UI 열기
+        // DesignSelectUI.Instance?.Open(_selected.name);
+        Debug.Log($"[Edit] 디자인 변경 — {_selected.name} (TODO: 디자인 선택 UI)");
+    }
+
+    void OnPositionMove()
+    {
+        if (_selected == null) return;
+        _originalPos = _selected.transform.position;
+        _movingMode  = true;
+        _dragFingerId = -1;
+
+        if (editPopup) editPopup.SetActive(false);
+        if (confirmUI) confirmUI.SetActive(true);
+        Debug.Log($"[Edit] 위치 이동 모드 — {_selected.name}");
+    }
+
+    void Confirm()
+    {
+        _movingMode = false;
+        if (confirmUI) confirmUI.SetActive(false);
+
+        // TODO: 변경된 위치 DB에 저장
+        // FirebaseManager.Instance.SaveFurniturePosition(_selected.name, _selected.transform.position);
+        Debug.Log($"[Edit] 위치 확정 — {_selected.name} pos={_selected.transform.position} (TODO: DB 저장)");
+
+        Deselect();
+    }
+
+    void Cancel() => CancelMove();
+
+    void CancelMove()
+    {
+        if (_selected != null && _movingMode)
+            _selected.transform.position = _originalPos;
+
+        _movingMode = false;
+        if (confirmUI) confirmUI.SetActive(false);
+        Debug.Log("[Edit] 위치 취소");
+        Deselect();
+    }
+
+    // ── 드래그 처리 ───────────────────────────────────────────
+
+    void HandleDrag()
+    {
+        if (_selected == null) return;
+
+        Vector2 inputPos  = Vector2.zero;
+        bool    hasInput  = false;
+
+        if (Touch.activeTouches.Count > 0)
+        {
+            foreach (var t in Touch.activeTouches)
+            {
+                if (t.phase == UnityEngine.InputSystem.TouchPhase.Began)
+                { _dragFingerId = t.finger.index; inputPos = t.screenPosition; hasInput = true; break; }
+                if (t.finger.index == _dragFingerId)
+                { inputPos = t.screenPosition; hasInput = true; break; }
+            }
+        }
+        else if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+        {
+            inputPos = Mouse.current.position.ReadValue();
+            hasInput = true;
+        }
+
+        if (!hasInput) return;
+
+        Ray ray = _cam.ScreenPointToRay(inputPos);
+        // y=floorY 평면과 교차점 계산 (레이어 불필요)
+        if (RaycastFloorPlane(ray, out Vector3 worldPos))
+        {
+            Vector3 snapped = SnapToGrid(worldPos);
+            snapped.y = _originalPos.y; // Y는 원래 높이 유지
+            _selected.transform.position = snapped;
+        }
+    }
+
+    // ── 바닥 평면 교차 ────────────────────────────────────────
+
+    bool RaycastFloorPlane(Ray ray, out Vector3 result)
+    {
+        // y = floorY 평면과 ray 교차점
+        float denom = ray.direction.y;
+        if (Mathf.Abs(denom) < 0.0001f) { result = Vector3.zero; return false; }
+        float t = (floorY - ray.origin.y) / denom;
+        if (t < 0f) { result = Vector3.zero; return false; }
+        result = ray.origin + ray.direction * t;
+        return true;
+    }
+
+    // ── 그리드 스냅 ───────────────────────────────────────────
+
+    Vector3 SnapToGrid(Vector3 pos)
+    {
+        return new Vector3(
+            Mathf.Round(pos.x / gridCellSize) * gridCellSize,
+            pos.y,
+            Mathf.Round(pos.z / gridCellSize) * gridCellSize);
+    }
+
+    // ── 팝업 위치 ─────────────────────────────────────────────
+
+    void PositionPopupAbove(GameObject furniture)
+    {
+        if (editPopup == null) return;
+        var ren = furniture.GetComponentInChildren<Renderer>();
+        Vector3 topWorld = ren != null
+            ? ren.bounds.center + Vector3.up * ren.bounds.extents.y
+            : furniture.transform.position + Vector3.up * 20f;
+
+        Vector3 screenPos = _cam.WorldToScreenPoint(topWorld);
+        var rt = editPopup.GetComponent<RectTransform>();
+        if (rt) rt.position = screenPos + Vector3.up * 60f;
+    }
+
+    // ── 유틸 ─────────────────────────────────────────────────
+
+    bool IsEditable(GameObject go)
+    {
+        foreach (var kw in editableKeywords)
+            if (go.name.Contains(kw)) return true;
+        return false;
+    }
+}

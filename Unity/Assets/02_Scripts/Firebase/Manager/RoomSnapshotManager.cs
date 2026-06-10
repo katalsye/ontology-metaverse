@@ -6,15 +6,17 @@ using System.Collections.Generic;
 
 public class RoomSnapshotManager : MonoBehaviour
 {
+    public static RoomSnapshotManager Instance { get; private set; }
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
     void Awake()
     {
-        FirebaseBootstrap.RunWhenReady(Init);
+        Instance = this;
     }
 
-    private void Init()
+    void Start()
     {
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;

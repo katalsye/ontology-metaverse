@@ -34,10 +34,18 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
-    // quests/{uid}/userQuests/{questId} — 퀘스트
+    // users/{uid}/fcmTokens/{tokenId} — FCM 푸시 토큰
+    // 본인만 읽기/쓰기 (퀘스트 알림 발송용, Cloud Functions는 Admin SDK라 규칙 무시됨)
+    // ───────────────────────────────────────
+    match /users/{uid}/fcmTokens/{tokenId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ───────────────────────────────────────
+    // quests/{uid} — 퀘스트 (단일 문서 + quests 배열 필드)
     // 본인만 읽기/쓰기
     // ───────────────────────────────────────
-    match /quests/{uid}/userQuests/{questId} {
+    match /quests/{uid} {
       allow read, write: if isOwner(uid);
     }
 
@@ -58,11 +66,11 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
-    // room_objects/{uid}/objects/{objectId} — 방 오브젝트
+    // room_objects/{uid} — 방 오브젝트 (단일 문서 + objects 배열 필드)
     // 본인: 읽기/쓰기
     // 팔로워: 읽기
     // ───────────────────────────────────────
-    match /room_objects/{uid}/objects/{objectId} {
+    match /room_objects/{uid} {
       allow read: if isOwner(uid) || isAcceptedFollower(uid);
       allow write: if isOwner(uid);
     }

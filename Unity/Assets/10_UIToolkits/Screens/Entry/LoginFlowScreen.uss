@@ -93,11 +93,6 @@
     opacity: 0.85;
 }
 
-.social-btn--kakao {
-    background-color: #FEE500;
-    border-color: #FEE500;
-}
-
 .social-icon {
     width: 22px;
     height: 22px;
@@ -111,19 +106,10 @@
     border-radius: 4px;
 }
 
-.social-icon--kakao {
-    background-color: #3C1E1E; /* 플레이스홀더 */
-    border-radius: 4px;
-}
-
 .social-label {
     font-size: var(--fs-body);
     -unity-font-style: bold;
     color: var(--ink);
-}
-
-.social-label--kakao {
-    color: #3C1E1E;
 }
 
 /* ── STEP 2: 권한 요청 ── */

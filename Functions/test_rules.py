@@ -1,6 +1,6 @@
 """
 test_rules.py
-추론 규칙 단위 테스트 — 29개 규칙 전체 + 엣지케이스
+추론 규칙 단위 테스트 — 37개 규칙 전체 + 엣지케이스
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -38,6 +38,10 @@ ALL_RULE_IDS = [
     "persona_solitary", "persona_routine", "persona_night_owl",
     "focus_music_pattern", "stress_music_pattern", "social_music_pattern",
     "schedule_overload",
+    "high_resting_hr_stress", "recovery_deficit_persona",
+    "complete_missing_companion", "complete_missing_emotion",
+    "complete_missing_purpose", "complete_missing_music_mood",
+    "complete_missing_sleep_cause", "complete_missing_event_review",
 ]
 
 
@@ -131,12 +135,12 @@ def _add_cafe_location(g: Graph, user: URIRef, uid: str,
 # ── Test 1: rule_parser ───────────────────────────────────────────────────────
 
 def test_rule_parser(rules: dict[str, str]) -> bool:
-    print("\n[Test P] 규칙 파서 — 29개 RULE_ID 추출 확인")
+    print("\n[Test P] 규칙 파서 — 37개 RULE_ID 추출 확인")
     expected = set(ALL_RULE_IDS)
     extracted = set(rules.keys())
     missing = sorted(expected - extracted)
     extra   = sorted(extracted - expected)
-    ok = check(f"29개 규칙 추출됨 (실제 {len(extracted)}개)",
+    ok = check(f"37개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
     assert ok
@@ -2162,11 +2166,311 @@ def testdeduplicate_quests_multi_rule(rules: dict[str, str]) -> None:
     assert ok4, f"남은 Quest title 불일치: {title}"
 
 
+# ── Test 30 / Rule P7 ─────────────────────────────────────────────────────────
+
+def test_high_resting_hr_stress(rules: dict[str, str]) -> bool:
+    print("\n[Test 30] high_resting_hr_stress — 안정시 심박 스트레스 감지")
+    results = []
+
+    # 정례: bpm >= 90.0, 운동 기록 없음 → HighRestingHR + Quest + stress_ball
+    g = load_base_graph()
+    user = _add_user(g, "r30a")
+    hr = PROD["hr_r30a"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(95.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=95 → HighRestingHR 상태 부여",
+                         (user, PROD.hasState, PROD.HighRestingHR) in g))
+    results.append(check("→ 휴식 권장 퀘스트 생성",
+                         any("오늘 심박수가 높네요" in t for t in quest_titles(g))))
+    results.append(check("→ stress_ball RoomObject 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "stress_ball"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ stress_ball inferredFrom='HighRestingHR'",
+                         any(str(g.value(obj, PROD.inferredFrom)) == "HighRestingHR"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "stress_ball")))
+    results.append(check("→ stress_ball placementZone='desk'",
+                         any(str(g.value(obj, PROD.placementZone)) == "desk"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "stress_ball")))
+
+    # 반례: bpm >= 90 이지만 stepCount >= 8000 (운동함) → HighRestingHR 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r30b")
+    hr = PROD["hr_r30b"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(92.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    sc = PROD["sc_r30b"]
+    g.add((sc, RDF.type, PROD.StepCount))
+    g.add((sc, PROD["count"], Literal(9000, datatype=XSD.integer)))
+    g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=92 + stepCount=9000 → HighRestingHR 미생성 (운동 예외)",
+                         (user, PROD.hasState, PROD.HighRestingHR) not in g))
+
+    # 반례: bpm < 90 → HighRestingHR 미생성
+    g = load_base_graph()
+    user = _add_user(g, "r30c")
+    hr = PROD["hr_r30c"]
+    g.add((hr, RDF.type, PROD.HeartRate))
+    g.add((hr, PROD.bpm, Literal(75.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    results.append(check("bpm=75 → HighRestingHR 미생성",
+                         (user, PROD.hasState, PROD.HighRestingHR) not in g))
+
+    assert all(results)
+
+
+def test_recovery_deficit_persona(rules: dict[str, str]) -> bool:
+    print("\n[Test P7] recovery_deficit_persona — HRV 회복 부족 페르소나 감지")
+    results = []
+
+    # 정례: rmssd < 20.0 → Persona(recoveryLevel=deficit) + meditation_cushion
+    g = load_base_graph()
+    user = _add_user(g, "rP7a")
+    hrv = PROD["hrv_rP7a"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(15.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    persona_nodes = list(g.objects(user, PROD.hasPersona))
+    results.append(check("rmssd=15 → Persona 노드 생성",
+                         len(persona_nodes) > 0))
+    results.append(check("→ recoveryLevel='deficit'",
+                         any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                             for p in persona_nodes)))
+    results.append(check("→ meditation_cushion RoomObject 생성",
+                         any(str(g.value(obj, PROD.objectType)) == "meditation_cushion"
+                             for obj in g.objects(user, PROD.hasRoomObject))))
+    results.append(check("→ meditation_cushion placementZone='floor'",
+                         any(str(g.value(obj, PROD.placementZone)) == "floor"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "meditation_cushion")))
+    results.append(check("→ meditation_cushion inferredFrom='Persona:recovery_deficit'",
+                         any(str(g.value(obj, PROD.inferredFrom)) == "Persona:recovery_deficit"
+                             for obj in g.objects(user, PROD.hasRoomObject)
+                             if str(g.value(obj, PROD.objectType)) == "meditation_cushion")))
+
+    # 경계값: rmssd = 19.9 (< 20.0) → 발동
+    g = load_base_graph()
+    user = _add_user(g, "rP7b")
+    hrv = PROD["hrv_rP7b"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(19.9, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    results.append(check("rmssd=19.9 (경계-1) → Persona 생성",
+                         any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                             for p in g.objects(user, PROD.hasPersona))))
+
+    # 반례: rmssd >= 20.0 → Persona 미생성
+    g = load_base_graph()
+    user = _add_user(g, "rP7c")
+    hrv = PROD["hrv_rP7c"]
+    g.add((hrv, RDF.type, PROD.HeartRateVariability))
+    g.add((hrv, PROD.rmssd, Literal(25.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHrv, hrv))
+    apply_rule(g, rules["recovery_deficit_persona"])
+    results.append(check("rmssd=25.0 → Persona(deficit) 미생성",
+                         not any(str(g.value(p, PROD.recoveryLevel)) == "deficit"
+                                 for p in g.objects(user, PROD.hasPersona))))
+
+    assert all(results)
+
+
+# ── Test C1-C6: complete_missing_* ────────────────────────────────────────────
+
+def test_complete_missing_companion(rules: dict[str, str]) -> bool:
+    print("\n[Test C1] complete_missing_companion — 동행자 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c1a")
+    loc = PROD["loc_c1a"]
+    g.add((loc, RDF.type, PROD.Location))
+    g.add((loc, PROD.placeName, Literal("카페")))
+    g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["missing_companion"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_companion → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    g.add((loc, PROD.companion, Literal("친구")))
+    apply_rule(g, rules["complete_missing_companion"])
+    quest = quests[0]
+    results.append(check("companion 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    # 반례: companion 없으면 complete_* 미발동
+    g2 = load_base_graph()
+    user2 = _add_user(g2, "c1b")
+    loc2 = PROD["loc_c1b"]
+    g2.add((loc2, RDF.type, PROD.Location))
+    g2.add((loc2, PROD.placeName, Literal("카페")))
+    g2.add((user2, PROD.hasLocation, loc2))
+    apply_rule(g2, rules["missing_companion"])
+    quests2 = list(g2.objects(user2, PROD.receivesQuest))
+    apply_rule(g2, rules["complete_missing_companion"])
+    if quests2:
+        results.append(check("companion 없으면 isCompleted=True 미발동",
+                             Literal(True) not in set(g2.objects(quests2[0], PROD.isCompleted))))
+
+    assert all(results)
+
+
+def test_complete_missing_emotion(rules: dict[str, str]) -> bool:
+    print("\n[Test C2] complete_missing_emotion — 감정 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c2a")
+    act = PROD["act_c2a"]
+    g.add((act, RDF.type, PROD.Activity))
+    g.add((act, PROD.activityType, Literal("독서")))
+    g.add((user, PROD.hasActivity, act))
+    apply_rule(g, rules["missing_emotion"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_emotion → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    g.add((act, PROD.emotion, Literal("평온")))
+    apply_rule(g, rules["complete_missing_emotion"])
+    quest = quests[0]
+    results.append(check("emotion 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_missing_purpose(rules: dict[str, str]) -> bool:
+    print("\n[Test C3] complete_missing_purpose — 방문 목적 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c3a")
+    # missing_purpose requires >= 3 visits to same placeName
+    for i in range(3):
+        loc_i = PROD[f"loc_c3a_{i}"]
+        g.add((loc_i, RDF.type, PROD.Location))
+        g.add((loc_i, PROD.placeName, Literal("도서관")))
+        g.add((user, PROD.hasLocation, loc_i))
+    apply_rule(g, rules["missing_purpose"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_purpose → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    # complete_* matches quest.targetValue="도서관" with loc.placeName="도서관" + purpose set
+    g.add((PROD["loc_c3a_0"], PROD.purpose, Literal("공부")))
+    apply_rule(g, rules["complete_missing_purpose"])
+    quest = quests[0]
+    results.append(check("purpose 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_missing_music_mood(rules: dict[str, str]) -> bool:
+    print("\n[Test C4] complete_missing_music_mood — 음악 무드 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c4a")
+    ml = PROD["ml_c4a"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("재즈")))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["missing_music_mood"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_music_mood → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    g.add((ml, PROD.mood, Literal("집중")))
+    apply_rule(g, rules["complete_missing_music_mood"])
+    quest = quests[0]
+    results.append(check("mood 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_missing_sleep_cause(rules: dict[str, str]) -> bool:
+    print("\n[Test C5] complete_missing_sleep_cause — 수면 원인 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c5a")
+    sleep = PROD["sleep_c5a"]
+    g.add((sleep, RDF.type, PROD.SleepData))
+    g.add((sleep, PROD.quality, Literal(45, datatype=XSD.integer)))
+    g.add((sleep, PROD.duration, Literal(5.0, datatype=XSD.float)))
+    g.add((user, PROD.hasSleepData, sleep))
+    apply_rule(g, rules["missing_sleep_cause"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_sleep_cause → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    g.add((sleep, PROD.cause, Literal("카페인")))
+    apply_rule(g, rules["complete_missing_sleep_cause"])
+    quest = quests[0]
+    results.append(check("cause 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_missing_event_review(rules: dict[str, str]) -> bool:
+    print("\n[Test C6] complete_missing_event_review — 일정 후기 입력 시 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c6a")
+    evt = PROD["evt_c6a"]
+    g.add((evt, RDF.type, PROD.CalendarEvent))
+    g.add((evt, PROD.eventTitle, Literal("팀 미팅")))
+    g.add((evt, PROD.startTime, Literal("2026-01-01T09:00:00", datatype=XSD.dateTime)))
+    g.add((evt, PROD.endTime,   Literal("2026-01-01T10:00:00", datatype=XSD.dateTime)))
+    g.add((user, PROD.hasCalendarEvent, evt))
+    apply_rule(g, rules["missing_event_review"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("missing_event_review → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    g.add((evt, PROD.review, Literal("생산적이었다")))
+    apply_rule(g, rules["complete_missing_event_review"])
+    quest = quests[0]
+    results.append(check("review 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     print("=" * 60)
-    print("inference_rules.sparql 단위 테스트 (29개 규칙 전체 + Persona 엣지케이스)")
+    print("inference_rules.sparql 단위 테스트 (37개 규칙 전체 + Persona 엣지케이스)")
     print("=" * 60)
 
     rules_text = RULES_PATH.read_text(encoding="utf-8")
@@ -2187,6 +2491,14 @@ def main() -> None:
         ("persona_edge",  lambda: test_persona_edge_cases(rules)),
         ("spotify_music",     lambda: test_spotify_music_patterns(rules)),
         ("schedule_overload", lambda: test_schedule_overload(rules)),
+        ("high_resting_hr",  lambda: test_high_resting_hr_stress(rules)),
+        ("recovery_deficit", lambda: test_recovery_deficit_persona(rules)),
+        ("complete_companion",    lambda: test_complete_missing_companion(rules)),
+        ("complete_emotion",      lambda: test_complete_missing_emotion(rules)),
+        ("complete_purpose",      lambda: test_complete_missing_purpose(rules)),
+        ("complete_music_mood",   lambda: test_complete_missing_music_mood(rules)),
+        ("complete_sleep_cause",  lambda: test_complete_missing_sleep_cause(rules)),
+        ("complete_event_review", lambda: test_complete_missing_event_review(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
         ("다중 규칙 중복 Quest 제거", lambda: testdeduplicate_quests_multi_rule(rules)),
         # E63 함수들은 pytest로도 실행 가능 (python test_rules.py와 동일 커버리지)

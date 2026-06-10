@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a977a541551c67b4891fd806043a1f24
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322280
+  packageName: Native mobile date picker
+  packageVersion: 1.0.0
+  assetPath: Assets/NativeMobileDatePicker/Documentation.rtf
+  uploadId: 766331

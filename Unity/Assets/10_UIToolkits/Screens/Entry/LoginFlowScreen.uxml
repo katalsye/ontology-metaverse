@@ -33,11 +33,6 @@
                     <ui:VisualElement class="social-icon social-icon--google" />
                     <ui:Label text="Google로 계속하기" class="social-label" />
                 </ui:Button>
-
-                <ui:Button name="btn-kakao" class="social-btn social-btn--kakao">
-                    <ui:VisualElement class="social-icon social-icon--kakao" />
-                    <ui:Label text="카카오로 계속하기" class="social-label social-label--kakao" />
-                </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
 

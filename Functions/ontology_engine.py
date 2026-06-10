@@ -49,7 +49,14 @@ RULE_ORDER = [
     "missing_purpose",          # Rule 6-C (의도 빈 노드)
     "missing_music_mood",       # Rule 6-D (음악 맥락 빈 노드)
     "missing_sleep_cause",      # Rule 6-E (수면 원인 빈 노드)
-    "missing_event_review",     # Rule 6-F (일정 후기 빈 노드)
+    "missing_event_review",      # Rule 6-F (일정 후기 빈 노드)
+    # 데이터 보완형 퀘스트 자동 완료 (Phase 1, #116)
+    "complete_missing_companion",    # Rule C1
+    "complete_missing_emotion",      # Rule C2
+    "complete_missing_purpose",      # Rule C3
+    "complete_missing_music_mood",   # Rule C4
+    "complete_missing_sleep_cause",  # Rule C5
+    "complete_missing_event_review", # Rule C6
     "indoor_day_pattern",       # Rule 7
     "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
     "routine_detection",        # Rule 8
@@ -71,6 +78,9 @@ RULE_ORDER = [
     "persona_solitary",             # Rule P4
     "persona_routine",              # Rule P5  (routine_detection 의존)
     "persona_night_owl",            # Rule P6
+    "recovery_deficit_persona",     # Rule P7  (HRV 회복 부족 페르소나)
+    # 바이오 데이터 기반 상태 추론
+    "high_resting_hr_stress",       # Rule 30  (안정시 심박 스트레스)
 ]
 
 
@@ -378,6 +388,10 @@ def _apply_rules(g: Graph, rules: dict[str, str]) -> list[tuple]:
             logger.info("Rule %s → %d new triples", rule_id, len(result))
         except Exception as exc:
             logger.error("Rule %s failed: %s", rule_id, exc)
+    # complete_* 규칙 실행 후 isCompleted 충돌 해소:
+    # isCompleted=True가 생성된 Quest의 isCompleted=False 제거 (멱등성)
+    for quest in list(g.subjects(PROD.isCompleted, Literal(True))):
+        g.remove((quest, PROD.isCompleted, Literal(False)))
     return new_triples
 
 
@@ -391,6 +405,31 @@ def _collect_new_quests(g: Graph, new_triples: list[tuple]) -> list[URIRef]:
         s for s in new_subjects
         if (s, PROD.questType, None) in g
     ]
+
+
+def _clear_existing_room_objects(g: Graph, user_uri: URIRef) -> int:
+    """
+    User에 연결된 모든 RoomObject와 관련 트리플 제거.
+    매 추론마다 RoomObject를 새로 생성하기 위함 (유니티팀 합의 ⑥).
+
+    제거 대상:
+      1. ?obj ?p ?o  (RoomObject의 모든 속성 트리플)
+      2. ?user prod:hasRoomObject ?obj
+
+    Returns: 제거된 트리플 수
+    """
+    removed_count = 0
+    room_objs = list(g.objects(user_uri, PROD.hasRoomObject))
+    for obj in room_objs:
+        for p, o in list(g.predicate_objects(obj)):
+            g.remove((obj, p, o))
+            removed_count += 1
+        g.remove((user_uri, PROD.hasRoomObject, obj))
+        removed_count += 1
+    if removed_count > 0:
+        logger.info("Cleared %d previous RoomObject triples for %s",
+                    removed_count, user_uri)
+    return removed_count
 
 
 def _save_results_to_firestore(
@@ -414,25 +453,29 @@ def _save_results_to_firestore(
             created  = g.value(quest, PROD.createdAt)
             title_str = str(title) if title else ""
             reward_amt = g.value(quest, PROD.rewardAmount)
+            is_done_bool = is_done.toPython() if is_done is not None else False
             quests_payload.append({
-                "title":        title_str,
-                "questType":    str(q_type) if q_type else "",
-                "rewardAmount": int(reward_amt.toPython()) if reward_amt is not None else 0,
-                # Literal.toPython() → Python bool/int/float 변환 (str 변환 금지)
-                "isCompleted":  is_done.toPython() if is_done is not None else False,
-                "createdAt":    str(created) if created else "",
+                "title":           title_str,
+                "questType":       str(q_type) if q_type else "",
+                "rewardAmount":    int(reward_amt.toPython()) if reward_amt is not None else 0,
+                "isCompleted":     is_done_bool,
+                "createdAt":       str(created) if created else "",
+                "targetEntityUri": str(g.value(quest, PROD.targetEntity)) if g.value(quest, PROD.targetEntity) else "",
+                "targetValue":     str(g.value(quest, PROD.targetValue)) if g.value(quest, PROD.targetValue) else "",
+                "completedAt":     str(g.value(quest, PROD.completedAt)) if g.value(quest, PROD.completedAt) else "",
             })
-            new_quest_titles.append(title_str)
+            if not is_done_bool:  # 완료된 퀘스트는 FCM 알림 제외
+                new_quest_titles.append(title_str)
         db.collection("quests").document(uid).set(
             {"quests": quests_payload}, merge=True
         )
         logger.info("Saved %d new quests for uid=%s", len(quests_payload), uid)
 
-    # room_objects — hasRoomObject로 연결된 노드만 수집
-    new_obj_subjects = {s for s, p, _ in new_triples if p == PROD.hasRoomObject}
-    if new_obj_subjects:
+    # room_objects — 그래프에서 직접 순회 (new_triples blank node ID 불일치 버그 수정)
+    all_obj_subjects = list(g.objects(user_uri, PROD.hasRoomObject))
+    if all_obj_subjects:
         room_objs = []
-        for obj in new_obj_subjects:
+        for obj in all_obj_subjects:
             room_objs.append({
                 "objectType":  str(g.value(obj, PROD.objectType) or ""),
                 "inferredFrom": str(g.value(obj, PROD.inferredFrom) or ""),
@@ -443,17 +486,44 @@ def _save_results_to_firestore(
         )
         logger.info("Saved %d room_objects for uid=%s", len(room_objs), uid)
 
+        # room_snapshots — 추론 완료 시점마다 스냅샷 저장 (유니티팀 합의 ②)
+        # 같은 날 재추론 시 덮어쓰기 (set)
+        snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        db.collection("room_snapshots") \
+            .document(uid) \
+            .collection("snapshots") \
+            .document(snapshot_date) \
+            .set({
+                "objects":   room_objs,
+                "createdAt": datetime.now(timezone.utc),
+            })
+        logger.info("Saved room_snapshot for uid=%s date=%s (%d objects)",
+                    uid, snapshot_date, len(room_objs))
+
+        # 팔로워 방 업데이트 알림 (유니티팀 합의 ④)
+        # FCM 실패는 추론 결과에 영향 없음 — fcm_sender 내부에서 경고만 남김
+        try:
+            from fcm_sender import send_room_updated_to_followers
+            sent = send_room_updated_to_followers(db, messaging, uid)
+            if sent > 0:
+                logger.info("FCM room_updated sent to %d followers for uid=%s",
+                            sent, uid)
+        except Exception as exc:
+            logger.warning("FCM room_updated 전송 실패 (무시): %s", exc)
+
     # persona — 복수 Persona 노드를 순회해 속성 병합 저장
     persona_nodes = list(g.objects(user_uri, PROD.hasPersona))
     if persona_nodes:
         persona: dict[str, str] = {
-            "energyType": "", "socialPreference": "", "lifePattern": "", "updatedAt": "",
+            "energyType": "", "socialPreference": "", "lifePattern": "",
+            "recoveryLevel": "", "updatedAt": "",
         }
         for pnode in persona_nodes:
             for key, prop in [
                 ("energyType",       PROD.energyType),
                 ("socialPreference", PROD.socialPreference),
                 ("lifePattern",      PROD.lifePattern),
+                ("recoveryLevel",    PROD.recoveryLevel),
                 ("updatedAt",        PROD.updatedAt),
             ]:
                 if not persona[key]:
@@ -584,6 +654,9 @@ def run_inference(uid: str, bucket_name: str, rules_sparql: str) -> dict:
 
     # 1. Storage에서 그래프 로드
     g = _load_graph_from_storage(bucket_name, uid)
+
+    # 2-a. 이전 추론 RoomObject 정리 (유니티팀 합의 ⑥ — 매 추론마다 전체 재생성)
+    _clear_existing_room_objects(g, URIRef(f"http://7team.dev/ontology#user_{uid}"))
 
     # 2. Firestore temp_triples 확인
     temp_triples = _load_temp_triples(db, uid)

@@ -31,12 +31,47 @@ public class ToastController : MonoBehaviour
         });
     }
 
+    private void OnEnable()
+    {
+        if (FcmManager.Instance == null) return;
+        FcmManager.Instance.OnForegroundNotification += HandleForegroundNotification;
+        FcmManager.Instance.OnNotificationTapped     += HandleNotificationTapped;
+    }
+
+    private void OnDisable()
+    {
+        if (FcmManager.Instance == null) return;
+        FcmManager.Instance.OnForegroundNotification -= HandleForegroundNotification;
+        FcmManager.Instance.OnNotificationTapped     -= HandleNotificationTapped;
+    }
+
+    private void HandleForegroundNotification(NotificationData data)
+    {
+        Show(data.Title, data.Body, ScreenForType(data.Type));
+    }
+
+    private void HandleNotificationTapped(NotificationData data)
+    {
+        string screen = ScreenForType(data.Type);
+        if (!string.IsNullOrEmpty(screen))
+            ScreenManager.Instance.GoTo(screen);
+    }
+
+    private static string ScreenForType(string type) => type switch
+    {
+        "follow_request" => "feed",
+        "room_update"    => "myroom",
+        "new_quest"      => "quest",
+        _                => ""
+    };
+
     public void Show(string title, string body, string screen, float duration = 3f)
     {
         toastTitle.text = title;
         toastBody.text = body;
         targetScreen = screen;
         toastContainer.style.display = DisplayStyle.Flex;
+        AudioManager.Instance?.PlaySFX(5);
 
         StartCoroutine(AutoHide(duration));
     }
