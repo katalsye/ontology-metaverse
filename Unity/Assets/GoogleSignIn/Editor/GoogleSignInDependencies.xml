@@ -3,7 +3,11 @@
   <!-- See https://github.com/googlesamples/unity-jar-resolver#usage for
     how to configure dependencies -->
   <androidPackages>
-    <androidPackage spec="com.google.android.gms:play-services-auth:16+">
+    <!-- google-signin-support:1.0.4의 libnative-googlesignin.so는 play-services-auth
+         16~17.x대 내부 클래스 구조 기준으로 빌드됨. "16+"로 두면 빌드 시점 최신(21.x대)이
+         resolve되어 JNI 호출이 깨지고 GoogleSignIn_SignIn()이 NULL Future를 반환,
+         다음 프레임 GoogleSignIn_Pending(NULL)에서 SIGSEGV 발생. 호환 버전으로 고정. -->
+    <androidPackage spec="com.google.android.gms:play-services-auth:19.2.0">
       <androidSdkPackageIds>
         <androidSdkPackageId>extra-google-m2repository</androidSdkPackageId>
       </androidSdkPackageIds>

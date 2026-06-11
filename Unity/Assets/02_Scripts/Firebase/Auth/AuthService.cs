@@ -24,33 +24,52 @@ public class AuthService : MonoBehaviour
 
     void Start()
     {
-        auth = FirebaseAuth.DefaultInstance;
-
         if (authConfig == null)
         {
-            Debug.LogError("[AuthService] AuthConfig가 연결되지 않았습니다. 인스펙터에서 AuthConfig.asset을 드래그하세요.");
+            Debug.LogError("[AuthService] AuthConfig가 연결되지 않았습니다.");
+            return;
+        }
+
+        FirebaseBootstrap.RunWhenReady(() =>
+        {
+            auth = FirebaseAuth.DefaultInstance;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            GoogleSignIn.Configuration = new GoogleSignInConfiguration
+            {
+                WebClientId = authConfig.webClientId,
+                RequestIdToken = true,
+                UseGameSignIn = false,
+                RequestEmail = true,
+            };
+#endif
+            Debug.Log("[AuthService] 초기화 완료");
+        });
+    }
+
+    public void SignInWithGoogle(Action onSuccess, Action<string> onFailure = null)
+    {
+        if (auth == null)
+        {
+            Debug.LogError("[AuthService] Firebase 초기화가 완료되지 않았습니다.");
+            onFailure?.Invoke("Firebase 초기화 중");
             return;
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        GoogleSignIn.Configuration = new GoogleSignInConfiguration
+        System.Threading.Tasks.Task<GoogleSignInUser> signInTask;
+        try
         {
-            WebClientId = authConfig.webClientId,
-            RequestIdToken = true,
-            UseGameSignIn = false,
-            RequestEmail = true,
-        };
-#endif
-        Debug.Log("[AuthService] 초기화 완료");
-    }
+            signInTask = GoogleSignIn.DefaultInstance.SignIn();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[AuthService] GoogleSignIn.SignIn() 호출 실패: {e}");
+            onFailure?.Invoke(e.Message);
+            return;
+        }
 
-    // ───────────────────────────────────────
-    // Google 로그인
-    // ───────────────────────────────────────
-    public void SignInWithGoogle(Action onSuccess, Action<string> onFailure = null)
-    {
-#if UNITY_ANDROID && !UNITY_EDITOR
-        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(task =>
+        signInTask.ContinueWith(task =>
         {
             if (task.IsCanceled)
             {
@@ -86,15 +105,12 @@ public class AuthService : MonoBehaviour
             });
         });
 #else
-        Debug.LogWarning("[AuthService] Google 로그인은 Android 빌드에서만 작동합니다. 에디터에서는 로그인 단계를 스킵합니다.");
+        Debug.LogWarning("[AuthService] Google 로그인은 Android 빌드에서만 작동합니다.");
         UserManager.Instance.CreateUserIfNotExists();
         onSuccess?.Invoke();
 #endif
     }
 
-    // ───────────────────────────────────────
-    // 로그아웃
-    // ───────────────────────────────────────
     public void SignOut(Action onComplete = null)
     {
         QuestManager.Instance?.StopQuestListener();
@@ -106,12 +122,9 @@ public class AuthService : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    // ───────────────────────────────────────
-    // 계정 삭제
-    // ───────────────────────────────────────
     public void DeleteAccount(Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth.CurrentUser == null)
+        if (auth?.CurrentUser == null)
         {
             onFailure?.Invoke("로그인 상태 아님");
             return;

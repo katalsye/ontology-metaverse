@@ -2,14 +2,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 
-/// <summary>
-/// ScreenManager — 앱 전체 화면 전환 관리
-/// 싱글톤으로 모든 화면의 GoTo/GoBack 처리
-/// 
-/// 사용법:
-///   ScreenManager.Instance.GoTo("feed");
-///   ScreenManager.Instance.GoBack();
-/// </summary>
 public class ScreenManager : MonoBehaviour
 {
     public static ScreenManager Instance { get; private set; }
@@ -21,29 +13,29 @@ public class ScreenManager : MonoBehaviour
     [System.Serializable]
     public class ScreenEntry
     {
-        public string key;          // "splash", "onboarding", "myroom", "feed", etc.
+        public string key;
         public UIDocument document;
-        public bool hideBottomNav;  // 3D 뷰 진입 시 하단 바 숨김
+        public bool hideBottomNav;
     }
 
-    // 내비게이션 히스토리
     private Stack<string> history = new Stack<string>();
     private string currentScreen;
 
-    // 화면 전환 콜백 (BottomNav 등에서 구독)
     public event System.Action<string> OnScreenChanged;
 
     private void Awake()
     {
+        Debug.Log($"[ScreenManager] Awake — InstanceID: {GetInstanceID()}");
+
         if (Instance != null && Instance != this)
         {
+            Debug.Log($"[ScreenManager] 중복 인스턴스 감지 → Destroy");
             Destroy(gameObject);
             return;
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // 씬 시작 시 모든 화면 비활성화 — 중복 OnEnable 방지
         foreach (var entry in screens)
         {
             if (entry.document != null)
@@ -53,25 +45,34 @@ public class ScreenManager : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log($"[ScreenManager] Start — InstanceID: {GetInstanceID()}");
         GoTo("splash", false);
     }
 
-    /// <summary>
-    /// 특정 화면으로 이동
-    /// </summary>
     public void GoTo(string screenKey, bool addToHistory = true)
     {
+        Debug.Log($"[ScreenManager] GoTo({screenKey}) — currentScreen={currentScreen}");
+
         if (currentScreen == screenKey) return;
 
-        // 현재 화면 비활성화
         if (!string.IsNullOrEmpty(currentScreen))
         {
-            SetScreenActive(currentScreen, false);
+            // splash는 한 번 표시 후 재활성화 방지
+            if (currentScreen != "splash")
+            {
+                SetScreenActive(currentScreen, false);
+            }
+            else
+            {
+                // splash는 비활성화만 하고 히스토리에 쌓지 않음
+                SetScreenActive(currentScreen, false);
+                addToHistory = false;
+            }
+
             if (addToHistory)
                 history.Push(currentScreen);
         }
 
-        // 새 화면 활성화 (currentScreen을 먼저 설정해 OnEnable 재진입 방지)
         currentScreen = screenKey;
         SetScreenActive(screenKey, true);
 
@@ -79,9 +80,6 @@ public class ScreenManager : MonoBehaviour
         Debug.Log($"[ScreenManager] → {screenKey}");
     }
 
-    /// <summary>
-    /// 뒤로가기
-    /// </summary>
     public void GoBack()
     {
         if (history.Count == 0)
@@ -100,30 +98,25 @@ public class ScreenManager : MonoBehaviour
         Debug.Log($"[ScreenManager] ← {prev}");
     }
 
-    /// <summary>
-    /// 현재 화면이 하단 네비 숨김 대상인지
-    /// </summary>
     public bool ShouldHideBottomNav()
     {
         var entry = screens.Find(s => s.key == currentScreen);
         return entry != null && entry.hideBottomNav;
     }
 
-    /// <summary>
-    /// 현재 화면 키 반환
-    /// </summary>
     public string GetCurrentScreen() => currentScreen;
 
-    /// <summary>
-    /// 내비게이션 히스토리 초기화 — 엔트리 플로우(스플래시/온보딩/로그인)에서
-    /// 메인 앱으로 전환할 때 호출해 과거 화면으로 되돌아가는 것을 방지
-    /// </summary>
     public void ClearHistory() => history.Clear();
 
     private void SetScreenActive(string key, bool active)
     {
         var entry = screens.Find(s => s.key == key);
-        if (entry != null && entry.document != null)
-            entry.document.gameObject.SetActive(active);
+        if (entry == null || entry.document == null)
+        {
+            Debug.LogWarning($"[ScreenManager] SetScreenActive: '{key}' 키를 찾을 수 없음");
+            return;
+        }
+        Debug.Log($"[ScreenManager] SetScreenActive({key}, {active})");
+        entry.document.gameObject.SetActive(active);
     }
 }

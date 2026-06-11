@@ -18,32 +18,49 @@ public class GoogleFirebaseLogin : MonoBehaviour
     
     private FirebaseAuth auth;
     private FirebaseUser user;
-    
-    private void Start()
+    private bool _initialized = false;
+
+    private void OnEnable()
     {
+        if (_initialized) return;
+
         if (authConfig == null)
         {
             Debug.LogError("AuthConfig가 연결되지 않았습니다. 인스펙터에서 AuthConfig.asset을 드래그하세요.");
             return;
         }
+
+        androidLoginButton.interactable = false;
         androidLoginButton.onClick.AddListener(GoogleSignInClick);
         logoutButton.onClick.AddListener(SignOut);
 
-        GoogleSignIn.Configuration = new GoogleSignInConfiguration()
+        try
         {
-            WebClientId = authConfig.webClientId,
-            RequestIdToken = true,
-            UseGameSignIn = false,
-            RequestEmail = true,
-        };
+            GoogleSignIn.Configuration = new GoogleSignInConfiguration()
+            {
+                WebClientId = authConfig.webClientId,
+                RequestIdToken = true,
+                UseGameSignIn = false,
+                RequestEmail = true,
+            };
+            Debug.Log("[Login] GoogleSignIn Configuration 완료");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Login] GoogleSignIn Configuration 실패: {e.Message}");
+            return;
+        }
 
         FirebaseBootstrap.RunWhenReady(OnFirebaseReady);
+        _initialized = true;
     }
 
     private void OnFirebaseReady()
     {
         auth = FirebaseAuth.DefaultInstance;
-        Debug.Log("Firebase Auth initialized successfully.");
+        Debug.Log("[Login] Firebase Auth 초기화 완료");
+
+        androidLoginButton.interactable = true;
 
         if (auth.CurrentUser == null) return;
 
@@ -61,22 +78,28 @@ public class GoogleFirebaseLogin : MonoBehaviour
     
     private void GoogleSignInClick()
     {
+        if (auth == null)
+        {
+            Debug.LogError("[Login] auth가 null입니다. Firebase 초기화 대기 중.");
+            return;
+        }
+
+        if (GoogleSignIn.Configuration == null)
+        {
+            Debug.LogError("[Login] GoogleSignIn.Configuration이 null입니다.");
+            return;
+        }
+
         try
         {
             GoogleSignIn.DefaultInstance.SignIn().ContinueWith(task =>
             {
                 if (task.IsFaulted)
-                {
                     Debug.LogError($"SignIn Error: {task.Exception}");
-                }
                 else if (task.IsCanceled)
-                {
-                    Debug.LogError($"SignIn Canceled: ");
-                }
+                    Debug.LogError("SignIn Canceled");
                 else
-                {
                     OnGoogleAuthenticatedFinished(task);
-                }
             });
         }
         catch (Exception e)
@@ -101,7 +124,7 @@ public class GoogleFirebaseLogin : MonoBehaviour
     
             auth.SignInWithCredentialAsync(credential).ContinueWithOnMainThread(continuation =>
             {
-                if(continuation.IsCanceled) { return; }
+                if (continuation.IsCanceled) return;
     
                 if (continuation.IsFaulted)
                 {
@@ -127,10 +150,8 @@ public class GoogleFirebaseLogin : MonoBehaviour
 
     public void SignOut()
     {
-        // 1. 리스너 먼저 정리 (CurrentUser가 null 되기 전에)
         StopAllManagerListeners();
 
-        // 2. 로그아웃 처리
         GoogleSignIn.DefaultInstance.SignOut();
         auth.SignOut();
         user = null;
@@ -143,14 +164,12 @@ public class GoogleFirebaseLogin : MonoBehaviour
 
     private void StopAllManagerListeners()
     {
-        // 같은 GameObject에 붙어있는 Manager들의 리스너 정리
         var roomManager = GetComponent<RoomObjectManager>();
         if (roomManager != null) roomManager.StopRoomListener();
 
         var questManager = GetComponent<QuestManager>();
         if (questManager != null) questManager.StopQuestListener();
 
-        // auth.SignOut() 전에 호출해야 CurrentUser가 유효함
         FcmManager.Instance?.RemoveToken();
         FcmManager.Instance?.StopNotificationListener();
 
