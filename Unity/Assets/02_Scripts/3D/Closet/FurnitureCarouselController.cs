@@ -270,21 +270,33 @@ public class FurnitureCarouselController : MonoBehaviour
 
     // ── 모델/색상 적용 ────────────────────────────────────────
 
+    /// <summary>모든 가구·variant 3D 모델을 끈다. (캐릭터 탭 진입 시 가구 잔상 제거용)</summary>
+    public void HideAllFurnitureModels()
+    {
+        if (data?.furnitures == null) return;
+        foreach (var e in data.furnitures)
+            if (e.variants != null)
+                foreach (var v in e.variants)
+                    if (v.model?.model3D != null)
+                        v.model.model3D.SetActive(false);
+    }
+
     void ApplyVariant(int fi, int vi)
     {
         // 모든 가구, 모든 variant 모델 전부 끄기
-        if (data?.furnitures != null)
-            foreach (var e in data.furnitures)
-                if (e.variants != null)
-                    foreach (var v in e.variants)
-                        if (v.model?.model3D != null)
-                            v.model.model3D.SetActive(false);
+        HideAllFurnitureModels();
 
         var entry = data.furnitures[fi];
         if (entry.variants == null || vi >= entry.variants.Length) return;
 
         var fm = entry.variants[vi].model;
         if (fm?.model3D == null) return;
+
+        // 현재 캐릭터 탭이면 가구 모델 켜지 않기 — MainScene→Closet 진입 시 OnEnable 타이밍 때문에
+        // 캐릭터 탭인데 가구 모델이 같이 보이는 문제 방지
+        var ui = ClosetUI.Instance;
+        if (ui != null && ui.IsCharacterTab) return;
+
         fm.model3D.SetActive(true);
 
         var cam = ClosetOrbitCamera.Instance;

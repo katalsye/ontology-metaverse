@@ -7,6 +7,9 @@ public class ClosetUI : MonoBehaviour
 {
     public static ClosetUI Instance { get; private set; }
 
+    /// <summary>현재 캐릭터 탭인지 여부 — FurnitureCarouselController가 가구 모델 켜기 전 체크용</summary>
+    public bool IsCharacterTab { get; private set; } = true;
+
     [Header("탭 버튼")]
     public Button characterButton;
     public Button furnitureButton;
@@ -69,6 +72,9 @@ public class ClosetUI : MonoBehaviour
                 cc.characterRenderer = characterRoot.GetComponentInChildren<SkinnedMeshRenderer>();
         }
 
+        // 처음 진입 시 가구 3D 모델들 무조건 끄기 (위치 무관 — 어디 붙어있든)
+        if (furnitureCarousel != null) furnitureCarousel.HideAllFurnitureModels();
+
         SelectTab(true);
     }
 
@@ -93,6 +99,8 @@ public class ClosetUI : MonoBehaviour
 
     void SelectTab(bool isCharacter)
     {
+        IsCharacterTab = isCharacter;
+
         characterButton?.gameObject.SetActive(!isCharacter);
         furnitureButton?.gameObject.SetActive(isCharacter);
 
@@ -108,7 +116,12 @@ public class ClosetUI : MonoBehaviour
 
         if (isCharacter)
         {
-            // 캐릭터 탭: 캐릭터 루트를 카메라 타겟으로
+            // 캐릭터 탭: 가구 3D 모델을 명시적으로 모두 끔.
+            // (FurnitureCarouselController.OnEnable이 가구 모델을 SetActive(true)로 켜놓는데,
+            //  가구 모델이 furnitureRoot 자식이 아니어서 panel만 꺼도 잔상이 남는 문제 해결)
+            if (furnitureCarousel != null) furnitureCarousel.HideAllFurnitureModels();
+
+            // 캐릭터 루트를 카메라 타겟으로
             cam.target = characterRoot != null ? characterRoot.transform : null;
         }
         else
