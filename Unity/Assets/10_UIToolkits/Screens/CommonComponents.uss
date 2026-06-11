@@ -82,7 +82,7 @@
 }
 
 .nav-label {
-    font-size: var(--fs-micro);
+    font-size: 18px;
     color: var(--ink-faint);
     -unity-text-align: middle-center;
 }
