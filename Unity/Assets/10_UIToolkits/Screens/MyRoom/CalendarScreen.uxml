@@ -15,7 +15,7 @@
         <!-- 상단 바 -->
         <ui:VisualElement class="top-bar row">
             <ui:Button name="btn-back" class="btn-back">
-                <ui:Label text="←" class="btn-back-text" />
+                <ui:VisualElement class="btn-back-icon" />
             </ui:Button>
             <ui:Label text="달력" class="text-heading" />
             <ui:VisualElement style="width: 40px;" />
@@ -24,11 +24,11 @@
         <!-- 월 선택 -->
         <ui:VisualElement name="month-nav" class="month-nav row">
             <ui:Button name="btn-prev" class="month-arrow">
-                <ui:Label text="‹" class="month-arrow-text" />
+                <ui:VisualElement class="month-arrow-icon month-arrow-icon--prev" />
             </ui:Button>
             <ui:Label name="month-title" text="2026년 5월" class="month-title" />
             <ui:Button name="btn-next" class="month-arrow">
-                <ui:Label text="›" class="month-arrow-text" />
+                <ui:VisualElement class="month-arrow-icon month-arrow-icon--next" />
             </ui:Button>
         </ui:VisualElement>
 

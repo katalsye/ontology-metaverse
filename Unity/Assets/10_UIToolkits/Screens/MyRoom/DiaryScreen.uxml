@@ -15,7 +15,7 @@
         <!-- 상단 바 -->
         <ui:VisualElement class="top-bar row">
             <ui:Button name="btn-back" class="btn-back">
-                <ui:Label text="←" class="btn-back-text" />
+                <ui:VisualElement class="btn-back-icon" />
             </ui:Button>
             <ui:Label text="한줄일기" class="text-heading" />
             <ui:Button name="btn-history" class="icon-btn">

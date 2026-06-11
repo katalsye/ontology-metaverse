@@ -33,10 +33,19 @@
     scale: 0.9;
 }
 
-.month-arrow-text {
-    font-size: 22px;
-    color: var(--ink-muted);
-    -unity-text-align: middle-center;
+.month-arrow-icon {
+    width: 16px;
+    height: 16px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--ink-muted);
+}
+
+.month-arrow-icon--prev {
+    background-image: url("../../icons/ic_btn_prev.png");
+}
+
+.month-arrow-icon--next {
+    background-image: url("../../icons/ic_btn_next.png");
 }
 
 .month-label {

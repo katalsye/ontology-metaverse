@@ -139,9 +139,10 @@
     scale: 0.9;
 }
 
-.send-btn-text {
-    font-size: 18px;
-    color: var(--white);
-    -unity-text-align: middle-center;
-    -unity-font-style: bold;
+.send-btn-icon {
+    width: 18px;
+    height: 18px;
+    background-image: url("../../icons/ic_btn_send.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--white);
 }

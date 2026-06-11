@@ -146,11 +146,12 @@
     opacity: 0.8;
 }
 
-.btn-back-text {
-    font-size: var(--fs-body);
-    -unity-font-style: bold;
-    color: var(--white);
-    -unity-text-align: middle-center;
+.btn-back-icon {
+    width: 18px;
+    height: 18px;
+    background-image: url("../icons/ic_btn_back.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--white);
 }
 
 /* ── 텍스트 스타일 ── */

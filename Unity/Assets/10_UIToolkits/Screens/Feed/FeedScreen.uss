@@ -50,6 +50,10 @@
     background-image: url("../../icons/ic_friends.png");
 }
 
+#ic-sort {
+    background-image: url("../../icons/ic_btn_sort.png");
+}
+
 /* ── 정렬 필터 바 ── */
 .sort-bar {
     padding: 8px 20px 12px;

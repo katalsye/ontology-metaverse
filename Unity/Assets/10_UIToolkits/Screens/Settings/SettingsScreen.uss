@@ -62,9 +62,12 @@
     color: var(--rose);
 }
 
-.row-chevron {
-    font-size: 18px;
-    color: var(--ink-faint);
+.row-chevron-icon {
+    width: 14px;
+    height: 14px;
+    background-image: url("../../icons/ic_btn_next.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--ink-faint);
 }
 
 /* ── 설정 행 ── */

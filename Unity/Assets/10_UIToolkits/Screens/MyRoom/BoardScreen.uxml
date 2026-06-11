@@ -15,7 +15,7 @@
         <!-- 상단 바 -->
         <ui:VisualElement class="top-bar row">
             <ui:Button name="btn-back" class="btn-back">
-                <ui:Label text="←" class="btn-back-text" />
+                <ui:VisualElement class="btn-back-icon" />
             </ui:Button>
             <ui:Label text="방명록" class="text-heading" />
             <ui:VisualElement style="width: 40px;" />
@@ -37,7 +37,7 @@
         <ui:VisualElement name="input-bar" class="input-bar row">
             <ui:TextField name="input-comment" class="comment-input" />
             <ui:Button name="btn-send" class="send-btn center-content">
-                <ui:Label text="↑" class="send-btn-text" />
+                <ui:VisualElement class="send-btn-icon" />
             </ui:Button>
         </ui:VisualElement>
 

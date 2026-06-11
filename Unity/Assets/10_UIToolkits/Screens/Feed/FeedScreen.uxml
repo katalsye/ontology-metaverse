@@ -18,7 +18,7 @@
             <ui:VisualElement class="header-right row">
                 <!-- 정렬 버튼 -->
                 <ui:Button name="btn-sort" class="icon-btn">
-                    <ui:Label text="↕" class="icon-btn-text" />
+                    <ui:VisualElement name="ic-sort" class="icon-btn-img" />
                 </ui:Button>
                 <!-- 친구 관리 버튼 -->
                 <ui:Button name="btn-friends" class="icon-btn">
