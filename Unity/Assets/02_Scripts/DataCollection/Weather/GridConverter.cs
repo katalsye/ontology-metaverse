@@ -19,7 +19,7 @@ namespace OntologyMetaverse.DataCollection.Weather
     ///
     /// 검증값 (참고):
     ///   서울시청 (37.5665, 126.9780) → (60, 127)
-    ///   대구 (35.8714, 128.6014)     → (89, 90)
+    ///   대구 (35.8714, 128.6014)     → (89, 91)
     ///   부산 (35.1796, 129.0756)     → (98, 76)
     /// </summary>
     public static class GridConverter
