@@ -4,5 +4,4 @@
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="DynamicWeatherSystem.Editor.csproj" />
   <Project Path="FirebaseMessagingActivityGenerator.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

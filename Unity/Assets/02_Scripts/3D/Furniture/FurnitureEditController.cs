@@ -543,7 +543,10 @@ public class FurnitureEditController : MonoBehaviour
                 // 추가된 가구면 moveConfirmBtn을 삭제 버튼으로 전환, 아니면 일반 모드
                 if (cfg.isAdded)
                 {
+                    // 이전 선택 하이라이트 해제 후 새 대상 하이라이트 (선택됐음을 시각적으로 표시)
+                    if (_selected != null && _selected != furniture) SetHighlight(_selected, false);
                     _selected   = furniture; // 삭제 대상 기억
+                    SetHighlight(_selected, true);
                     _deleteMode = true;
                     // 컨테이너를 끄면 moveConfirmBtn도 같이 꺼지므로
                     // moveConfirmBtn만 따로 켜서 삭제 버튼으로 전환
@@ -1735,6 +1738,8 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
         foreach (var col in _selected.GetComponentsInChildren<Collider>())
         {
             if (!col.enabled) continue;
+            // size 0 콜라이더는 유령 겹침 오탐을 일으키므로 제외
+            if (col.bounds.size.sqrMagnitude < 1e-6f) continue;
             Vector3 center = col.bounds.center + offset;
             Vector3 half   = col.bounds.extents * overlapShrink;
             half.y = Mathf.Min(half.y, 5f);
@@ -1790,11 +1795,15 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             foreach (var col in cfg.target.GetComponentsInChildren<Collider>())
             {
                 if (!col.enabled) continue;
+                // size 0 콜라이더는 유령 겹침 오탐을 일으키므로 제외 (vol == 0 인 빈 box 등)
+                if (col.bounds.size.sqrMagnitude < 1e-6f) continue;
                 Vector3 half = col.bounds.extents * overlapShrink; // overlapShrink로 빡빡함 조절
                 half.y = Mathf.Min(half.y, 5f);
                 foreach (var ov in Physics.OverlapBox(col.bounds.center, half, col.transform.rotation, ~0, QueryTriggerInteraction.Ignore))
                 {
                     if (ov == null || ov.transform.IsChildOf(cfg.target.transform)) continue;
+                    // 상대 collider도 size 0이면 무시 (OverlapBox가 면적 0 영역을 잘못 잡는 경우)
+                    if (ov.bounds.size.sqrMagnitude < 1e-6f) continue;
                     foreach (var other in editableItems)
                     {
                         if (other.target == null || other.target == cfg.target) continue;
