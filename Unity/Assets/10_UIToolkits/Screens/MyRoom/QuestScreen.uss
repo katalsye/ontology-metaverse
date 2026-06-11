@@ -146,8 +146,11 @@
 }
 
 .reward-icon {
-    font-size: 14px;
+    width: 14px;
+    height: 14px;
     margin-right: 4px;
+    background-image: url("../../icons/ic_coin.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .reward-amount {
@@ -166,9 +169,12 @@
     display: flex;
 }
 
-.empty-emoji {
-    font-size: 48px;
+.empty-emoji-img {
+    width: 48px;
+    height: 48px;
     margin-bottom: 12px;
+    background-image: url("../../icons/ic_nav_quest.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .empty-title {

@@ -26,7 +26,7 @@
 
             <!-- 아바타 -->
             <ui:VisualElement name="profile-avatar" class="profile-avatar center-content">
-                <ui:Label text="😊" class="profile-avatar-emoji" />
+                <ui:VisualElement name="profile-avatar-image" class="avatar-image-default" />
             </ui:VisualElement>
 
             <!-- 닉네임 -->

@@ -49,9 +49,6 @@
     flex-shrink: 0;
 }
 
-.profile-mini-emoji {
-    font-size: 22px;
-}
 
 .profile-mini-name {
     font-size: var(--fs-body);
@@ -201,9 +198,6 @@
     margin-bottom: 24px;
 }
 
-.edit-avatar-emoji {
-    font-size: 40px;
-}
 
 .input-group {
     margin-bottom: 16px;

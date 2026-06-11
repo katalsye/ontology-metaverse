@@ -186,11 +186,6 @@
     margin-bottom: 32px;
 }
 
-.avatar-emoji {
-    font-size: 48px;
-    -unity-text-align: middle-center;
-}
-
 .input-group {
     margin-bottom: 20px;
 }

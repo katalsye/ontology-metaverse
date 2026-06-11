@@ -31,9 +31,11 @@
 }
 
 .sleep-moon {
-    font-size: 36px;
-    -unity-text-align: middle-center;
+    width: 40px;
+    height: 40px;
     margin-bottom: 12px;
+    background-image: url("../../icons/ic_sleep_moon.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .sleep-hours {

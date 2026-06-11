@@ -28,7 +28,7 @@
 
         <!-- 빈 상태 -->
         <ui:VisualElement name="empty-state" class="empty-state center-content col">
-            <ui:Label text="💬" class="empty-emoji" />
+            <ui:VisualElement name="empty-board-icon" class="empty-emoji-img" />
             <ui:Label text="아직 방명록이 비어있어요" class="empty-title" />
             <ui:Label text="첫 번째 메시지를 남겨보세요" class="empty-desc" />
         </ui:VisualElement>

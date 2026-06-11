@@ -19,7 +19,7 @@
             </ui:Button>
             <ui:Label text="한줄일기" class="text-heading" />
             <ui:Button name="btn-history" class="icon-btn">
-                <ui:Label text="📖" class="icon-btn-text" />
+                <ui:VisualElement name="diary-history-icon" class="icon-btn-img" />
             </ui:Button>
         </ui:VisualElement>
 
@@ -27,7 +27,7 @@
         <ui:VisualElement name="diary-header" class="diary-header center-content col">
             <ui:Label name="diary-date" text="2026년 5월 4일 월요일" class="diary-date" />
             <ui:VisualElement class="streak-badge row">
-                <ui:Label text="🔥" class="streak-icon" />
+                <ui:VisualElement name="streak-icon-img" class="streak-icon" />
                 <ui:Label name="streak-count" text="7일 연속 기록 중!" class="streak-text" />
             </ui:VisualElement>
         </ui:VisualElement>
@@ -44,7 +44,7 @@
         <!-- 오늘의 퀘스트 안내 -->
         <ui:VisualElement name="quest-hint" class="quest-hint row">
             <ui:VisualElement class="quest-hint-icon center-content">
-                <ui:Label text="✨" class="quest-hint-emoji" />
+                <ui:VisualElement name="quest-hint-icon-img" class="quest-hint-emoji" />
             </ui:VisualElement>
             <ui:VisualElement class="col">
                 <ui:Label text="일일 퀘스트" class="quest-hint-title" />

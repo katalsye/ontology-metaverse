@@ -100,7 +100,7 @@
 
             <!-- 아바타 미리보기 (플레이스홀더) -->
             <ui:VisualElement name="avatar-preview" class="avatar-preview center-content">
-                <ui:Label text="😊" class="avatar-emoji" />
+                <ui:VisualElement name="avatar-image" class="avatar-image-default" />
             </ui:VisualElement>
 
             <!-- 닉네임 입력 -->

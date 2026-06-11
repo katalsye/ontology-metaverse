@@ -36,7 +36,7 @@
                 <!-- 요청 카드 (C#에서 동적 생성, 예시) -->
                 <ui:VisualElement name="request-template" class="friend-row row">
                     <ui:VisualElement class="friend-avatar center-content">
-                        <ui:Label text="😊" class="friend-avatar-emoji" />
+                        <ui:VisualElement name="friend-avatar-image" class="avatar-image-default" />
                     </ui:VisualElement>
                     <ui:Label name="request-name" text="새로운 유저" class="friend-name" />
                     <ui:VisualElement class="request-actions row">

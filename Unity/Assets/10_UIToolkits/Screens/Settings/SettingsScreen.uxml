@@ -27,7 +27,7 @@
             <ui:VisualElement name="profile-section" class="settings-group">
                 <ui:VisualElement name="btn-edit-profile" class="profile-row row">
                     <ui:VisualElement class="profile-mini-avatar center-content">
-                        <ui:Label text="😊" class="profile-mini-emoji" />
+                        <ui:VisualElement name="profile-mini-avatar-image" class="avatar-image-default" />
                     </ui:VisualElement>
                     <ui:VisualElement class="col" style="flex-grow: 1;">
                         <ui:Label name="settings-nickname" text="닉네임" class="profile-mini-name" />
@@ -138,7 +138,7 @@
                 <ui:Label text="프로필 편집" class="sheet-title" />
 
                 <ui:VisualElement class="edit-avatar center-content">
-                    <ui:Label text="😊" class="edit-avatar-emoji" />
+                    <ui:VisualElement name="edit-avatar-image" class="avatar-image-default" />
                 </ui:VisualElement>
 
                 <ui:VisualElement class="input-group col">

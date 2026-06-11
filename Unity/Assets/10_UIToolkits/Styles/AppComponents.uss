@@ -204,6 +204,15 @@
     color: var(--ink-faint);
 }
 
+/* ── 아바타 플레이스홀더 (실제 프로필 이미지로 동적 교체됨) ── */
+.avatar-image-default {
+    width: 100%;
+    height: 100%;
+    background-image: url("../icons/ic_avatar_default.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-radius: 50%;
+}
+
 /* ── 오버레이 ── */
 .overlay-bg {
     position: absolute;

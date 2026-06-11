@@ -87,10 +87,12 @@
     display: flex;
 }
 
-.empty-emoji {
-    font-size: 48px;
-    -unity-text-align: middle-center;
+.empty-emoji-img {
+    width: 48px;
+    height: 48px;
     margin-bottom: 12px;
+    background-image: url("../../icons/ic_empty_diary.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .empty-title {

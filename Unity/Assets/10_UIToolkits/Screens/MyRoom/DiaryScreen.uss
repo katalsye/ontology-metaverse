@@ -34,8 +34,11 @@
 }
 
 .streak-icon {
-    font-size: 14px;
+    width: 16px;
+    height: 16px;
     margin-right: 4px;
+    background-image: url("../../icons/ic_streak_fire.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .streak-text {
@@ -102,8 +105,20 @@
 }
 
 .quest-hint-emoji {
-    font-size: 18px;
-    -unity-text-align: middle-center;
+    width: 20px;
+    height: 20px;
+    background-image: url("../../icons/ic_quest_hint_star.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.icon-btn-img {
+    width: 20px;
+    height: 20px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#diary-history-icon {
+    background-image: url("../../icons/ic_diary_history.png");
 }
 
 .quest-hint-title {

@@ -159,8 +159,8 @@ public class BoardScreenController : MonoBehaviour
 
         var avatar = new VisualElement();
         avatar.AddToClassList("comment-avatar");
-        var emoji = new Label("😊");
-        emoji.AddToClassList("comment-avatar-emoji");
+        var emoji = new VisualElement();
+        emoji.AddToClassList("avatar-image-default");
         avatar.Add(emoji);
 
         var body = new VisualElement();

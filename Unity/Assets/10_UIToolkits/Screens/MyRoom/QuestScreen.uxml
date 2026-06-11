@@ -36,7 +36,7 @@
 
         <!-- 빈 상태 -->
         <ui:VisualElement name="empty-state" class="empty-state center-content col">
-            <ui:Label text="📋" class="empty-emoji" />
+            <ui:VisualElement name="empty-quest-icon" class="empty-emoji-img" />
             <ui:Label name="empty-text" text="진행 중인 퀘스트가 없어요" class="empty-title" />
         </ui:VisualElement>
 
@@ -68,7 +68,7 @@
                 <ui:VisualElement class="detail-reward row">
                     <ui:Label text="보상" class="text-caption" />
                     <ui:VisualElement class="row">
-                        <ui:Label text="🪙" class="reward-icon" />
+                        <ui:VisualElement name="reward-coin-icon" class="reward-icon" />
                         <ui:Label name="detail-reward-amount" text="50" class="reward-amount" />
                     </ui:VisualElement>
                 </ui:VisualElement>

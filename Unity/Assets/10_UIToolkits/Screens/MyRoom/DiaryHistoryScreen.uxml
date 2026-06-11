@@ -39,7 +39,7 @@
 
         <!-- 빈 상태 -->
         <ui:VisualElement name="empty-state" class="empty-state center-content col">
-            <ui:Label text="📝" class="empty-emoji" />
+            <ui:VisualElement name="empty-diary-icon" class="empty-emoji-img" />
             <ui:Label text="이 달에 작성한 일기가 없어요" class="empty-title" />
         </ui:VisualElement>
 

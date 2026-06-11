@@ -19,9 +19,19 @@
     align-items: center;
 }
 
-.currency-icon {
-    font-size: 14px;
+.currency-icon-img {
+    width: 16px;
+    height: 16px;
     margin-right: 4px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#icon-coin {
+    background-image: url("../icons/ic_coin.png");
+}
+
+#icon-gem {
+    background-image: url("../icons/ic_gem.png");
 }
 
 .currency-value {
@@ -75,10 +85,28 @@
     width: 18px;
 }
 
-.nav-icon {
-    font-size: 22px;
-    -unity-text-align: middle-center;
+.nav-icon-img {
+    width: 24px;
+    height: 24px;
     margin-bottom: 3px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--ink-faint);
+}
+
+#nav-myroom-icon {
+    background-image: url("../icons/ic_nav_myroom.png");
+}
+
+#nav-feed-icon {
+    background-image: url("../icons/ic_nav_feed.png");
+}
+
+#nav-quest-icon {
+    background-image: url("../icons/ic_nav_quest.png");
+}
+
+#nav-shop-icon {
+    background-image: url("../icons/ic_nav_shop.png");
 }
 
 .nav-label {
@@ -87,7 +115,10 @@
     -unity-text-align: middle-center;
 }
 
-.nav-tab--active .nav-icon,
+.nav-tab--active .nav-icon-img {
+    -unity-background-image-tint-color: var(--rose);
+}
+
 .nav-tab--active .nav-label {
     color: var(--rose);
 }
@@ -127,8 +158,11 @@
     margin-bottom: 16px;
 }
 
-.reward-emoji {
-    font-size: 44px;
+.reward-icon-img {
+    width: 48px;
+    height: 48px;
+    background-image: url("../icons/ic_reward_celebration.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .reward-title {
@@ -183,8 +217,11 @@
     margin-right: 12px;
 }
 
-.toast-icon-emoji {
-    font-size: 18px;
+.toast-icon-img {
+    width: 20px;
+    height: 20px;
+    background-image: url("../icons/ic_toast_notification.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .toast-text-area {

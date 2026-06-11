@@ -276,7 +276,7 @@ public class QuestScreenController : MonoBehaviour
         // 보상 미리보기
         var rewardRow = new VisualElement();
         rewardRow.AddToClassList("quest-reward-preview");
-        var coinIcon = new Label("🪙");
+        var coinIcon = new VisualElement();
         coinIcon.AddToClassList("reward-icon");
         var coinAmount = new Label($"+{quest.rewardCoins}");
         coinAmount.AddToClassList("reward-amount");

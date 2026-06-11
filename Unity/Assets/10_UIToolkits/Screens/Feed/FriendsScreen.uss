@@ -73,10 +73,6 @@
     margin-right: 12px;
 }
 
-.friend-avatar-emoji {
-    font-size: 20px;
-    -unity-text-align: middle-center;
-}
 
 .friend-name {
     font-size: var(--fs-body-sm);

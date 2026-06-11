@@ -105,8 +105,8 @@ public class FriendsScreenController : MonoBehaviour
         var avatar = new VisualElement();
         avatar.AddToClassList("friend-avatar");
         avatar.AddToClassList("center-content");
-        var emoji = new Label("😊");
-        emoji.AddToClassList("friend-avatar-emoji");
+        var emoji = new VisualElement();
+        emoji.AddToClassList("avatar-image-default");
         avatar.Add(emoji);
 
         var nameLabel = new Label(name);
@@ -145,8 +145,8 @@ public class FriendsScreenController : MonoBehaviour
         var avatar = new VisualElement();
         avatar.AddToClassList("friend-avatar");
         avatar.AddToClassList("center-content");
-        var emoji = new Label("😊");
-        emoji.AddToClassList("friend-avatar-emoji");
+        var emoji = new VisualElement();
+        emoji.AddToClassList("avatar-image-default");
         avatar.Add(emoji);
 
         var nameLabel = new Label(name);

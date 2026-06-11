@@ -162,8 +162,8 @@ public class FeedScreenController : MonoBehaviour
         var avatar = new VisualElement();
         avatar.AddToClassList("feed-avatar");
         avatar.AddToClassList("center-content");
-        var avatarEmoji = new Label("😊");
-        avatarEmoji.AddToClassList("feed-avatar-emoji");
+        var avatarEmoji = new VisualElement();
+        avatarEmoji.AddToClassList("avatar-image-default");
         avatar.Add(avatarEmoji);
 
         // 텍스트 영역

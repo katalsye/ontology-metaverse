@@ -47,7 +47,7 @@
 
                 <!-- 가격 -->
                 <ui:VisualElement name="item-price-row" class="item-price-row row">
-                    <ui:Label text="🪙" class="price-icon" />
+                    <ui:VisualElement class="price-icon-img" />
                     <ui:Label name="item-price" text="100" class="price-value" />
                 </ui:VisualElement>
 

@@ -22,7 +22,7 @@
                 </ui:Button>
                 <!-- 친구 관리 버튼 -->
                 <ui:Button name="btn-friends" class="icon-btn">
-                    <ui:Label text="👥" class="icon-btn-text" />
+                    <ui:VisualElement name="ic-friends" class="icon-btn-img" />
                 </ui:Button>
                 <!-- 설정 버튼 -->
                 <ui:Button name="btn-settings" class="icon-btn">
@@ -45,7 +45,7 @@
             <ui:VisualElement name="card-template" class="feed-card row">
                 <!-- 아바타 -->
                 <ui:VisualElement class="feed-avatar center-content">
-                    <ui:Label text="😊" class="feed-avatar-emoji" />
+                    <ui:VisualElement name="card-avatar" class="avatar-image-default" />
                 </ui:VisualElement>
 
                 <!-- 텍스트 영역 -->
@@ -67,7 +67,7 @@
         <!-- 빈 상태 (카드 0개일 때) -->
         <ui:VisualElement name="empty-state" class="empty-state center-content col">
             <ui:VisualElement class="empty-illust center-content">
-                <ui:Label text="🏠" class="empty-emoji" />
+                <ui:VisualElement name="empty-feed-icon" class="empty-emoji-img" />
             </ui:VisualElement>
             <ui:Label text="아직 팔로우한 친구가 없어요" class="empty-title" />
             <ui:Label text="친구를 추가하고 일상을 구경해보세요" class="empty-desc" />

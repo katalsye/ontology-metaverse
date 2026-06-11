@@ -37,10 +37,6 @@
     justify-content: center;
 }
 
-.comment-avatar-emoji {
-    font-size: 18px;
-    -unity-text-align: middle-center;
-}
 
 .comment-body {
     flex-grow: 1;
@@ -82,9 +78,12 @@
     display: flex;
 }
 
-.empty-emoji {
-    font-size: 48px;
+.empty-emoji-img {
+    width: 48px;
+    height: 48px;
     margin-bottom: 12px;
+    background-image: url("../../icons/ic_empty_board.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .empty-title {

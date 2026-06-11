@@ -92,9 +92,12 @@
     justify-content: center;
 }
 
-.price-icon {
-    font-size: 14px;
+.price-icon-img {
+    width: 14px;
+    height: 14px;
     margin-right: 4px;
+    background-image: url("../../icons/ic_coin.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .price-value {
@@ -169,8 +172,9 @@
     margin-bottom: 20px;
 }
 
-.item-price-row .price-icon {
-    font-size: 20px;
+.item-price-row .price-icon-img {
+    width: 20px;
+    height: 20px;
     margin-right: 6px;
 }
 

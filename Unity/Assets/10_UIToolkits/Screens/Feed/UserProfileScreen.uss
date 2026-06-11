@@ -24,10 +24,6 @@
     margin-bottom: 16px;
 }
 
-.profile-avatar-emoji {
-    font-size: 40px;
-    -unity-text-align: middle-center;
-}
 
 .profile-nickname {
     font-size: var(--fs-heading);

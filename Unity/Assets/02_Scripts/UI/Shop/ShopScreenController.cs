@@ -126,8 +126,8 @@ public class ShopScreenController : MonoBehaviour
 
         var priceRow = new VisualElement();
         priceRow.AddToClassList("shop-item-price");
-        var coinIcon = new Label("🪙");
-        coinIcon.AddToClassList("price-icon");
+        var coinIcon = new VisualElement();
+        coinIcon.AddToClassList("price-icon-img");
         var priceLabel = new Label(item.price.ToString());
         priceLabel.AddToClassList("price-value");
         priceRow.Add(coinIcon);

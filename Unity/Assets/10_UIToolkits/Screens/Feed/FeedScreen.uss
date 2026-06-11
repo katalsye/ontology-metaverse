@@ -40,6 +40,16 @@
     -unity-text-align: middle-center;
 }
 
+.icon-btn-img {
+    width: 20px;
+    height: 20px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#ic-friends {
+    background-image: url("../../icons/ic_friends.png");
+}
+
 /* ── 정렬 필터 바 ── */
 .sort-bar {
     padding: 8px 20px 12px;
@@ -98,11 +108,6 @@
     background-color: var(--butter-soft);
     flex-shrink: 0;
     margin-right: 12px;
-}
-
-.feed-avatar-emoji {
-    font-size: 22px;
-    -unity-text-align: middle-center;
 }
 
 /* 카드 텍스트 */
@@ -166,9 +171,11 @@
     margin-bottom: 20px;
 }
 
-.empty-emoji {
-    font-size: 44px;
-    -unity-text-align: middle-center;
+.empty-emoji-img {
+    width: 48px;
+    height: 48px;
+    -unity-background-scale-mode: scale-to-fit;
+    background-image: url("../../icons/ic_nav_myroom.png");
 }
 
 .empty-title {
