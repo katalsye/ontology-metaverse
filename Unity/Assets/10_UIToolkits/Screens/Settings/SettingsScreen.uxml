@@ -132,7 +132,7 @@
         <ui:VisualElement name="profile-edit-overlay" class="overlay-bg" style="display: none;">
             <ui:VisualElement name="profile-edit-sheet" class="detail-sheet col">
                 <ui:Button name="btn-close-edit" class="close-btn">
-                    <ui:Label text="✕" class="close-btn-text" />
+                    <ui:VisualElement class="close-btn-icon" />
                 </ui:Button>
 
                 <ui:Label text="프로필 편집" class="sheet-title" />

@@ -34,7 +34,7 @@
         <ui:VisualElement name="item-detail-overlay" class="overlay-bg" style="display: none;">
             <ui:VisualElement name="item-detail-sheet" class="detail-sheet col">
                 <ui:Button name="btn-close-detail" class="close-btn">
-                    <ui:Label text="✕" class="close-btn-text" />
+                    <ui:VisualElement class="close-btn-icon" />
                 </ui:Button>
 
                 <!-- 아이템 미리보기 -->

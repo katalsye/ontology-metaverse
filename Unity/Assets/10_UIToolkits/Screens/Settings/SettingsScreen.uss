@@ -176,9 +176,11 @@
     justify-content: center;
 }
 
-.close-btn-text {
-    font-size: 14px;
-    color: var(--ink-muted);
+.close-btn-icon {
+    width: 14px;
+    height: 14px;
+    background-image: url("../../icons/ic_btn_close.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .sheet-title {

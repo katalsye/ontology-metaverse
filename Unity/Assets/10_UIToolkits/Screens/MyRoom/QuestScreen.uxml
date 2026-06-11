@@ -44,7 +44,7 @@
         <ui:VisualElement name="quest-detail-overlay" class="overlay-bg" style="display: none;">
             <ui:VisualElement name="quest-detail-sheet" class="detail-sheet col">
                 <ui:Button name="btn-close-detail" class="close-btn">
-                    <ui:Label text="✕" class="close-btn-text" />
+                    <ui:VisualElement class="close-btn-icon" />
                 </ui:Button>
 
                 <ui:VisualElement class="detail-header">
