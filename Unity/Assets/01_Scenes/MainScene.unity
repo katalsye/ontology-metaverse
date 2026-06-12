@@ -206,6 +206,236 @@ MonoBehaviour:
   - key: myroom
     document: {fileID: 394470283}
     hideBottomNav: 0
+--- !u!1 &150021677
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 150021690}
+  - component: {fileID: 150021689}
+  - component: {fileID: 150021688}
+  - component: {fileID: 150021687}
+  - component: {fileID: 150021686}
+  - component: {fileID: 150021685}
+  - component: {fileID: 150021684}
+  - component: {fileID: 150021683}
+  - component: {fileID: 150021682}
+  - component: {fileID: 150021681}
+  - component: {fileID: 150021680}
+  - component: {fileID: 150021679}
+  - component: {fileID: 150021678}
+  m_Layer: 0
+  m_Name: _AutoCollect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &150021678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e516f8019b108fa44836b88a28241cb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TempTripleManager
+--- !u!114 &150021679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 250d1b7b4868f68428c8f7ee216c932e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.RawDataToTripleConverter
+  batchSize: 20
+--- !u!114 &150021680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40e99746032cd9b468016b1f79d8e607, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.BatchScheduler
+  autoRunOnStart: 1
+  collectionIntervalSeconds: 60
+  batchIntervalSeconds: 60
+  initWaitSeconds: 20
+  locationCollector: {fileID: 150021689}
+  stepCollector: {fileID: 150021688}
+  appUsageCollector: {fileID: 150021687}
+  galleryCollector: {fileID: 150021686}
+  weatherCollector: {fileID: 150021685}
+  weatherIntervalMinutes: 60
+  geocoder: {fileID: 150021684}
+  geocodeIntervalMinutes: 10
+  healthCollector: {fileID: 150021683}
+  healthIntervalMinutes: 30
+  calendarCollector: {fileID: 150021682}
+  calendarIntervalMinutes: 60
+  spotifyCollector: {fileID: 150021681}
+  spotifyIntervalMinutes: 30
+  converter: {fileID: 150021679}
+  tempTripleManager: {fileID: 150021678}
+--- !u!114 &150021681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d381eb63aece7a34bbc78e9baaf06d3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Spotify.SpotifyCollector
+  clientId: 2afd2a051e554fde8778aa4d22d974a8
+  redirectUri: ontologyapp://spotify-callback
+  scopes: user-read-recently-played user-top-read
+  forceReauth: 0
+  lastFmApiKey: e2c71cb2d7eb0bfb528dfc5f455dc799
+--- !u!114 &150021682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fea689a290cedc488af04e4b94e04dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Calendar.CalendarCollector
+  pastDays: 14
+  futureDays: 7
+  autoRequestPermission: 1
+--- !u!114 &150021683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83cc7d8f1d6342040aa9d47f39a10f7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Health.HealthConnectCollector
+  readWindowHours: 24
+  pollTimeoutSeconds: 10
+  autoOpenSettingsOnMissingPermission: 1
+--- !u!114 &150021684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39080ff06f023a146b73306dccfc50da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Geocoding.ReverseGeocoder
+  restApiKey: 
+--- !u!114 &150021685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cedda222e885b454fbbe16a6bcca020f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Weather.WeatherCollector
+  serviceKey: 
+  fallbackLat: 35.8714
+  fallbackLng: 128.6014
+--- !u!114 &150021686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03ade9c1a42680a4ba805dd76d5c5cef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Gallery.GalleryEXIFCollector
+  maxPhotos: 5
+--- !u!114 &150021687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56d12f29447f79a4eaa707b7abf42671, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.AppUsage.AppUsageCollector
+  topAppsCount: 5
+  autoOpenSettings: 1
+--- !u!114 &150021688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6523fc9e4419d7946b7792c5cab41262, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Step.StepCollector
+  maxInitWaitSeconds: 15
+--- !u!114 &150021689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ac3175980db5b44bf21e0283eb3d1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Location.LocationCollector
+  desiredAccuracyInMeters: 10
+  updateDistanceInMeters: 10
+  maxInitWaitSeconds: 20
+--- !u!4 &150021690
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150021677}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.67373, y: 0, z: -0.53302}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &240639916
 GameObject:
   m_ObjectHideFlags: 0
@@ -2315,3 +2545,4 @@ SceneRoots:
   - {fileID: 2034386090}
   - {fileID: 287335478}
   - {fileID: 960036148}
+  - {fileID: 150021690}
