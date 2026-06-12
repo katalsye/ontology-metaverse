@@ -107,6 +107,8 @@ public class FcmManager : MonoBehaviour
             }
             SaveTokenToFirestore(task.Result);
         });
+
+        SubscribeToQuestTopic();
     }
 
     // 로그아웃 시 이 기기 토큰 제거
@@ -133,6 +135,40 @@ public class FcmManager : MonoBehaviour
                     else
                         Debug.Log("FCM 토큰 삭제 완료");
                 });
+        });
+
+        UnsubscribeFromQuestTopic();
+    }
+
+    // ───────────────────────────────────────
+    // 퀘스트 알림 토픽 구독/해제
+    // ontology_engine.py가 quests_{uid} 토픽으로 새 퀘스트를 푸시함
+    // ───────────────────────────────────────
+    private void SubscribeToQuestTopic()
+    {
+        if (auth?.CurrentUser == null) return;
+
+        string topic = $"quests_{auth.CurrentUser.UserId}";
+        FirebaseMessaging.SubscribeAsync(topic).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+                Debug.LogError($"FCM 토픽 구독 실패 ({topic}): " + task.Exception);
+            else
+                Debug.Log($"FCM 토픽 구독 완료: {topic}");
+        });
+    }
+
+    private void UnsubscribeFromQuestTopic()
+    {
+        if (auth?.CurrentUser == null) return;
+
+        string topic = $"quests_{auth.CurrentUser.UserId}";
+        FirebaseMessaging.UnsubscribeAsync(topic).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+                Debug.LogWarning($"FCM 토픽 구독 해제 실패 ({topic}): " + task.Exception);
+            else
+                Debug.Log($"FCM 토픽 구독 해제 완료: {topic}");
         });
     }
 
