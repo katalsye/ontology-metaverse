@@ -37,6 +37,12 @@ public class QuestScreenController : MonoBehaviour
     private Label detailRewardAmount;
     private Button btnClaim;
 
+    // 답변 입력 (데이터 보완형 퀘스트)
+    private VisualElement answerSection;
+    private TextField inputAnswer;
+    private Button btnSubmitAnswer;
+    private Label answerFeedback;
+
     // 데이터
     private List<QuestData> allQuests = new List<QuestData>();
     private QuestData selectedQuest;
@@ -71,6 +77,13 @@ public class QuestScreenController : MonoBehaviour
 
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         btnClaim.clicked += OnClaimReward;
+
+        // 답변 입력
+        answerSection = root.Q("answer-section");
+        inputAnswer = root.Q<TextField>("input-quest-answer");
+        btnSubmitAnswer = root.Q<Button>("btn-submit-answer");
+        answerFeedback = root.Q<Label>("answer-feedback");
+        btnSubmitAnswer.clicked += OnSubmitAnswer;
 
         if (QuestManager.Instance != null)
         {
@@ -147,15 +160,18 @@ public class QuestScreenController : MonoBehaviour
     {
         var type = q.QuestType switch
         {
-            "보완형" => QuestType.DataFill,
-            "개선형" => QuestType.LifeImprove,
+            "데이터 보완형" => QuestType.DataFill,
+            "삶 개선형" => QuestType.LifeImprove,
             "일일"  => QuestType.Daily,
             _       => QuestType.DataFill,
         };
         var status = q.IsCompleted ? QuestStatus.Done : QuestStatus.Active;
         float progress = q.IsCompleted ? 1f : 0f;
 
-        return new QuestData(q.Index, q.Title, "", type, status, progress, q.RewardAmount, q.Claimed, q.CompletedAt ?? "");
+        return new QuestData(q.Index, q.Title, "", type, status, progress, q.RewardAmount, q.Claimed, q.CompletedAt ?? "")
+        {
+            source = q,
+        };
     }
 
     private void SetTab(string tab)
@@ -320,6 +336,14 @@ public class QuestScreenController : MonoBehaviour
         btnClaim.style.display = (quest.status == QuestStatus.Done && !quest.claimed)
             ? DisplayStyle.Flex : DisplayStyle.None;
 
+        // 답변 입력 (데이터 보완형 + 미완료일 때만)
+        bool showAnswer = quest.type == QuestType.DataFill && quest.status == QuestStatus.Active;
+        answerSection.EnableInClassList("answer-section--visible", showAnswer);
+        inputAnswer.value = "";
+        answerFeedback.text = "";
+        answerFeedback.RemoveFromClassList("answer-feedback--success");
+        answerFeedback.RemoveFromClassList("answer-feedback--error");
+
         detailOverlay.style.display = DisplayStyle.Flex;
     }
 
@@ -350,6 +374,21 @@ public class QuestScreenController : MonoBehaviour
             }
         );
     }
+
+    private void OnSubmitAnswer()
+    {
+        if (selectedQuest?.source == null) return;
+
+        bool ok = QuestAnswerSubmitter.TrySubmit(selectedQuest.source, inputAnswer.value, out string message);
+
+        answerFeedback.text = message;
+        answerFeedback.RemoveFromClassList("answer-feedback--success");
+        answerFeedback.RemoveFromClassList("answer-feedback--error");
+        answerFeedback.AddToClassList(ok ? "answer-feedback--success" : "answer-feedback--error");
+
+        if (ok)
+            inputAnswer.value = "";
+    }
 }
 
 public enum QuestType { DataFill, LifeImprove, Daily }
@@ -366,6 +405,7 @@ public class QuestData
     public int rewardCoins;
     public bool claimed;
     public string completedAt;  // ISO 8601, done탭 정렬용
+    public Quest source;        // 답변 제출 시 targetEntityUri/targetValue 참조용
 
     public QuestData(int id, string title, string description,
                      QuestType type, QuestStatus status, float progress,

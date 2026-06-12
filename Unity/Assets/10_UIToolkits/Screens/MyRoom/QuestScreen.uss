@@ -247,3 +247,50 @@
     border-top-color: var(--line-faint);
     margin-bottom: 16px;
 }
+
+/* ── 퀘스트 답변 입력 ── */
+.answer-section {
+    display: none;
+    flex-direction: column;
+    background-color: var(--card);
+    border-radius: var(--r-lg);
+    border-width: 1px;
+    border-color: var(--line-faint);
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.answer-section--visible {
+    display: flex;
+}
+
+.answer-textfield {
+    min-height: 76px;
+    border-radius: var(--r-md);
+    border-width: 1px;
+    border-color: var(--line);
+    background-color: var(--card-soft);
+    padding: 10px;
+    font-size: var(--fs-body-sm);
+    color: var(--ink);
+    margin-bottom: 10px;
+    -unity-word-wrap: true;
+}
+
+.answer-textfield:focus {
+    border-color: var(--rose);
+}
+
+.answer-feedback {
+    font-size: var(--fs-small);
+    margin-top: 6px;
+    -unity-text-align: middle-center;
+}
+
+.answer-feedback--success {
+    color: var(--mint);
+}
+
+.answer-feedback--error {
+    color: var(--red);
+}

@@ -73,6 +73,16 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
 
+                <!-- 답변 입력 (데이터 보완형 + 미완료일 때만 표시) -->
+                <ui:VisualElement name="answer-section" class="answer-section">
+                    <ui:TextField name="input-quest-answer"
+                                multiline="true"
+                                class="answer-textfield"
+                                placeholder-text="답변을 입력해 주세요..." />
+                    <ui:Button name="btn-submit-answer" text="답변 제출"
+                            class="btn btn--md btn--rose btn--full" />
+                    <ui:Label name="answer-feedback" text="" class="answer-feedback" />
+                </ui:VisualElement>
                 <!-- 보상 수령 버튼 (완료된 퀘스트만) -->
                 <ui:Button name="btn-claim" text="보상 수령"
                            class="btn btn--md btn--rose btn--full" style="display: none;" />

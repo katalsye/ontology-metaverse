@@ -12,7 +12,7 @@ public class Quest
     public int Index { get; set; }          // 배열 내 위치 (Firestore에는 저장되지 않음)
 
     public string Title { get; set; }
-    public string QuestType { get; set; }    // 보완형 / 개선형
+    public string QuestType { get; set; }    // "데이터 보완형" / "삶 개선형" (엔진 questType 값과 동일)
     public int RewardAmount { get; set; }
     public bool IsCompleted { get; set; }
     public string CreatedAt { get; set; }
