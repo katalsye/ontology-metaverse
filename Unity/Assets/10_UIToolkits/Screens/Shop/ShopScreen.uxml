@@ -39,7 +39,7 @@
 
                 <!-- 아이템 미리보기 -->
                 <ui:VisualElement name="item-preview" class="item-preview center-content">
-                    <ui:Label name="item-preview-emoji" text="🪑" class="item-preview-emoji" />
+                    <ui:VisualElement name="item-preview-icon" class="item-preview-icon icon-ic_item_chair" />
                 </ui:VisualElement>
 
                 <ui:Label name="item-detail-name" text="" class="item-detail-name" />

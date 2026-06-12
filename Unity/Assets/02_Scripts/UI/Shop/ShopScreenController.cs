@@ -22,7 +22,9 @@ public class ShopScreenController : MonoBehaviour
     private Button tabFurniture, tabSkin, tabPet;
     private string currentCategory = "furniture";
 
-    private Label detailName, detailDesc, detailPrice, previewEmoji;
+    private Label detailName, detailDesc, detailPrice;
+    private VisualElement previewIcon;
+    private string previewIconClass = "icon-ic_item_chair";
     private ShopItemData selectedItem;
 
     private List<ShopItemData> allItems = new List<ShopItemData>();
@@ -47,7 +49,7 @@ public class ShopScreenController : MonoBehaviour
         detailName = root.Q<Label>("item-detail-name");
         detailDesc = root.Q<Label>("item-detail-desc");
         detailPrice = root.Q<Label>("item-price");
-        previewEmoji = root.Q<Label>("item-preview-emoji");
+        previewIcon = root.Q<VisualElement>("item-preview-icon");
 
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         root.Q<Button>("btn-buy").clicked += OnBuyClicked;
@@ -59,14 +61,14 @@ public class ShopScreenController : MonoBehaviour
     {
         allItems = new List<ShopItemData>
         {
-            new ShopItemData("f1", "furniture", "원목 책상", "따뜻한 느낌의 원목 책상", "🪑", 100),
-            new ShopItemData("f2", "furniture", "미니 화분", "방에 생기를 더해요", "🪴", 50),
-            new ShopItemData("f3", "furniture", "무드 조명", "은은한 분위기 연출", "💡", 80),
-            new ShopItemData("f4", "furniture", "러그", "포근한 깔개", "🟫", 60),
-            new ShopItemData("s1", "skin", "파자마 세트", "편안한 잠옷", "👕", 120),
-            new ShopItemData("s2", "skin", "캐주얼 후드", "데일리 패션", "🧥", 150),
-            new ShopItemData("p1", "pet", "고양이", "귀여운 동반자", "🐱", 300),
-            new ShopItemData("p2", "pet", "강아지", "충실한 친구", "🐶", 300),
+            new ShopItemData("f1", "furniture", "원목 책상", "따뜻한 느낌의 원목 책상", "ic_item_chair", 100),
+            new ShopItemData("f2", "furniture", "미니 화분", "방에 생기를 더해요", "ic_item_plant", 50),
+            new ShopItemData("f3", "furniture", "무드 조명", "은은한 분위기 연출", "ic_item_lamp", 80),
+            new ShopItemData("f4", "furniture", "러그", "포근한 깔개", "ic_item_rug", 60),
+            new ShopItemData("s1", "skin", "파자마 세트", "편안한 잠옷", "ic_item_pajama", 120),
+            new ShopItemData("s2", "skin", "캐주얼 후드", "데일리 패션", "ic_item_hoodie", 150),
+            new ShopItemData("p1", "pet", "고양이", "귀여운 동반자", "ic_item_cat", 300),
+            new ShopItemData("p2", "pet", "강아지", "충실한 친구", "ic_item_dog", 300),
         };
 
         // 보유 아이템 조회 후 렌더링
@@ -117,9 +119,10 @@ public class ShopScreenController : MonoBehaviour
 
         var thumb = new VisualElement();
         thumb.AddToClassList("shop-item-thumb");
-        var emoji = new Label(item.emoji);
-        emoji.AddToClassList("shop-item-emoji");
-        thumb.Add(emoji);
+        var icon = new VisualElement();
+        icon.AddToClassList("shop-item-icon");
+        icon.AddToClassList($"icon-{item.icon}");
+        thumb.Add(icon);
 
         var name = new Label(item.name);
         name.AddToClassList("shop-item-name");
@@ -152,7 +155,11 @@ public class ShopScreenController : MonoBehaviour
     private void ShowDetail(ShopItemData item)
     {
         selectedItem = item;
-        previewEmoji.text = item.emoji;
+
+        if (previewIconClass != null) previewIcon.RemoveFromClassList(previewIconClass);
+        previewIconClass = $"icon-{item.icon}";
+        previewIcon.AddToClassList(previewIconClass);
+
         detailName.text = item.name;
         detailDesc.text = item.description;
         detailPrice.text = item.price.ToString();
@@ -195,13 +202,13 @@ public class ShopScreenController : MonoBehaviour
 
 public class ShopItemData
 {
-    public string id, category, name, description, emoji;
+    public string id, category, name, description, icon;
     public int price;
 
     public ShopItemData(string id, string category, string name,
-                        string description, string emoji, int price)
+                        string description, string icon, int price)
     {
         this.id = id; this.category = category; this.name = name;
-        this.description = description; this.emoji = emoji; this.price = price;
+        this.description = description; this.icon = icon; this.price = price;
     }
 }

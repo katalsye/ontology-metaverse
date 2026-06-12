@@ -73,10 +73,21 @@
     justify-content: center;
 }
 
-.shop-item-emoji {
-    font-size: 36px;
-    -unity-text-align: middle-center;
+.shop-item-icon {
+    width: 100%;
+    height: 100%;
+    -unity-background-scale-mode: scale-to-fit;
 }
+
+/* 아이템별 아이콘 (그리드 썸네일 + 상세 미리보기 공용) */
+.icon-ic_item_chair { background-image: url("../../icons/ic_item_chair.png"); }
+.icon-ic_item_plant { background-image: url("../../icons/ic_item_plant.png"); }
+.icon-ic_item_lamp { background-image: url("../../icons/ic_item_lamp.png"); }
+.icon-ic_item_rug { background-image: url("../../icons/ic_item_rug.png"); }
+.icon-ic_item_pajama { background-image: url("../../icons/ic_item_pajama.png"); }
+.icon-ic_item_hoodie { background-image: url("../../icons/ic_item_hoodie.png"); }
+.icon-ic_item_cat { background-image: url("../../icons/ic_item_cat.png"); }
+.icon-ic_item_dog { background-image: url("../../icons/ic_item_dog.png"); }
 
 .shop-item-name {
     font-size: var(--fs-body-sm);
@@ -147,9 +158,10 @@
     margin: 8px 0 20px;
 }
 
-.item-preview-emoji {
-    font-size: 64px;
-    -unity-text-align: middle-center;
+.item-preview-icon {
+    width: 100%;
+    height: 100%;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .item-detail-name {
