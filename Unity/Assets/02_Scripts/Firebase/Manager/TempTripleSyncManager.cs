@@ -7,7 +7,9 @@ using Firebase.Extensions;
 using OntologyMetaverse.DataCollection.SQLite;
 
 /// <summary>
-/// SQLite triples 테이블(Synced=0)을 Firestore temp_triples/{uid}/triples에 일괄 업로드.
+/// SQLite triples 테이블(Synced=0)을 Firestore temp_triples/{uid}/items에 일괄 업로드.
+/// 필드명/경로는 Docs/triple-json-spec.md(v3) 및 무성님 측 triggers.py의
+/// on_document_written(temp_triples/{uid}/items/{itemId}) 트리거와 일치시켜야 한다.
 /// 업로드 성공 시 SQLite Synced=1 처리.
 /// 앱이 백그라운드로 전환될 때 자동 실행, 또는 외부에서 SyncUnsyncedTriples() 직접 호출.
 /// </summary>
@@ -82,7 +84,7 @@ public class TempTripleSyncManager : MonoBehaviour
         Debug.Log($"[TempTripleSync] 동기화 시작: {unsynced.Count}개");
 
         string uid    = _auth.CurrentUser.UserId;
-        var    colRef = _db.Collection("temp_triples").Document(uid).Collection("triples");
+        var    colRef = _db.Collection("temp_triples").Document(uid).Collection("items");
 
         UploadChunk(unsynced, colRef, offset: 0, onComplete, onFailure);
     }
@@ -104,12 +106,10 @@ public class TempTripleSyncManager : MonoBehaviour
         {
             batch.Set(colRef.Document(), new Dictionary<string, object>
             {
-                { "Subject",   t.Subject },
-                { "Predicate", t.Predicate },
-                { "Object",    t.Object },
-                { "Datatype",  t.Datatype ?? "" },
-                { "Source",    t.Source },
-                { "Timestamp", t.Timestamp },
+                { "subject",   t.Subject },
+                { "predicate", t.Predicate },
+                { "object",    t.Object },
+                { "datatype",  t.Datatype },
                 { "CreatedAt", FieldValue.ServerTimestamp }
             });
         }
