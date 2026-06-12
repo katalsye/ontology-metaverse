@@ -70,6 +70,51 @@ namespace OntologyMetaverse.DataCollection.Spotify
         }
 
         /// <summary>
+        /// Spotify OAuth 토큰 보유 여부.
+        /// BatchScheduler가 매 cycle 체크해서 미인증이면 수집 자체를 스킵.
+        /// </summary>
+        public bool HasAuth() => _auth != null && _auth.IsAccessTokenValid;
+
+        /// <summary>
+        /// 초기화 단계에서 OAuth 토큰만 확보하는 메서드. BatchScheduler.Start()가 직렬로 호출.
+        /// Health Connect 설정 화면 · Calendar 권한 팝업과 같은 시점에 OAuth 브라우저 띄우면
+        /// 서로 가려서 사용자가 못 보는 문제 방지.
+        ///
+        /// 동작:
+        ///   - clientId 미설정 → 즉시 yield break
+        ///   - 이미 유효 토큰 → 즉시 yield break
+        ///   - 없으면 EnsureValidAccessToken(브라우저 OAuth) 호출
+        /// </summary>
+        public IEnumerator EnsureAuthInteractive()
+        {
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                Debug.LogWarning("[SpotifyCollector] clientId 미설정 → OAuth 스킵");
+                yield break;
+            }
+
+            if (forceReauth)
+            {
+                _auth.ClearTokens();
+                forceReauth = false;
+            }
+
+            if (_auth.IsAccessTokenValid)
+            {
+                Debug.Log("[SpotifyCollector] 토큰 이미 유효 → OAuth 스킵");
+                yield break;
+            }
+
+            string authError = null;
+            yield return _auth.EnsureValidAccessToken(err => authError = err);
+
+            if (!_auth.IsAccessTokenValid)
+                Debug.LogError($"[SpotifyCollector] OAuth 실패: {authError ?? "(원인 미상)"} → 다음 cycle 재시도");
+            else
+                Debug.Log("[SpotifyCollector] OAuth 인증 완료");
+        }
+
+        /// <summary>
         /// 한 번의 수집 사이클. BatchScheduler가 주기적으로 호출.
         /// </summary>
         public IEnumerator CollectRecentTracks()

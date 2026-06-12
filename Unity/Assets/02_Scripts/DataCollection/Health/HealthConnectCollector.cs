@@ -51,6 +51,59 @@ namespace OntologyMetaverse.DataCollection.Health
         public bool HasProvidedSteps { get; private set; }
 
         /// <summary>
+        /// 현재 4개 권한(SLEEP/STEPS/HEART_RATE/HRV)이 모두 부여됐는지.
+        /// BatchScheduler가 매 cycle 권한 체크해서 미허용이면 수집 자체를 스킵.
+        /// </summary>
+        public bool HasPermission() => HealthConnectBridge.HasAllPermissions();
+
+        /// <summary>
+        /// 초기화 단계에서 권한만 받는 메서드. BatchScheduler.Start()가 직렬로 호출.
+        /// Spotify OAuth · Calendar 권한 팝업과 같은 시점에 띄우지 않게 분리.
+        ///
+        /// 동작:
+        ///   - SDK Unavailable → 즉시 yield break (수집기 통째로 비활성)
+        ///   - 이미 권한 있음 → 즉시 yield break
+        ///   - 권한 없음 → Health Connect 앱 띄우고 사용자가 부여하고 돌아올 때까지 polling (최대 maxWaitSeconds)
+        ///   - 타임아웃 → 경고만 남기고 진행 (다음 cycle에서 CollectAll이 재시도)
+        /// </summary>
+        public IEnumerator EnsurePermissionInteractive()
+        {
+            var status = HealthConnectBridge.GetSdkStatus();
+            if (status != HealthConnectSdkStatus.Available)
+            {
+                Debug.LogWarning($"[HealthConnect] SDK 사용 불가: {status} → 권한 요청 스킵");
+                if (status == HealthConnectSdkStatus.ProviderUpdateRequired)
+                    HealthConnectBridge.OpenHealthConnectSettings();
+                yield break;
+            }
+
+            if (HealthConnectBridge.HasAllPermissions())
+            {
+                Debug.Log("[HealthConnect] 권한 이미 있음 → 요청 스킵");
+                yield break;
+            }
+
+            Debug.Log("[HealthConnect] 설정 화면 띄움 — 사용자 권한 부여 대기");
+            HealthConnectBridge.OpenHealthConnectSettings();
+            _settingsOpened = true;
+
+            const float maxWaitSeconds = 60f;
+            const float pollIntervalSeconds = 2f;
+            float elapsed = 0f;
+            while (elapsed < maxWaitSeconds)
+            {
+                yield return new WaitForSeconds(pollIntervalSeconds);
+                elapsed += pollIntervalSeconds;
+                if (HealthConnectBridge.HasAllPermissions())
+                {
+                    Debug.Log($"[HealthConnect] 권한 부여 확인됨 ({elapsed:F0}s)");
+                    yield break;
+                }
+            }
+            Debug.LogWarning($"[HealthConnect] {maxWaitSeconds:F0}s 내 권한 부여 안 됨 → 다음 cycle 재시도");
+        }
+
+        /// <summary>
         /// 한 번의 수집 사이클. BatchScheduler가 주기적으로 호출.
         /// </summary>
         public IEnumerator CollectHealthData()
