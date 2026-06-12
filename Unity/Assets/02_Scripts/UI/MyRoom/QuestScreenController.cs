@@ -251,8 +251,8 @@ public class QuestScreenController : MonoBehaviour
 
         var typePill = new Label(quest.type switch
         {
-            QuestType.DataFill => "데이터 보완",
-            QuestType.LifeImprove => "삶 개선",
+            QuestType.DataFill => "보완형",
+            QuestType.LifeImprove => "개선형",
             QuestType.Daily => "일일",
             _ => "",
         });
@@ -324,8 +324,8 @@ public class QuestScreenController : MonoBehaviour
         detailTypePill.Clear();
         var pillLabel = new Label(quest.type switch
         {
-            QuestType.DataFill => "데이터 보완",
-            QuestType.LifeImprove => "삶 개선",
+            QuestType.DataFill => "보완형",
+            QuestType.LifeImprove => "개선형",
             QuestType.Daily => "일일",
             _ => "",
         });
