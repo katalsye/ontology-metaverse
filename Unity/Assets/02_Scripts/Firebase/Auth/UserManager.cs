@@ -122,9 +122,10 @@ public class UserManager : MonoBehaviour
     public void UpdatePersona(Persona persona, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
+        // ontology_engine.py와 동일한 소문자 "persona" 필드에 기록 (필드 분기 방지)
         Dictionary<string, object> updates = new Dictionary<string, object>
         {
-            { "Persona", persona }
+            { "persona", persona }
         };
 
         db.Collection("users").Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
@@ -255,7 +256,7 @@ public class UserManager : MonoBehaviour
                     { "ProfileImageUrl", user.PhotoUrl?.ToString() ?? "" },
                     { "StatusMessage", "" },
                     { "IsPublic", true },
-                    { "Persona", new Dictionary<string, object>() },
+                    { "persona", new Dictionary<string, object>() },
                     { "CreatedAt", FieldValue.ServerTimestamp }
                 };
 

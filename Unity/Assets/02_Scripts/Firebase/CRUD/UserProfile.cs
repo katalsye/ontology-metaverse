@@ -21,7 +21,8 @@ public class UserProfile
     [FirestoreProperty]
     public bool IsPublic { get; set; }
 
-    [FirestoreProperty]
+    // ontology_engine.py가 소문자 "persona" 필드에 추론 결과를 기록함
+    [FirestoreProperty("persona")]
     public Persona Persona { get; set; }
 
     [FirestoreProperty]
