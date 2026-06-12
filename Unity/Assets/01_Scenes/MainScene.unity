@@ -363,7 +363,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cedda222e885b454fbbe16a6bcca020f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OntologyMetaverse.DataCollection.Weather.WeatherCollector
-  serviceKey: 
+  serviceKey: a157342b341f64fa2f1cccc8f9b8100ea371b4b9d875e92c183f0e59fa3fa485
   fallbackLat: 35.8714
   fallbackLng: 128.6014
 --- !u!114 &150021686
