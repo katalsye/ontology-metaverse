@@ -16,7 +16,9 @@ public class SplashScreenController : MonoBehaviour
     private Label appSubtitle;
     private Label loadingText;
 
-    private static bool _hasNavigated = false;
+    /// <summary>스플래시 애니메이션 시퀀스가 끝나면 true (BootManager가 대기에 사용)</summary>
+    public bool IsAnimationFinished { get; private set; }
+
     private Coroutine _splashCoroutine;
 
     private void OnEnable()
@@ -27,8 +29,6 @@ public class SplashScreenController : MonoBehaviour
             StopCoroutine(_splashCoroutine);
             _splashCoroutine = null;
         }
-
-        if (_hasNavigated) return;
 
         root = uiDocument.rootVisualElement;
         logoRing    = root.Q("logo-ring");
@@ -67,33 +67,7 @@ public class SplashScreenController : MonoBehaviour
         if (remaining > 0f)
             yield return new WaitForSeconds(remaining);
 
-        NavigateNext();
-    }
-
-    private void NavigateNext()
-    {
-        if (_hasNavigated) return;
-        _hasNavigated = true;
-
-        var user = Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser;
-        bool isProperlyLoggedIn = user != null && !user.IsAnonymous;
-        bool hasOnboarding = PlayerPrefs.HasKey("onboarding_complete");
-        bool hasNickname   = PlayerPrefs.HasKey("nickname");
-        bool setupComplete = hasOnboarding && hasNickname;
-
-        if (isProperlyLoggedIn)
-        {
-            ScreenManager.Instance.ClearHistory();
-            ScreenManager.Instance.GoTo("myroom");
-        }
-        else if (setupComplete)
-        {
-            ScreenManager.Instance.GoTo("login");
-        }
-        else
-        {
-            ScreenManager.Instance.GoTo("onboarding");
-        }
+        IsAnimationFinished = true;
     }
 
     private IEnumerator AnimateLogoPop()

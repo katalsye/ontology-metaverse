@@ -46,7 +46,12 @@ public class ScreenManager : MonoBehaviour
     private void Start()
     {
         Debug.Log($"[ScreenManager] Start — InstanceID: {GetInstanceID()}");
-        GoTo("splash", false);
+
+        string entry = AppRouter.EntryScreen;
+        if (entry == "myroom")
+            ClearHistory();
+
+        GoTo(entry, false);
     }
 
     public void GoTo(string screenKey, bool addToHistory = true)
@@ -57,17 +62,7 @@ public class ScreenManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(currentScreen))
         {
-            // splash는 한 번 표시 후 재활성화 방지
-            if (currentScreen != "splash")
-            {
-                SetScreenActive(currentScreen, false);
-            }
-            else
-            {
-                // splash는 비활성화만 하고 히스토리에 쌓지 않음
-                SetScreenActive(currentScreen, false);
-                addToHistory = false;
-            }
+            SetScreenActive(currentScreen, false);
 
             if (addToHistory)
                 history.Push(currentScreen);
