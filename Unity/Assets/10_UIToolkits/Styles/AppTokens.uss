@@ -66,6 +66,10 @@
     --sp-xl:        24px;
     --sp-2xl:       32px;
 
+    /* ── 레이아웃 ── */
+    /* 하단 네비게이션 바 높이 (CommonComponents.uss .bottom-nav 실측치) */
+    --nav-height:   80px;
+
     /* ── 그림자 ── */
     /* UI Toolkit은 CSS box-shadow 미지원, 
        대신 border + background 조합으로 처리 */

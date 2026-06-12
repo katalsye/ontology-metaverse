@@ -44,6 +44,7 @@
 .quest-list {
     flex-grow: 1;
     padding: 0 20px;
+    padding-bottom: var(--nav-height);
 }
 
 /* 퀘스트 카드 */
@@ -191,7 +192,7 @@
     background-color: var(--card);
     border-top-left-radius: var(--r-2xl);
     border-top-right-radius: var(--r-2xl);
-    padding: 24px 24px 40px;
+    padding: 24px 24px var(--nav-height);
     min-height: 320px;
 }
 
