@@ -10,16 +10,10 @@ import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
-# ── 무거운 의존성 사전 Mock ────────────────────────────────────────────────────
-for _mod in [
-    "firebase_admin",
-    "firebase_admin.firestore",
-    "rdflib",
-    "rdflib.graph",
-    "rdflib.namespace",
-    "rdflib.term",
-]:
-    sys.modules.setdefault(_mod, MagicMock())
+# sys.modules.setdefault(MagicMock())로 rdflib/firebase_admin을 전역 주입했더니
+# pytest 알파벳순 수집에서 이 파일이 먼저 import돼 rdflib을 MagicMock으로 덮어버렸음.
+# 같은 pytest 프로세스의 다른 테스트들이 진짜 rdflib 대신 MagicMock으로 동작 → 56건 연쇄 실패.
+# 이 파일 안 테스트들은 모두 patch("check_inference._load_prop_map" 등)으로 모킹하므로 전역 차단 불필요.
 
 _SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 _FUNCTIONS_DIR = os.path.dirname(_SCRIPTS_DIR)
@@ -326,12 +320,19 @@ class TestCLIIntegration(unittest.TestCase):
 
     _SCRIPT = os.path.join(_SCRIPTS_DIR, "check_inference.py")
 
+    # Windows 기본 인코딩이 cp949라 자식이 utf-8로 출력해도, 부모가 cp949로 디코딩하면
+    # check_inference.py --help의 한글 출력에서 UnicodeDecodeError 발생 → proc.stdout=None.
+    # 자식 환경변수로 PYTHONIOENCODING=utf-8 강제 + 부모 encoding="utf-8"로 양쪽 일치시킨다.
+    _UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+
     def test_help_exits_zero(self):
         """--help 플래그 → 종료코드 0, 'uid' 텍스트 포함."""
         proc = subprocess.run(
             [sys.executable, self._SCRIPT, "--help"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=self._UTF8_ENV,
         )
         self.assertEqual(proc.returncode, 0)
         self.assertIn("uid", proc.stdout)
@@ -342,6 +343,8 @@ class TestCLIIntegration(unittest.TestCase):
             [sys.executable, self._SCRIPT],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=self._UTF8_ENV,
         )
         self.assertNotEqual(proc.returncode, 0)
 
