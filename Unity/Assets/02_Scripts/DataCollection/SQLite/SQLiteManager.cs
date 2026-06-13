@@ -71,7 +71,30 @@ namespace OntologyMetaverse.DataCollection.SQLite
         /// 외부에서 직접 SQLite 연결에 접근 (고급 쿼리용)
         /// </summary>
         public SQLiteConnection Connection => _db;
-        
+
+        /// <summary>
+        /// keepDays 이전에 수집되고 변환까지 끝난(Processed=1) raw_data 삭제.
+        /// Processed=0은 아직 변환 안 됐으므로 절대 안 건드림.
+        /// 매 batch cycle 끝에 BatchScheduler가 호출.
+        /// </summary>
+        /// <returns>삭제된 행 수. 실패 시 -1.</returns>
+        public int CleanupProcessedRawData(int keepDays)
+        {
+            try
+            {
+                string cutoff = DateTime.UtcNow.AddDays(-keepDays).ToString("o");
+                return _db.Execute(
+                    "DELETE FROM RawData WHERE Processed = 1 AND Timestamp < ?",
+                    cutoff
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[SQLiteManager] raw_data retention 정리 실패: {e.Message}");
+                return -1;
+            }
+        }
+
         /// <summary>
         /// DB 연결 종료
         /// </summary>
