@@ -1,4 +1,12 @@
 <!-- MyRoomScreen.uxml — 투명 오버레이 (3DRoomScene이 뒤에 렌더링됨) -->
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <ui:VisualElement name="myroom-root" class="full-screen" />
+    <Style src="../../Styles/AppTokens.uss" />
+    <Style src="MyRoomScreen.uss" />
+
+    <ui:VisualElement name="myroom-root" class="full-screen">
+        <!-- 설정 버튼 -->
+        <ui:Button name="btn-settings" class="icon-btn myroom-settings-btn">
+            <ui:VisualElement name="ic-settings" class="icon-btn-img" />
+        </ui:Button>
+    </ui:VisualElement>
 </ui:UXML>

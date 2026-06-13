@@ -35,9 +35,6 @@ public class BottomNavController : MonoBehaviour
             tabs[i].clicked += () => OnTabClicked(index);
         }
 
-        // 화면 전환 이벤트 구독
-        ScreenManager.Instance.OnScreenChanged += OnScreenChanged;
-
         // FCM 미읽음 수 → feed 뱃지
         if (FcmManager.Instance != null)
             FcmManager.Instance.OnUnreadCountChanged += OnUnreadNotificationsChanged;
@@ -47,6 +44,13 @@ public class BottomNavController : MonoBehaviour
             QuestManager.Instance.OnUnreadQuestCountChanged += OnUnreadQuestCountChanged;
 
         SetActiveTab(0); // 기본: 마이룸
+    }
+
+    private void Start()
+    {
+        // ScreenManager.Awake()가 모든 오브젝트의 Awake 단계에서 Instance를 설정하므로
+        // Start 시점에는 항상 준비되어 있음 (OnEnable 시점은 실행 순서에 따라 null일 수 있음)
+        ScreenManager.Instance.OnScreenChanged += OnScreenChanged;
     }
 
     private void OnDisable()

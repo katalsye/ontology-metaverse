@@ -21,6 +21,12 @@ public class MyRoomScreenController : MonoBehaviour
 
     private void OnEnable()
     {
+        if (uiDocument != null)
+        {
+            var root = uiDocument.rootVisualElement;
+            root.Q<Button>("btn-settings").clicked += OnSettingsClicked;
+        }
+
         if (mainSceneCamera != null)
             mainSceneCamera.gameObject.SetActive(false);
 
@@ -40,6 +46,9 @@ public class MyRoomScreenController : MonoBehaviour
 
     private void OnDisable()
     {
+        if (uiDocument != null)
+            uiDocument.rootVisualElement.Q<Button>("btn-settings").clicked -= OnSettingsClicked;
+
         if (QuestManager.Instance != null)
             QuestManager.Instance.OnUnreadQuestCountChanged -= OnUnreadQuestChanged;
 
@@ -58,5 +67,10 @@ public class MyRoomScreenController : MonoBehaviour
     private void OnUnreadQuestChanged(int count)
     {
         // badge-quest 업데이트는 BottomNavController가 같은 이벤트를 구독해 처리
+    }
+
+    private void OnSettingsClicked()
+    {
+        ScreenManager.Instance.GoTo("settings");
     }
 }

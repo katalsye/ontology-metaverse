@@ -82,6 +82,14 @@
                     <ui:Label text="앱 사용시간" class="setting-label" />
                     <ui:VisualElement name="toggle-usage" class="toggle" />
                 </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="캘린더" class="setting-label" />
+                    <ui:VisualElement name="toggle-calendar" class="toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="Spotify" class="setting-label" />
+                    <ui:VisualElement name="toggle-spotify" class="toggle" />
+                </ui:VisualElement>
             </ui:VisualElement>
 
             <!-- 사운드 -->

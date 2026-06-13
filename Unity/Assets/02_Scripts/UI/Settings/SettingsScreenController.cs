@@ -65,6 +65,8 @@ public class SettingsScreenController : MonoBehaviour
         SetupToggle("toggle-location", "perm_location");
         SetupToggle("toggle-health", "perm_health");
         SetupToggle("toggle-usage", "perm_usage");
+        SetupToggle("toggle-calendar", "perm_calendar");
+        SetupToggle("toggle-spotify", "perm_spotify");
 
         // 슬라이더
         var bgmSlider = root.Q<Slider>("slider-bgm");

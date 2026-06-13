@@ -23,6 +23,23 @@
     -unity-text-align: middle-center;
 }
 
+.icon-btn-img {
+    width: 20px;
+    height: 20px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#ic-settings {
+    background-image: url("../../icons/ic_btn_settings.png");
+}
+
+/* 좌상단 설정 버튼 */
+.myroom-settings-btn {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+}
+
 .myroom-scroll {
     flex-grow: 1;
     padding: 0 var(--sp-xl) var(--sp-2xl);
