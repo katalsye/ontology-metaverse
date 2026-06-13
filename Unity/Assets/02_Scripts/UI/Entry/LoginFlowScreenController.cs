@@ -40,6 +40,10 @@ public class LoginFlowScreenController : MonoBehaviour
         { "spotify", false },
     };
 
+    // 토글 클릭 시 권한 다이얼로그 결과에 따라 비주얼을 되돌리기 위한 참조
+    private readonly Dictionary<string, (VisualElement toggle, VisualElement thumb)> toggleElements
+        = new Dictionary<string, (VisualElement toggle, VisualElement thumb)>();
+
     // 프로필
     private TextField inputNickname;
     private TextField inputStatus;
@@ -103,7 +107,9 @@ public class LoginFlowScreenController : MonoBehaviour
     }
 
     /// <summary>
-    /// 토글 스위치 설정 (클릭 시 on/off 전환)
+    /// 토글 스위치 설정.
+    /// 켜는 동작은 실제 권한 동의 결과가 확인된 후에만 ON으로 표시되고,
+    /// 동의하지 않으면 미선택 상태로 되돌아간다. 끄는 동작은 별도 동의 절차 없이 즉시 반영.
     /// </summary>
     private void SetupToggle(string toggleName, string permKey)
     {
@@ -127,23 +133,126 @@ public class LoginFlowScreenController : MonoBehaviour
         thumb.style.transitionDuration = new List<TimeValue> { new(200, TimeUnit.Millisecond) };
         toggle.Add(thumb);
 
+        toggleElements[permKey] = (toggle, thumb);
+
         toggle.RegisterCallback<ClickEvent>(evt =>
         {
-            permissions[permKey] = !permissions[permKey];
-            bool isOn = permissions[permKey];
-
-            if (isOn)
+            if (permissions[permKey])
             {
-                toggle.AddToClassList("toggle--on");
-                thumb.style.left = 23; // 48 - 22 - 3
-                StartCoroutine(RequestPermissionFor(permKey));
+                // 끄기: 권한 동의 자체를 회수할 수는 없으므로 앱 내 사용 동의만 철회
+                permissions[permKey] = false;
+                SetToggleVisual(toggle, thumb, false);
             }
             else
             {
-                toggle.RemoveFromClassList("toggle--on");
-                thumb.style.left = 3;
+                StartCoroutine(TryEnablePermission(permKey));
             }
         });
+    }
+
+    /// <summary>
+    /// 권한 다이얼로그/설정 화면을 띄운 뒤, 실제 동의 여부를 확인해 토글 비주얼을 갱신한다.
+    /// 동의하지 않았으면 토글은 미선택 상태로 유지(되돌아감)된다.
+    /// </summary>
+    private IEnumerator TryEnablePermission(string permKey)
+    {
+        yield return RequestPermissionFor(permKey);
+
+        bool granted = CheckPermissionGranted(permKey);
+        permissions[permKey] = granted;
+
+        if (toggleElements.TryGetValue(permKey, out var elems))
+            SetToggleVisual(elems.toggle, elems.thumb, granted);
+    }
+
+    private void SetToggleVisual(VisualElement toggle, VisualElement thumb, bool isOn)
+    {
+        if (isOn)
+        {
+            toggle.AddToClassList("toggle--on");
+            thumb.style.left = 23; // 48 - 22 - 3
+        }
+        else
+        {
+            toggle.RemoveFromClassList("toggle--on");
+            thumb.style.left = 3;
+        }
+    }
+
+    /// <summary>
+    /// permKey에 해당하는 권한이 실제로 부여되었는지 확인.
+    /// gallery/location/calendar: Permission.HasUserAuthorizedPermission (Editor에서는 항상 true)
+    /// health: ACTIVITY_RECOGNITION + Health Connect 권한 모두 필요
+    /// usage: PACKAGE_USAGE_STATS (시스템 설정에서 직접 허용)
+    /// spotify: OAuth access token 보유 여부
+    /// </summary>
+    private bool CheckPermissionGranted(string permKey)
+    {
+        switch (permKey)
+        {
+            case "gallery":
+#if UNITY_ANDROID
+                return Permission.HasUserAuthorizedPermission("android.permission.READ_MEDIA_IMAGES")
+                    || Permission.HasUserAuthorizedPermission(Permission.ExternalStorageRead);
+#else
+                return true;
+#endif
+
+            case "location":
+#if UNITY_ANDROID
+                return Permission.HasUserAuthorizedPermission(Permission.FineLocation);
+#else
+                return true;
+#endif
+
+            case "health":
+#if UNITY_ANDROID && !UNITY_EDITOR
+                return Permission.HasUserAuthorizedPermission("android.permission.ACTIVITY_RECOGNITION")
+                    && HealthConnectBridge.HasAllPermissions();
+#else
+                return true;
+#endif
+
+            case "usage":
+                return IsUsageAccessGranted();
+
+            case "calendar":
+#if UNITY_ANDROID
+                return Permission.HasUserAuthorizedPermission("android.permission.READ_CALENDAR");
+#else
+                return true;
+#endif
+
+            case "spotify":
+                return SpotifyCollector.Instance != null && SpotifyCollector.Instance.HasAuth();
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// 앱이 다시 포그라운드로 돌아왔을 때, 외부 설정 화면(Health Connect/사용 기록 액세스)에서
+    /// 사용자가 권한을 허용했는지 재확인해 토글 상태를 동기화한다.
+    /// </summary>
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus) return;
+
+        RecheckExternalPermission("health");
+        RecheckExternalPermission("usage");
+    }
+
+    private void RecheckExternalPermission(string permKey)
+    {
+        if (permissions[permKey]) return; // 이미 ON
+        if (!toggleElements.TryGetValue(permKey, out var elems)) return;
+
+        if (CheckPermissionGranted(permKey))
+        {
+            permissions[permKey] = true;
+            SetToggleVisual(elems.toggle, elems.thumb, true);
+        }
     }
 
     /// <summary>
@@ -313,6 +422,21 @@ public class LoginFlowScreenController : MonoBehaviour
             Debug.Log("[LoginFlow] 사용 기록 액세스 설정 화면 오픈");
             cls.CallStatic("openSettings", activity);
         }
+#endif
+    }
+
+    /// <summary>
+    /// PACKAGE_USAGE_STATS 권한이 현재 부여되어 있는지 확인.
+    /// </summary>
+    private bool IsUsageAccessGranted()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        using var cls = new AndroidJavaClass("com.ontology.metaverse.appusage.AppUsageHelper");
+        using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+        return cls.CallStatic<bool>("hasPermission", activity);
+#else
+        return true;
 #endif
     }
 
