@@ -162,6 +162,7 @@ public class QuestScreenController : MonoBehaviour
         {
             "데이터 보완형" => QuestType.DataFill,
             "삶 개선형" => QuestType.LifeImprove,
+            "운동" => QuestType.LifeImprove,
             "일일"  => QuestType.Daily,
             _       => QuestType.DataFill,
         };

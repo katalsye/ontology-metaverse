@@ -98,6 +98,10 @@ public static class QuestAnswerSubmitter
         if (title.EndsWith("어땠어?"))
             return new AnswerMapping { Predicate = "review", LookupPredicate = null };
 
+        // stress_music_pattern / complete_stress_reason: "오늘 힘든 일 있었어?" → targetEntity = Activity/MusicListening
+        if (title == "오늘 힘든 일 있었어?")
+            return new AnswerMapping { Predicate = "reason", LookupPredicate = null };
+
         // missing_emotion: "오늘 [activityType] 어떤 기분이었어?" → targetValue = activityType
         if (title.EndsWith("어떤 기분이었어?"))
             return new AnswerMapping { Predicate = "emotion", LookupPredicate = "activityType" };

@@ -22,12 +22,14 @@ namespace OntologyMetaverse.Testing
     ///      - "2. emotion 테스트 퀘스트 추가": targetValue 경로 테스트
     ///        (SQLite에 activityType="산책" 트리플을 먼저 심어두고,
     ///         답변 제출 시 그 트리플의 subject를 찾아 prod:emotion을 붙임)
+    ///      - "3. stress reason 테스트 퀘스트 추가": targetEntityUri 경로 테스트
+    ///        (답변 제출 시 targetEntityUri를 subject로 바로 사용, prod:reason을 붙임)
     ///   4. 앱에서 퀘스트 화면 → 진행 중 탭 → 새로 추가된 퀘스트 열어서 답변 제출
     ///   5. 확인:
     ///      - answer-feedback에 성공 메시지 표시
     ///      - SQLite triples 테이블에 새 행 (Synced 0→1)
     ///      - Firestore temp_triples/{uid}/items에 새 문서
-    ///   6. "3. 테스트 퀘스트 정리"로 quests/{uid}에서 시드 데이터 제거
+    ///   6. "4. 테스트 퀘스트 정리"로 quests/{uid}에서 시드 데이터 제거
     ///
     /// 주의: temp_triples에 올라간 데이터는 다음 batch 추론에서 실제 그래프에 반영됨.
     /// 운영 계정이 아닌 테스트 계정으로 실행 권장.
@@ -89,7 +91,26 @@ namespace OntologyMetaverse.Testing
             });
         }
 
-        [ContextMenu("3. 테스트 퀘스트 정리 (Firestore + SQLite)")]
+        [ContextMenu("3. stress reason 테스트 퀘스트 추가 (targetEntityUri)")]
+        public void SeedStressReasonQuest()
+        {
+            string actUri = OntologyBaseUri + "act_test_stress";
+
+            AddQuest(new Dictionary<string, object>
+            {
+                { "title", TestTitlePrefix + "오늘 힘든 일 있었어?" },
+                { "questType", "데이터 보완형" },
+                { "rewardAmount", 30 },
+                { "isCompleted", false },
+                { "createdAt", DateTime.UtcNow.ToString("o") },
+                { "completedAt", "" },
+                { "targetEntityUri", actUri },
+                { "targetValue", "" },
+                { "claimed", false },
+            });
+        }
+
+        [ContextMenu("4. 테스트 퀘스트 정리 (Firestore + SQLite)")]
         public void CleanupSeedData()
         {
             string uid = FirebaseAuth.DefaultInstance.CurrentUser?.UserId;
