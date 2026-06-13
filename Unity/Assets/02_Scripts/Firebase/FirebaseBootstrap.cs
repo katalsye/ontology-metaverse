@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Firebase;
+using Firebase.Crashlytics;
 using Firebase.Extensions;
 using Firebase.Firestore;
 using UnityEngine;
@@ -65,6 +66,7 @@ public static class FirebaseBootstrap
             if (task.IsFaulted)
             {
                 Debug.LogError("[FirebaseBootstrap] 초기화 실패: " + task.Exception);
+                Crashlytics.LogException(task.Exception);
                 initStarted = false; // 재시도 허용
                 return;
             }
@@ -72,6 +74,7 @@ public static class FirebaseBootstrap
             if (task.Result != DependencyStatus.Available)
             {
                 Debug.LogError("[FirebaseBootstrap] 의존성 미충족: " + task.Result);
+                Crashlytics.LogException(new Exception("Firebase 의존성 미충족: " + task.Result));
                 initStarted = false; // 재시도 허용
                 return;
             }
@@ -106,7 +109,11 @@ public static class FirebaseBootstrap
             foreach (var cb in toRun)
             {
                 try { cb(); }
-                catch (Exception ex) { Debug.LogError("[FirebaseBootstrap] 콜백 예외: " + ex); }
+                catch (Exception ex)
+                {
+                    Debug.LogError("[FirebaseBootstrap] 콜백 예외: " + ex);
+                    Crashlytics.LogException(ex);
+                }
             }
         });
     }

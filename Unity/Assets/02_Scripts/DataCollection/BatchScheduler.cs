@@ -127,6 +127,12 @@ namespace OntologyMetaverse.DataCollection
 
             Debug.Log("[BatchScheduler] === 자동화 시작 ===");
 
+            // 온보딩 미완료 시 LoginFlow의 권한 토글을 누르기 전에
+            // 여기서 시스템 권한 팝업/OAuth 동의 화면이 먼저 떠버리는 것 방지.
+            // LoginFlowScreenController.OnStartClicked()가 onboarding_complete를 설정할 때까지 대기.
+            while (!PlayerPrefs.HasKey("onboarding_complete"))
+                yield return new WaitForSeconds(0.5f);
+
             // 1. Collectors 초기화 (권한 요청 + 센서 등록)
             if (locationCollector != null)
             {
