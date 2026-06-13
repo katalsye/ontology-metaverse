@@ -111,6 +111,10 @@ namespace OntologyMetaverse.DataCollection
         public RawDataToTripleConverter converter;
         public TempTripleManager tempTripleManager;
 
+        [Header("raw_data Retention (일)")]
+        [Tooltip("이 일수보다 오래된 Processed=1 raw_data 자동 삭제. 7일 권장. 0이면 비활성 (발표 데모용).")]
+        public int rawDataRetentionDays = 7;
+
         // ─────────────────────────────────────────────────────
 
         private IEnumerator Start()
@@ -145,6 +149,23 @@ namespace OntologyMetaverse.DataCollection
             {
                 // PACKAGE_USAGE_STATS는 코루틴 대기 불필요 (한 번 체크 + 설정 화면 오픈)
                 appUsageCollector.EnsurePermission();
+            }
+
+            // Health Connect · Calendar · Spotify는 첫 cycle에 동시 발사하면 화면이 서로 가려서
+            // 사용자가 권한을 못 본 채 묻혀버린다 (실제로 그 버그 재현됨). 여기서 직렬로 받아둔다.
+            if (healthCollector != null)
+            {
+                yield return StartCoroutine(healthCollector.EnsurePermissionInteractive());
+            }
+
+            if (calendarCollector != null)
+            {
+                yield return StartCoroutine(calendarCollector.EnsurePermissionInteractive());
+            }
+
+            if (spotifyCollector != null)
+            {
+                yield return StartCoroutine(spotifyCollector.EnsureAuthInteractive());
             }
 
             // 2. 센서 안정화 대기
@@ -235,12 +256,20 @@ namespace OntologyMetaverse.DataCollection
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Geocoding 실패: {e.Message}"); }
 
             // Health Connect는 30분 간격. 24h 윈도우라 자주 호출할 필요 없음.
+            // 권한 없으면 호출 자체 스킵 + _last 업데이트 안 함 → 다음 cycle에서 재시도 (예전엔 실패해도 30분 잠겨버렸음).
             try
             {
                 if (healthCollector != null && (System.DateTime.UtcNow - _lastHealthCollectedAt).TotalMinutes >= healthIntervalMinutes)
                 {
-                    StartCoroutine(healthCollector.CollectHealthData());
-                    _lastHealthCollectedAt = System.DateTime.UtcNow;
+                    if (healthCollector.HasPermission())
+                    {
+                        StartCoroutine(healthCollector.CollectHealthData());
+                        _lastHealthCollectedAt = System.DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        Debug.Log("[BatchScheduler] Health 권한 미허용 → 수집 스킵 (다음 cycle 재시도)");
+                    }
                 }
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Health 수집 실패: {e.Message}"); }
@@ -250,8 +279,15 @@ namespace OntologyMetaverse.DataCollection
             {
                 if (calendarCollector != null && (System.DateTime.UtcNow - _lastCalendarCollectedAt).TotalMinutes >= calendarIntervalMinutes)
                 {
-                    StartCoroutine(calendarCollector.CollectCalendarEvents());
-                    _lastCalendarCollectedAt = System.DateTime.UtcNow;
+                    if (calendarCollector.HasPermission())
+                    {
+                        StartCoroutine(calendarCollector.CollectCalendarEvents());
+                        _lastCalendarCollectedAt = System.DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        Debug.Log("[BatchScheduler] Calendar 권한 미허용 → 수집 스킵 (다음 cycle 재시도)");
+                    }
                 }
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Calendar 수집 실패: {e.Message}"); }
@@ -261,8 +297,15 @@ namespace OntologyMetaverse.DataCollection
             {
                 if (spotifyCollector != null && (System.DateTime.UtcNow - _lastSpotifyCollectedAt).TotalMinutes >= spotifyIntervalMinutes)
                 {
-                    StartCoroutine(spotifyCollector.CollectRecentTracks());
-                    _lastSpotifyCollectedAt = System.DateTime.UtcNow;
+                    if (spotifyCollector.HasAuth())
+                    {
+                        StartCoroutine(spotifyCollector.CollectRecentTracks());
+                        _lastSpotifyCollectedAt = System.DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        Debug.Log("[BatchScheduler] Spotify 미인증 → 수집 스킵 (다음 cycle 재시도)");
+                    }
                 }
             }
             catch (System.Exception e) { Debug.LogError($"[BatchScheduler] Spotify 수집 실패: {e.Message}"); }
@@ -303,6 +346,16 @@ namespace OntologyMetaverse.DataCollection
                 onSuccess: cnt => Debug.Log($"[BatchScheduler] ✅✅ Firestore 업로드 성공: {cnt}건"),
                 onFailure: msg => Debug.LogError($"[BatchScheduler] ❌ Firestore 업로드 실패: {msg}")
             );
+
+            // batch 끝나면 처리 완료된 오래된 raw_data 정리.
+            // Processed=0 (변환 안 됨) · synced=0 트리플 원본은 안 건드림.
+            if (rawDataRetentionDays > 0)
+            {
+                int deleted = OntologyMetaverse.DataCollection.SQLite.SQLiteManager.Instance
+                    .CleanupProcessedRawData(rawDataRetentionDays);
+                if (deleted > 0)
+                    Debug.Log($"[BatchScheduler] raw_data retention: {deleted}건 정리 ({rawDataRetentionDays}일 이전)");
+            }
         }
     }
 }

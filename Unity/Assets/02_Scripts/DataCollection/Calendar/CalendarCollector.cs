@@ -45,6 +45,49 @@ namespace OntologyMetaverse.DataCollection.Calendar
         private bool _permissionAlreadyRequested = false;
 
         /// <summary>
+        /// READ_CALENDAR 권한 부여 상태.
+        /// BatchScheduler가 매 cycle 권한 체크해서 미허용이면 수집 자체를 스킵.
+        /// </summary>
+        public bool HasPermission() => CalendarBridge.HasPermission();
+
+        /// <summary>
+        /// 초기화 단계에서 권한만 받는 메서드. BatchScheduler.Start()가 직렬로 호출.
+        /// Health Connect · Spotify OAuth와 같은 시점에 동시 발사되지 않게 분리.
+        ///
+        /// 동작:
+        ///   - 이미 권한 있음 → 즉시 yield break
+        ///   - 권한 없음 → 시스템 권한 팝업 띄우고 사용자 응답 polling (최대 maxWaitSeconds)
+        ///   - 타임아웃/거부 → 경고만 남기고 진행
+        /// </summary>
+        public IEnumerator EnsurePermissionInteractive()
+        {
+            if (CalendarBridge.HasPermission())
+            {
+                Debug.Log("[CalendarCollector] 권한 이미 있음 → 요청 스킵");
+                yield break;
+            }
+
+            Debug.Log("[CalendarCollector] READ_CALENDAR 권한 요청");
+            Permission.RequestUserPermission(PERMISSION);
+            _permissionAlreadyRequested = true;
+
+            const float maxWaitSeconds = 30f;
+            const float pollIntervalSeconds = 1f;
+            float elapsed = 0f;
+            while (elapsed < maxWaitSeconds)
+            {
+                yield return new WaitForSeconds(pollIntervalSeconds);
+                elapsed += pollIntervalSeconds;
+                if (CalendarBridge.HasPermission())
+                {
+                    Debug.Log($"[CalendarCollector] 권한 부여 확인됨 ({elapsed:F0}s)");
+                    yield break;
+                }
+            }
+            Debug.LogWarning($"[CalendarCollector] {maxWaitSeconds:F0}s 내 권한 부여 안 됨 → 다음 cycle 재시도");
+        }
+
+        /// <summary>
         /// 한 번의 수집 사이클. BatchScheduler가 주기적으로 호출.
         /// </summary>
         public IEnumerator CollectCalendarEvents()
