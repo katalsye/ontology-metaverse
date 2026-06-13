@@ -23,6 +23,13 @@ public class CurrencyBarController : MonoBehaviour
 
     public void Refresh()
     {
+        if (RewardManager.Instance == null)
+        {
+            coinLabel.text = "0";
+            gemLabel.text = "0";
+            return;
+        }
+
         // 코인: Firestore rewards/{uid}.Amount
         RewardManager.Instance.GetCurrency(
             onSuccess: coins => coinLabel.text = coins.ToString(),

@@ -35,7 +35,7 @@ public class OnboardingScreenController : MonoBehaviour
     private VisualElement[] dots;
     private int currentSlide = 0;
     private const int TOTAL_SLIDES = 4;
-    private const int DOWNLOAD_SLIDE = 3; // 마지막 슬라이드가 다운로드
+    private const int DOWNLOAD_SLIDE = 3;
 
     private bool isDownloading = false;
     private bool downloadComplete = false;
@@ -81,7 +81,6 @@ public class OnboardingScreenController : MonoBehaviour
     {
         if (currentSlide == DOWNLOAD_SLIDE)
         {
-            // 다운로드 슬라이드에서 버튼 클릭
             if (downloadComplete)
             {
                 NavigateToLogin();
@@ -93,7 +92,6 @@ public class OnboardingScreenController : MonoBehaviour
             return;
         }
 
-        // 다음 슬라이드로
         if (currentSlide < TOTAL_SLIDES - 1)
         {
             ShowSlide(currentSlide + 1);
@@ -102,20 +100,15 @@ public class OnboardingScreenController : MonoBehaviour
 
     private void OnSkipClicked()
     {
-        // 건너뛰기 → 바로 다운로드 슬라이드로
         ShowSlide(DOWNLOAD_SLIDE);
     }
 
-    /// <summary>
-    /// 특정 슬라이드 표시 (초기 호출 또는 전환 중에는 즉시 적용)
-    /// </summary>
     private void ShowSlide(int index)
     {
         if (_isTransitioning) return;
 
         if (currentSlide == index)
         {
-            // 초기 세팅: 애니메이션 없이 바로 표시
             slides[index].RemoveFromClassList("hidden");
             slides[index].AddToClassList("active");
             dots[index].AddToClassList("dot--active");
@@ -165,22 +158,17 @@ public class OnboardingScreenController : MonoBehaviour
         _isTransitioning = false;
     }
 
-    /// <summary>
-    /// 슬라이드에 따라 버튼 상태 변경
-    /// </summary>
     private void UpdateButtons()
     {
         if (currentSlide == DOWNLOAD_SLIDE)
         {
-            // 다운로드 슬라이드
-            btnNext.text = isDownloading ? "다운로드 중..." : 
+            btnNext.text = isDownloading ? "다운로드 중..." :
                            downloadComplete ? "시작하기" : "다운로드 시작";
             btnNext.SetEnabled(!isDownloading);
             btnSkip.style.display = DisplayStyle.None;
         }
         else if (currentSlide == TOTAL_SLIDES - 2)
         {
-            // 마지막 소개 슬라이드
             btnNext.text = "다음";
             btnSkip.style.display = DisplayStyle.None;
         }
@@ -250,7 +238,7 @@ public class OnboardingScreenController : MonoBehaviour
 
         if (www.result != UnityWebRequest.Result.Success)
         {
-            if (File.Exists(destPath)) File.Delete(destPath); // 불완전한 파일 제거
+            if (File.Exists(destPath)) File.Delete(destPath);
             OnModelDownloadFailed(www.error);
             yield break;
         }
