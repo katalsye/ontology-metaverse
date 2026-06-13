@@ -54,6 +54,12 @@ namespace OntologyMetaverse.DataCollection.Spotify
                  "아티스트 장르를 Last.fm으로 조회. 비우면 genre 없이 수집(음악 추론 규칙 비활성).")]
         public string lastFmApiKey = "";
 
+        /// <summary>
+        /// _AutoCollect(MainScene)에 붙어있는 단일 인스턴스.
+        /// LoginFlowScreenController 등 UI에서 OAuth 트리거용으로 참조.
+        /// </summary>
+        public static SpotifyCollector Instance { get; private set; }
+
         private SpotifyAuthManager _auth;
         private SpotifyApiClient _api;
         private LastFmGenreClient _lastFm;
@@ -64,6 +70,7 @@ namespace OntologyMetaverse.DataCollection.Spotify
 
         private void Awake()
         {
+            Instance = this;
             _auth = new SpotifyAuthManager(clientId, redirectUri, scopes);
             _api = new SpotifyApiClient();
             _lastFm = new LastFmGenreClient(lastFmApiKey);

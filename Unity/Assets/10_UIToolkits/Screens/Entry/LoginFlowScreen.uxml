@@ -94,6 +94,16 @@
                     </ui:VisualElement>
                     <ui:VisualElement name="toggle-calendar" class="toggle" />
                 </ui:VisualElement>
+
+                <!-- Spotify -->
+                <ui:VisualElement name="perm-spotify" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--spotify" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="Spotify" class="perm-name" />
+                        <ui:Label text="듣는 음악으로 취향과 무드를 분석해요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-spotify" class="toggle" />
+                </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:Label text="나중에 설정에서 변경할 수 있어요" class="text-tiny perm-hint" />

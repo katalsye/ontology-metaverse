@@ -4,6 +4,7 @@ using UnityEngine.Android;
 using System.Collections;
 using System.Collections.Generic;
 using OntologyMetaverse.DataCollection.Health;
+using OntologyMetaverse.DataCollection.Spotify;
 
 /// <summary>
 /// 1-3. LoginFlowScreen 컨트롤러
@@ -36,6 +37,7 @@ public class LoginFlowScreenController : MonoBehaviour
         { "health", false },
         { "usage", false },
         { "calendar", false },
+        { "spotify", false },
     };
 
     // 프로필
@@ -69,6 +71,7 @@ public class LoginFlowScreenController : MonoBehaviour
         SetupToggle("toggle-health", "health");
         SetupToggle("toggle-usage", "usage");
         SetupToggle("toggle-calendar", "calendar");
+        SetupToggle("toggle-spotify", "spotify");
 
         // 프로필
         inputNickname = root.Q<TextField>("input-nickname");
@@ -207,7 +210,8 @@ public class LoginFlowScreenController : MonoBehaviour
             $"위치={permissions["location"]}, " +
             $"Health={permissions["health"]}, " +
             $"사용시간={permissions["usage"]}, " +
-            $"캘린더={permissions["calendar"]}");
+            $"캘린더={permissions["calendar"]}, " +
+            $"Spotify={permissions["spotify"]}");
 
         // 권한 설정 저장
         foreach (var kv in permissions)
@@ -226,6 +230,7 @@ public class LoginFlowScreenController : MonoBehaviour
     /// - Health: ACTIVITY_RECOGNITION(걸음수 센서 fallback) + Health Connect 권한 화면
     /// - 사용시간: PACKAGE_USAGE_STATS (런타임 권한이 아니라 시스템 설정에서 직접 허용)
     /// - 캘린더: READ_CALENDAR
+    /// - Spotify: OAuth 브라우저 인증 (권한 동의 화면)
     /// </summary>
     private IEnumerator RequestPermissionFor(string permKey)
     {
@@ -250,6 +255,13 @@ public class LoginFlowScreenController : MonoBehaviour
 
             case "calendar":
                 yield return RequestRuntimePermission("android.permission.READ_CALENDAR");
+                break;
+
+            case "spotify":
+                if (SpotifyCollector.Instance != null)
+                    yield return SpotifyCollector.Instance.EnsureAuthInteractive();
+                else
+                    Debug.LogWarning("[LoginFlow] SpotifyCollector.Instance가 없음 (MainScene _AutoCollect 확인 필요)");
                 break;
         }
     }
