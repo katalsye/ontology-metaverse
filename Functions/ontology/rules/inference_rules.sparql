@@ -137,6 +137,37 @@ WHERE {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Rule 3-B — ExerciseQuestGeneration: 저보행일 기반 운동 퀘스트 자동 생성
+# StepCount 8000보 미만인 날 → questType="운동" 퀘스트 자동 생성
+# Rule 2 (burnout_warning)가 이 퀘스트 3건 미완료를 WHERE 조건으로 사용
+# 중복 방지: prod:targetValue에 날짜 문자열 저장 → 같은 날 재생성 불가
+# ══════════════════════════════════════════════════════════════════════════════
+# RULE_ID: exercise_quest_generation
+CONSTRUCT {
+    _:q a prod:Quest ;
+        prod:title ?title ;
+        prod:questType "운동" ;
+        prod:rewardAmount 50 ;
+        prod:isCompleted false ;
+        prod:targetValue ?dateStr .
+    ?user prod:receivesQuest _:q .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:hasStepCount ?sc .
+    ?sc prod:count ?steps ;
+        prod:date ?date .
+    FILTER (?steps < 8000)
+    BIND(STR(?date) AS ?dateStr)
+    BIND(CONCAT("오늘 8,000보 걸어볼까요? [", ?dateStr, "]") AS ?title)
+    FILTER NOT EXISTS {
+        ?user prod:receivesQuest ?existing .
+        ?existing prod:questType "운동" ;
+                  prod:targetValue ?dateStr .
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Rule 4 — PlaceHabit + RoomObject 추가
 # 같은 placeType 카테고리 주 3회 이상 방문
 # placeType → objectType 매핑:
@@ -286,6 +317,10 @@ WHERE {
 # Rule 6-C — missing_purpose (의도 빈 노드)
 # 같은 장소 3회 이상 방문했는데 purpose 속성 없음
 # → "[장소]에 자주 가는 이유가 있어?" 퀘스트 생성
+# Fix: 중첩 FILTER EXISTS { ... FILTER NOT EXISTS {...} } 패턴을 평탄화.
+#      RDFLib SPARQL 엔진이 중첩 EXISTS 안쪽 ?place/?user 바인딩을 전달하지 못하는
+#      한계를 우회. purpose 없는 ?loc을 외부 WHERE에서 직접 매칭 후 COUNT 서브쿼리를
+#      적용하는 방식으로 재작성. (Issue #125)
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE_ID: missing_purpose
 CONSTRUCT {
@@ -300,23 +335,21 @@ CONSTRUCT {
 WHERE {
     ?user a prod:User .
 
-    # 3회 이상 방문한 장소
+    # purpose 없는 방문 기록을 직접 매칭 (중첩 EXISTS 우회)
+    ?user prod:hasLocation ?loc .
+    ?loc  prod:placeName   ?place .
+    FILTER NOT EXISTS { ?loc prod:purpose ?p }
+
+    # 같은 장소 3회 이상 방문 (전체 방문 횟수 집계)
     {
-        SELECT ?user ?place (COUNT(?loc) AS ?visitCnt)
+        SELECT ?user ?place (COUNT(?loc3) AS ?visitCnt)
         WHERE {
-            ?user prod:hasLocation ?loc .
-            ?loc  prod:placeName   ?place .
+            ?user prod:hasLocation ?loc3 .
+            ?loc3 prod:placeName   ?place .
         }
         GROUP BY ?user ?place
     }
     FILTER (?visitCnt >= 3)
-
-    # 해당 장소의 방문 기록 중 purpose 없는 것이 하나라도 존재
-    FILTER EXISTS {
-        ?user prod:hasLocation ?loc2 .
-        ?loc2 prod:placeName ?place .
-        FILTER NOT EXISTS { ?loc2 prod:purpose ?p }
-    }
 
     BIND(COALESCE(STR(?place), "자주 가는 곳") AS ?displayPlace2)
     BIND(CONCAT(?displayPlace2, "에 자주 가는 이유가 있어?") AS ?questTitle)

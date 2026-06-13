@@ -44,6 +44,7 @@ RULE_ORDER = [
     "fatigue_risk",             # Rule 1
     "burnout_warning",          # Rule 2  (Rule 1 결과 의존)
     "sedentary_pattern",        # Rule 3
+    "exercise_quest_generation", # Rule 3-B (저보행일 운동 퀘스트 — Rule 2 의존성 공급)
     "place_habit",              # Rule 4
     "late_caffeine_sleep_quality",  # Rule 5
     "missing_companion",        # Rule 6

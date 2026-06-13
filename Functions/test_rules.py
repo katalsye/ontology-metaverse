@@ -1,6 +1,6 @@
 """
 test_rules.py
-추론 규칙 단위 테스트 — 37개 규칙 전체 + 엣지케이스
+추론 규칙 단위 테스트 — 38개 규칙 전체 + 엣지케이스
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -27,6 +27,7 @@ SKIP = "\033[93mSKIP\033[0m"
 
 ALL_RULE_IDS = [
     "fatigue_risk", "burnout_warning", "sedentary_pattern",
+    "exercise_quest_generation",
     "place_habit", "late_caffeine_sleep_quality", "missing_companion",
     "missing_emotion", "missing_purpose", "missing_music_mood",
     "missing_sleep_cause", "missing_event_review",
@@ -135,12 +136,12 @@ def _add_cafe_location(g: Graph, user: URIRef, uid: str,
 # ── Test 1: rule_parser ───────────────────────────────────────────────────────
 
 def test_rule_parser(rules: dict[str, str]) -> bool:
-    print("\n[Test P] 규칙 파서 — 37개 RULE_ID 추출 확인")
+    print("\n[Test P] 규칙 파서 — 38개 RULE_ID 추출 확인")
     expected = set(ALL_RULE_IDS)
     extracted = set(rules.keys())
     missing = sorted(expected - extracted)
     extra   = sorted(extracted - expected)
-    ok = check(f"37개 규칙 추출됨 (실제 {len(extracted)}개)",
+    ok = check(f"38개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
     assert ok
