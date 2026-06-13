@@ -20,7 +20,7 @@
             <ui:VisualElement name="slide-0" class="slide active">
                 <ui:VisualElement name="slide-0-illust" class="slide-illust" />
                 <ui:Label text="자동으로 채워지는 일상" class="slide-title" />
-                <ui:Label text="갤러리, 위치, 건강 데이터를&#10;별도 입력 없이 자동으로 수집해요"
+                <ui:Label text="갤러리·위치·건강·캘린더, 음악(Spotify)까지&#10;별도 입력 없이 자동으로 수집해요"
                           class="slide-desc" />
             </ui:VisualElement>
 
@@ -73,7 +73,7 @@
             <!-- 다음 / 시작 버튼 -->
             <ui:Button name="btn-next" text="다음" class="btn btn--md btn--rose btn--full" />
 
-            <!-- 건너뛰기 (마지막 슬라이드에서는 숨김) -->
+            <!-- 건너뛰기 (마지막 슬라이드에서는 btn-skip--hidden 토글로 숨김) -->
             <ui:Button name="btn-skip" text="건너뛰기" class="btn-skip" />
 
         </ui:VisualElement>

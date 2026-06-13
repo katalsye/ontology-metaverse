@@ -17,19 +17,26 @@
     position: absolute;
     width: 100%;
     height: 100%;
+    display: flex;                 /* 항상 레이아웃 유지 → 페이드 가능 */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 32px;
+    /* active/hidden 전환 시 opacity 페이드 */
+    transition-property: opacity;
+    transition-duration: 250ms;
 }
 
+/* 컨트롤러가 active / hidden 클래스를 스왑합니다.
+ * display:none 대신 visibility + opacity 를 써서 페이드가 실제로 재생됩니다.
+ * (position:absolute 로 슬라이드가 겹쳐 쌓여 있어 visibility:hidden 으로 입력/표시 차단) */
 .slide.active {
-    display: flex;
+    visibility: visible;
     opacity: 1;
 }
 
 .slide.hidden {
-    display: none;
+    visibility: hidden;
     opacity: 0;
 }
 
@@ -61,8 +68,9 @@
     font-size: var(--fs-body-sm);
     color: var(--ink-muted);
     -unity-text-align: middle-center;
-    -unity-word-wrap: true;
-    /* line-height: Unity 6에서 -unity-paragraph-spacing으로 대체 가능 */
+    /* Unity 6: -unity-word-wrap 는 deprecated → white-space 사용.
+     * normal 이면 자동 줄바꿈 + &#10; 명시적 줄바꿈 모두 렌더됨. */
+    white-space: normal;
 }
 
 /* ── 다운로드 영역 (슬라이드 4) ── */
@@ -142,4 +150,9 @@
 
 .btn-skip:hover {
     color: var(--ink-muted);
+}
+
+/* 마지막 슬라이드에서 컨트롤러가 토글 (btn-skip 에 add/remove) */
+.btn-skip--hidden {
+    display: none;
 }

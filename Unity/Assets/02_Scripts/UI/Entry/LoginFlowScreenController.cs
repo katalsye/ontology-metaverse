@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.Android;
+using System.Collections;
 using System.Collections.Generic;
+using OntologyMetaverse.DataCollection.Health;
 
 /// <summary>
 /// 1-3. LoginFlowScreen 컨트롤러
@@ -32,6 +35,7 @@ public class LoginFlowScreenController : MonoBehaviour
         { "location", false },
         { "health", false },
         { "usage", false },
+        { "calendar", false },
     };
 
     // 프로필
@@ -64,6 +68,7 @@ public class LoginFlowScreenController : MonoBehaviour
         SetupToggle("toggle-location", "location");
         SetupToggle("toggle-health", "health");
         SetupToggle("toggle-usage", "usage");
+        SetupToggle("toggle-calendar", "calendar");
 
         // 프로필
         inputNickname = root.Q<TextField>("input-nickname");
@@ -128,6 +133,7 @@ public class LoginFlowScreenController : MonoBehaviour
             {
                 toggle.AddToClassList("toggle--on");
                 thumb.style.left = 23; // 48 - 22 - 3
+                StartCoroutine(RequestPermissionFor(permKey));
             }
             else
             {
@@ -191,6 +197,8 @@ public class LoginFlowScreenController : MonoBehaviour
 
     /// <summary>
     /// 권한 요청 → 프로필 설정으로
+    /// 실제 권한 요청은 토글을 켤 때 바로 트리거되므로(RequestPermissionFor),
+    /// 여기서는 최종 설정값 저장 후 다음 단계로 이동만 한다.
     /// </summary>
     private void OnPermissionsNext()
     {
@@ -198,18 +206,102 @@ public class LoginFlowScreenController : MonoBehaviour
             $"갤러리={permissions["gallery"]}, " +
             $"위치={permissions["location"]}, " +
             $"Health={permissions["health"]}, " +
-            $"사용시간={permissions["usage"]}");
-
-        // TODO: 실제 Android 권한 요청 호출
-        // AndroidPermissionHelper.RequestPermissions(...)
+            $"사용시간={permissions["usage"]}, " +
+            $"캘린더={permissions["calendar"]}");
 
         // 권한 설정 저장
         foreach (var kv in permissions)
         {
             PlayerPrefs.SetInt($"perm_{kv.Key}", kv.Value ? 1 : 0);
         }
+        PlayerPrefs.Save();
 
         GoToStep(2);
+    }
+
+    /// <summary>
+    /// 토글이 켜질 때 해당 항목의 실제 권한 다이얼로그/설정 화면을 바로 띈다.
+    /// - 갤러리: READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE
+    /// - 위치: FineLocation
+    /// - Health: ACTIVITY_RECOGNITION(걸음수 센서 fallback) + Health Connect 권한 화면
+    /// - 사용시간: PACKAGE_USAGE_STATS (런타임 권한이 아니라 시스템 설정에서 직접 허용)
+    /// - 캘린더: READ_CALENDAR
+    /// </summary>
+    private IEnumerator RequestPermissionFor(string permKey)
+    {
+        switch (permKey)
+        {
+            case "gallery":
+                yield return RequestRuntimePermission("android.permission.READ_MEDIA_IMAGES", Permission.ExternalStorageRead);
+                break;
+
+            case "location":
+                yield return RequestRuntimePermission(Permission.FineLocation);
+                break;
+
+            case "health":
+                yield return RequestRuntimePermission("android.permission.ACTIVITY_RECOGNITION");
+                HealthConnectBridge.OpenHealthConnectSettings();
+                break;
+
+            case "usage":
+                OpenAppUsageSettingsIfNeeded();
+                yield break;
+
+            case "calendar":
+                yield return RequestRuntimePermission("android.permission.READ_CALENDAR");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// candidates 중 하나라도 이미 허용돼 있으면 스킵, 아니면 첫 후보 권한을 요청하고
+    /// 사용자 응답을 최대 8초 대기.
+    /// </summary>
+    private IEnumerator RequestRuntimePermission(params string[] candidates)
+    {
+#if UNITY_ANDROID
+        foreach (var p in candidates)
+        {
+            if (Permission.HasUserAuthorizedPermission(p))
+                yield break;
+        }
+
+        Debug.Log($"[LoginFlow] 권한 요청: {candidates[0]}");
+        Permission.RequestUserPermission(candidates[0]);
+
+        float waited = 0f;
+        while (waited < 8f)
+        {
+            yield return new WaitForSeconds(0.3f);
+            waited += 0.3f;
+            foreach (var p in candidates)
+            {
+                if (Permission.HasUserAuthorizedPermission(p))
+                    yield break;
+            }
+        }
+#else
+        yield break;
+#endif
+    }
+
+    /// <summary>
+    /// PACKAGE_USAGE_STATS 권한 확인 후, 없으면 사용 기록 액세스 설정 화면을 연다.
+    /// </summary>
+    private void OpenAppUsageSettingsIfNeeded()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        using var cls = new AndroidJavaClass("com.ontology.metaverse.appusage.AppUsageHelper");
+        using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+
+        if (!cls.CallStatic<bool>("hasPermission", activity))
+        {
+            Debug.Log("[LoginFlow] 사용 기록 액세스 설정 화면 오픈");
+            cls.CallStatic("openSettings", activity);
+        }
+#endif
     }
 
     /// <summary>

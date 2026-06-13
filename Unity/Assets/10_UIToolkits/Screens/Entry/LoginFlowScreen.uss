@@ -136,6 +136,7 @@
 .perm-icon--location { background-color: var(--mint-soft); }
 .perm-icon--health   { background-color: var(--rose-soft); }
 .perm-icon--usage    { background-color: var(--sky-soft); }
+.perm-icon--calendar { background-color: var(--butter-soft); }
 
 .perm-text {
     flex-grow: 1;

@@ -84,6 +84,16 @@
                     </ui:VisualElement>
                     <ui:VisualElement name="toggle-usage" class="toggle" />
                 </ui:VisualElement>
+
+                <!-- 캘린더 -->
+                <ui:VisualElement name="perm-calendar" class="perm-row row">
+                    <ui:VisualElement class="perm-icon perm-icon--calendar" />
+                    <ui:VisualElement class="perm-text col">
+                        <ui:Label text="캘린더" class="perm-name" />
+                        <ui:Label text="일정 기반으로 활동을 추론해요" class="perm-desc" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="toggle-calendar" class="toggle" />
+                </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:Label text="나중에 설정에서 변경할 수 있어요" class="text-tiny perm-hint" />
