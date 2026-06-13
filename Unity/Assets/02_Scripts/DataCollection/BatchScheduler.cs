@@ -111,6 +111,10 @@ namespace OntologyMetaverse.DataCollection
         public RawDataToTripleConverter converter;
         public TempTripleManager tempTripleManager;
 
+        [Header("raw_data Retention (일)")]
+        [Tooltip("이 일수보다 오래된 Processed=1 raw_data 자동 삭제. 7일 권장. 0이면 비활성 (발표 데모용).")]
+        public int rawDataRetentionDays = 7;
+
         // ─────────────────────────────────────────────────────
 
         private IEnumerator Start()
@@ -342,6 +346,16 @@ namespace OntologyMetaverse.DataCollection
                 onSuccess: cnt => Debug.Log($"[BatchScheduler] ✅✅ Firestore 업로드 성공: {cnt}건"),
                 onFailure: msg => Debug.LogError($"[BatchScheduler] ❌ Firestore 업로드 실패: {msg}")
             );
+
+            // batch 끝나면 처리 완료된 오래된 raw_data 정리.
+            // Processed=0 (변환 안 됨) · synced=0 트리플 원본은 안 건드림.
+            if (rawDataRetentionDays > 0)
+            {
+                int deleted = OntologyMetaverse.DataCollection.SQLite.SQLiteManager.Instance
+                    .CleanupProcessedRawData(rawDataRetentionDays);
+                if (deleted > 0)
+                    Debug.Log($"[BatchScheduler] raw_data retention: {deleted}건 정리 ({rawDataRetentionDays}일 이전)");
+            }
         }
     }
 }
