@@ -51,6 +51,10 @@ public class BottomNavController : MonoBehaviour
         // ScreenManager.Awake()가 모든 오브젝트의 Awake 단계에서 Instance를 설정하므로
         // Start 시점에는 항상 준비되어 있음 (OnEnable 시점은 실행 순서에 따라 null일 수 있음)
         ScreenManager.Instance.OnScreenChanged += OnScreenChanged;
+
+        // ScreenManager.Start()가 BottomNavController.Start()보다 먼저 실행되면
+        // 최초 진입 화면의 OnScreenChanged 이벤트를 구독 전에 놓치므로, 현재 화면 기준으로 즉시 동기화
+        OnScreenChanged(ScreenManager.Instance.GetCurrentScreen());
     }
 
     private void OnDisable()

@@ -19,12 +19,16 @@ public class MyRoomScreenController : MonoBehaviour
 
     private const string RoomScene = "3DRoomScene";
 
+    private Button settingsButton;
+
     private void OnEnable()
     {
         if (uiDocument != null)
         {
             var root = uiDocument.rootVisualElement;
-            root.Q<Button>("btn-settings").clicked += OnSettingsClicked;
+            settingsButton = root?.Q<Button>("btn-settings");
+            if (settingsButton != null)
+                settingsButton.clicked += OnSettingsClicked;
         }
 
         if (mainSceneCamera != null)
@@ -46,8 +50,8 @@ public class MyRoomScreenController : MonoBehaviour
 
     private void OnDisable()
     {
-        if (uiDocument != null)
-            uiDocument.rootVisualElement.Q<Button>("btn-settings").clicked -= OnSettingsClicked;
+        if (settingsButton != null)
+            settingsButton.clicked -= OnSettingsClicked;
 
         if (QuestManager.Instance != null)
             QuestManager.Instance.OnUnreadQuestCountChanged -= OnUnreadQuestChanged;
