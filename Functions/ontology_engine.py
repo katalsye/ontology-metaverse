@@ -45,6 +45,8 @@ RULE_ORDER = [
     "burnout_warning",          # Rule 2  (Rule 1 결과 의존)
     "sedentary_pattern",        # Rule 3
     "exercise_quest_generation", # Rule 3-B (저보행일 운동 퀘스트 — Rule 2 의존성 공급)
+    "complete_sedentary_pattern",  # A2-1: 30분 산책하기 완료 (StepCount >= 6000)
+    "complete_exercise_quest",     # A2-2: 운동 퀘스트 완료 (StepCount >= 8000, 날짜 매칭)
     "place_habit",              # Rule 4
     "late_caffeine_sleep_quality",  # Rule 5
     "missing_companion",        # Rule 6
@@ -62,11 +64,13 @@ RULE_ORDER = [
     "complete_missing_event_review", # Rule C6
     "indoor_day_pattern",       # Rule 7
     "sunny_indoor_quest",       # Rule 14 (Rule 7 IndoorDayPattern 의존)
+    "complete_sunny_indoor_quest", # A2-4: 날씨 맑음 + StepCount >= 5000
     "routine_detection",        # Rule 8
     "music_mood",               # Rule 9
     # Spotify 음악 청취 패턴 기반 감정 상태 추론 (Issue #16)
     "focus_music_pattern",      # Rule 26 (집중 음악 패턴)
     "stress_music_pattern",     # Rule 27 (스트레스 음악 패턴)
+    "complete_stress_reason",      # C: 힘든 이유 입력 시 완료 (prod:reason)
     "social_music_pattern",     # Rule 28 (사교 음악 패턴)
     "schedule_overload",               # Rule 29 (Google Calendar 일정 과부하)
     # 다단계 인과 체인 — 순서 고정 필수
@@ -74,6 +78,7 @@ RULE_ORDER = [
     "causal_exercise_skipped",      # Rule 11 (Rule 10 의존)
     "causal_weekly_activity_low",   # Rule 12 (Rule 11 의존)
     "causal_burnout_from_chain",    # Rule 13 (Rule 12 의존)
+    "complete_causal_burnout",      # A2-3: 인과 번아웃 퀘스트 완료 (StepCount >= 6000)
     # 페르소나 자동 생성 — 상태 규칙 이후 실행
     "persona_active",               # Rule P1
     "persona_indoor",               # Rule P2  (indoor_day_pattern 의존)
@@ -84,6 +89,7 @@ RULE_ORDER = [
     "recovery_deficit_persona",     # Rule P7  (HRV 회복 부족 페르소나)
     # 바이오 데이터 기반 상태 추론
     "high_resting_hr_stress",       # Rule 30  (안정시 심박 스트레스)
+    "complete_high_resting_hr",     # A2-5: 심박 정상화 완료 (bpm < 90.0)
 ]
 
 

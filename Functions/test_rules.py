@@ -1,6 +1,6 @@
 """
 test_rules.py
-추론 규칙 단위 테스트 — 38개 규칙 전체 + 엣지케이스
+추론 규칙 단위 테스트 — 44개 규칙 전체 + 엣지케이스
 Firebase 없이 RDFLib만으로 실행
 
 Usage:
@@ -43,6 +43,12 @@ ALL_RULE_IDS = [
     "complete_missing_companion", "complete_missing_emotion",
     "complete_missing_purpose", "complete_missing_music_mood",
     "complete_missing_sleep_cause", "complete_missing_event_review",
+    # A2 삶 개선형 자동 완료
+    "complete_sedentary_pattern", "complete_exercise_quest",
+    "complete_causal_burnout", "complete_sunny_indoor_quest",
+    "complete_high_resting_hr",
+    # C stress 데이터 보완형 자동 완료
+    "complete_stress_reason",
 ]
 
 
@@ -136,12 +142,12 @@ def _add_cafe_location(g: Graph, user: URIRef, uid: str,
 # ── Test 1: rule_parser ───────────────────────────────────────────────────────
 
 def test_rule_parser(rules: dict[str, str]) -> bool:
-    print("\n[Test P] 규칙 파서 — 38개 RULE_ID 추출 확인")
+    print("\n[Test P] 규칙 파서 — 44개 RULE_ID 추출 확인")
     expected = set(ALL_RULE_IDS)
     extracted = set(rules.keys())
     missing = sorted(expected - extracted)
     extra   = sorted(extracted - expected)
-    ok = check(f"38개 규칙 추출됨 (실제 {len(extracted)}개)",
+    ok = check(f"44개 규칙 추출됨 (실제 {len(extracted)}개)",
                extracted == expected,
                f"누락: {missing}  추가: {extra}" if missing or extra else "")
     assert ok
@@ -2522,6 +2528,249 @@ def test_complete_missing_event_review(rules: dict[str, str]) -> bool:
     assert all(results)
 
 
+# ── Test A2-1~A2-5: 삶 개선형 퀘스트 자동 완료 ────────────────────────────────
+
+def test_complete_sedentary_pattern(rules: dict[str, str]) -> bool:
+    print("\n[Test A2-1] complete_sedentary_pattern — StepCount >= 6000 시 산책 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "a21a")
+    # hasConsecutiveLowStepDays 트리플 직접 삽입 (DuckDB 집계 결과 시뮬레이션)
+    g.add((user, PROD.hasConsecutiveLowStepDays, Literal(3, datatype=XSD.integer)))
+    apply_rule(g, rules["sedentary_pattern"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("sedentary_pattern → '30분 산책하기' Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    # StepCount >= 6000 추가 → 완료 조건 충족
+    sc = PROD["sc_a21a"]
+    g.add((sc, RDF.type, PROD.StepCount))
+    g.add((sc, PROD["count"], Literal(6500, datatype=XSD.integer)))
+    g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["complete_sedentary_pattern"])
+    quest = quests[0]
+    results.append(check("StepCount >= 6000 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    # 반례: StepCount < 6000 → 미완료
+    g2 = load_base_graph()
+    user2 = _add_user(g2, "a21b")
+    g2.add((user2, PROD.hasConsecutiveLowStepDays, Literal(3, datatype=XSD.integer)))
+    apply_rule(g2, rules["sedentary_pattern"])
+    quests2 = list(g2.objects(user2, PROD.receivesQuest))
+    sc2 = PROD["sc_a21b"]
+    g2.add((sc2, RDF.type, PROD.StepCount))
+    g2.add((sc2, PROD["count"], Literal(2000, datatype=XSD.integer)))
+    g2.add((user2, PROD.hasStepCount, sc2))
+    apply_rule(g2, rules["complete_sedentary_pattern"])
+    if quests2:
+        results.append(check("StepCount < 6000 → isCompleted=True 미발동",
+                             Literal(True) not in set(g2.objects(quests2[0], PROD.isCompleted))))
+
+    assert all(results)
+
+
+def test_complete_exercise_quest(rules: dict[str, str]) -> bool:
+    print("\n[Test A2-2] complete_exercise_quest — 같은 날 StepCount >= 8000 시 운동 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "a22a")
+    # 저보행 날짜 2026-04-17 (steps < 8000)
+    sc_low = PROD["sc_a22a_low"]
+    g.add((sc_low, RDF.type, PROD.StepCount))
+    g.add((sc_low, PROD["count"], Literal(3000, datatype=XSD.integer)))
+    g.add((sc_low, PROD.date, Literal("2026-04-17", datatype=XSD.date)))
+    g.add((user, PROD.hasStepCount, sc_low))
+    apply_rule(g, rules["exercise_quest_generation"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("exercise_quest_generation → 운동 Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    # 같은 날 8000보 이상 StepCount 추가
+    sc_high = PROD["sc_a22a_high"]
+    g.add((sc_high, RDF.type, PROD.StepCount))
+    g.add((sc_high, PROD["count"], Literal(9000, datatype=XSD.integer)))
+    g.add((sc_high, PROD.date, Literal("2026-04-17", datatype=XSD.date)))
+    g.add((user, PROD.hasStepCount, sc_high))
+    apply_rule(g, rules["complete_exercise_quest"])
+    quest = quests[0]
+    results.append(check("같은 날 StepCount >= 8000 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_causal_burnout(rules: dict[str, str]) -> bool:
+    print("\n[Test A2-3] complete_causal_burnout — StepCount >= 6000 시 번아웃 체인 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "a23a")
+    # causal_burnout_from_chain 전제: WeeklyActivityLow 상태
+    g.add((user, PROD.hasState, PROD.WeeklyActivityLow))
+    apply_rule(g, rules["causal_burnout_from_chain"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("causal_burnout_from_chain → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    sc = PROD["sc_a23a"]
+    g.add((sc, RDF.type, PROD.StepCount))
+    g.add((sc, PROD["count"], Literal(7000, datatype=XSD.integer)))
+    g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["complete_causal_burnout"])
+    quest = quests[0]
+    results.append(check("StepCount >= 6000 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+def test_complete_sunny_indoor_quest(rules: dict[str, str]) -> bool:
+    print("\n[Test A2-4] complete_sunny_indoor_quest — 날씨 맑음 + StepCount >= 5000 시 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "a24a")
+    # sunny_indoor_quest 전제: IndoorDayPattern 상태 + 맑은 날씨
+    g.add((user, PROD.hasState, PROD.IndoorDayPattern))
+    w = PROD["weather_a24a"]
+    g.add((w, RDF.type, PROD.Weather))
+    g.add((w, PROD.condition, Literal("clear")))
+    g.add((user, PROD.hasWeather, w))
+    apply_rule(g, rules["sunny_indoor_quest"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("sunny_indoor_quest → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    sc = PROD["sc_a24a"]
+    g.add((sc, RDF.type, PROD.StepCount))
+    g.add((sc, PROD["count"], Literal(5500, datatype=XSD.integer)))
+    g.add((user, PROD.hasStepCount, sc))
+    apply_rule(g, rules["complete_sunny_indoor_quest"])
+    quest = quests[0]
+    results.append(check("맑음 + StepCount >= 5000 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    # 반례: StepCount < 5000 → 미완료
+    g2 = load_base_graph()
+    user2 = _add_user(g2, "a24b")
+    g2.add((user2, PROD.hasState, PROD.IndoorDayPattern))
+    w2 = PROD["weather_a24b"]
+    g2.add((w2, RDF.type, PROD.Weather))
+    g2.add((w2, PROD.condition, Literal("clear")))
+    g2.add((user2, PROD.hasWeather, w2))
+    apply_rule(g2, rules["sunny_indoor_quest"])
+    quests2 = list(g2.objects(user2, PROD.receivesQuest))
+    sc2 = PROD["sc_a24b"]
+    g2.add((sc2, RDF.type, PROD.StepCount))
+    g2.add((sc2, PROD["count"], Literal(3000, datatype=XSD.integer)))
+    g2.add((user2, PROD.hasStepCount, sc2))
+    apply_rule(g2, rules["complete_sunny_indoor_quest"])
+    if quests2:
+        results.append(check("StepCount < 5000 → isCompleted=True 미발동",
+                             Literal(True) not in set(g2.objects(quests2[0], PROD.isCompleted))))
+
+    assert all(results)
+
+
+def test_complete_high_resting_hr(rules: dict[str, str]) -> bool:
+    print("\n[Test A2-5] complete_high_resting_hr — bpm 정상화(< 90) 시 심박 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "a25a")
+    # high_resting_hr_stress 전제: bpm >= 90 + 운동 기록 없음
+    hr_high = PROD["hr_a25a_high"]
+    g.add((hr_high, RDF.type, PROD.HeartRate))
+    g.add((hr_high, PROD.bpm, Literal(95.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr_high))
+    apply_rule(g, rules["high_resting_hr_stress"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("high_resting_hr_stress → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    # 다음 측정: bpm < 90 (정상화)
+    hr_normal = PROD["hr_a25a_normal"]
+    g.add((hr_normal, RDF.type, PROD.HeartRate))
+    g.add((hr_normal, PROD.bpm, Literal(72.0, datatype=XSD.float)))
+    g.add((user, PROD.hasHeartRate, hr_normal))
+    apply_rule(g, rules["complete_high_resting_hr"])
+    quest = quests[0]
+    results.append(check("bpm < 90 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    assert all(results)
+
+
+# ── Test C-7: complete_stress_reason ─────────────────────────────────────────
+
+def test_complete_stress_reason(rules: dict[str, str]) -> bool:
+    print("\n[Test C7] complete_stress_reason — prod:reason 입력 시 스트레스 퀘스트 자동 완료")
+    results = []
+
+    g = load_base_graph()
+    user = _add_user(g, "c7a")
+    ml = PROD["ml_c7a"]
+    g.add((ml, RDF.type, PROD.MusicListening))
+    g.add((ml, PROD.genre, Literal("metal")))
+    g.add((ml, PROD.playedAt, Literal("2026-04-17T23:00:00", datatype=XSD.dateTime)))
+    g.add((ml, PROD.listenDuration, Literal(30, datatype=XSD.integer)))
+    g.add((user, PROD.listensTo, ml))
+    apply_rule(g, rules["stress_music_pattern"])
+    quests = list(g.objects(user, PROD.receivesQuest))
+    results.append(check("stress_music_pattern → Quest 생성됨", len(quests) > 0))
+    if not quests:
+        assert all(results)
+
+    # targetEntity → ml 연결 확인
+    quest = quests[0]
+    results.append(check("quest.targetEntity → MusicListening 노드 연결됨",
+                         g.value(quest, PROD.targetEntity) is not None))
+
+    # prod:reason 추가 → 완료 조건 충족
+    g.add((ml, PROD.reason, Literal("업무 스트레스")))
+    apply_rule(g, rules["complete_stress_reason"])
+    results.append(check("prod:reason 추가 → isCompleted=True",
+                         Literal(True) in set(g.objects(quest, PROD.isCompleted))))
+    results.append(check("completedAt 설정됨",
+                         g.value(quest, PROD.completedAt) is not None))
+
+    # 반례: reason 없으면 미완료
+    g2 = load_base_graph()
+    user2 = _add_user(g2, "c7b")
+    ml2 = PROD["ml_c7b"]
+    g2.add((ml2, RDF.type, PROD.MusicListening))
+    g2.add((ml2, PROD.genre, Literal("rock")))
+    g2.add((ml2, PROD.playedAt, Literal("2026-04-17T22:30:00", datatype=XSD.dateTime)))
+    g2.add((ml2, PROD.listenDuration, Literal(40, datatype=XSD.integer)))
+    g2.add((user2, PROD.listensTo, ml2))
+    apply_rule(g2, rules["stress_music_pattern"])
+    quests2 = list(g2.objects(user2, PROD.receivesQuest))
+    apply_rule(g2, rules["complete_stress_reason"])
+    if quests2:
+        results.append(check("reason 없으면 isCompleted=True 미발동",
+                             Literal(True) not in set(g2.objects(quests2[0], PROD.isCompleted))))
+
+    assert all(results)
+
+
 # ── 버그 수정 회귀 테스트 ──────────────────────────────────────────────────────
 
 def test_persona_no_accumulation(rules: dict[str, str]) -> None:
@@ -2650,6 +2899,14 @@ def main() -> None:
         ("complete_music_mood",   lambda: test_complete_missing_music_mood(rules)),
         ("complete_sleep_cause",  lambda: test_complete_missing_sleep_cause(rules)),
         ("complete_event_review", lambda: test_complete_missing_event_review(rules)),
+        # A2 삶 개선형 자동 완료
+        ("complete_sedentary",    lambda: test_complete_sedentary_pattern(rules)),
+        ("complete_exercise",     lambda: test_complete_exercise_quest(rules)),
+        ("complete_causal_burnout", lambda: test_complete_causal_burnout(rules)),
+        ("complete_sunny",        lambda: test_complete_sunny_indoor_quest(rules)),
+        ("complete_high_hr",      lambda: test_complete_high_resting_hr(rules)),
+        # C stress 완료
+        ("complete_stress_reason", lambda: test_complete_stress_reason(rules)),
         ("empty_graph",       lambda: test_edge_empty_graph(rules)),
         ("다중 규칙 중복 Quest 제거", lambda: testdeduplicate_quests_multi_rule(rules)),
         # E63 함수들은 pytest로도 실행 가능 (python test_rules.py와 동일 커버리지)

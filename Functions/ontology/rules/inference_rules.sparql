@@ -1052,7 +1052,8 @@ CONSTRUCT {
           prod:title "오늘 힘든 일 있었어?" ;
           prod:questType "데이터 보완형" ;
           prod:rewardAmount 30 ;
-          prod:isCompleted false .
+          prod:isCompleted false ;
+          prod:targetEntity ?ml .
     ?user prod:receivesQuest _:q .
     _:obj_stress a prod:RoomObject ;
         prod:objectType "stress_ball" ;
@@ -1250,4 +1251,127 @@ WHERE {
     ?user prod:hasHrv ?hrv .
     ?hrv  prod:rmssd  ?rmssd .
     FILTER (?rmssd < 20.0)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── A2 삶 개선형 퀘스트 자동 완료 규칙 (A2-1 ~ A2-5) ─────────────────────────
+# 사용자가 목표 행동 달성(StepCount/bpm 조건) 시 퀘스트를 자동 완료 처리.
+# prod:isCompleted true + prod:completedAt 타임스탬프 기록.
+# 퀘스트 식별: prod:title 고정 문자열 매칭 (각 규칙별 유일 제목).
+# ══════════════════════════════════════════════════════════════════════════════
+
+# RULE_ID: complete_sedentary_pattern
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:title "30분 산책하기" ;
+           prod:questType "삶 개선형" ;
+           prod:isCompleted false .
+    ?user prod:hasStepCount ?sc .
+    ?sc prod:count ?cnt .
+    FILTER (?cnt >= 6000)
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_exercise_quest
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "운동" ;
+           prod:isCompleted false ;
+           prod:targetValue ?dateStr .
+    ?user prod:hasStepCount ?sc .
+    ?sc prod:count ?cnt ;
+        prod:date ?date .
+    FILTER (STR(?date) = ?dateStr && ?cnt >= 8000)
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_causal_burnout
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:title "이번 주 활동량이 많이 줄었어요. 짧은 산책부터 시작해볼까요?" ;
+           prod:questType "삶 개선형" ;
+           prod:isCompleted false .
+    ?user prod:hasStepCount ?sc .
+    ?sc prod:count ?cnt .
+    FILTER (?cnt >= 6000)
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_sunny_indoor_quest
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:title "날씨가 맑아요! 지금 딱 산책하기 좋아요" ;
+           prod:questType "삶 개선형" ;
+           prod:isCompleted false .
+    ?user prod:hasWeather ?w .
+    ?w prod:condition ?cond .
+    FILTER (
+        CONTAINS(LCASE(STR(?cond)), "sun") ||
+        CONTAINS(LCASE(STR(?cond)), "clear") ||
+        CONTAINS(LCASE(STR(?cond)), "맑음")
+    )
+    ?user prod:hasStepCount ?sc .
+    ?sc prod:count ?cnt .
+    FILTER (?cnt >= 5000)
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# RULE_ID: complete_high_resting_hr
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:title "오늘 심박수가 높네요. 잠깐 쉬어볼까요?" ;
+           prod:questType "삶 개선형" ;
+           prod:isCompleted false .
+    ?user prod:hasHeartRate ?hr .
+    ?hr prod:bpm ?bpm .
+    FILTER (?bpm < 90.0)
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
+}
+
+# ── C: stress_music_pattern 데이터 보완형 퀘스트 자동 완료 ─────────────────────
+# RULE_ID: complete_stress_reason
+CONSTRUCT {
+    ?quest prod:isCompleted true ;
+           prod:completedAt ?now .
+}
+WHERE {
+    ?user a prod:User .
+    ?user prod:receivesQuest ?quest .
+    ?quest prod:questType "데이터 보완형" ;
+           prod:isCompleted false ;
+           prod:targetEntity ?ml .
+    ?user prod:listensTo ?ml .
+    ?ml prod:reason ?reason .
+    FILTER NOT EXISTS { ?quest prod:isCompleted true }
+    BIND(STR(NOW()) AS ?now)
 }
