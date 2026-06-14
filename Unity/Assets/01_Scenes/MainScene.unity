@@ -291,6 +291,7 @@ MonoBehaviour:
   spotifyIntervalMinutes: 30
   converter: {fileID: 150021679}
   tempTripleManager: {fileID: 150021678}
+  rawDataRetentionDays: 7
 --- !u!114 &150021681
 MonoBehaviour:
   m_ObjectHideFlags: 0
