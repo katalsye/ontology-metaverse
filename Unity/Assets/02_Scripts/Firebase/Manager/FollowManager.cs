@@ -27,16 +27,6 @@ public class FollowManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
-    // [STUB] CheckIsFollowing — UI에서 호출하지만 구현 누락
-    // TODO: 서윤님 follow 컬렉션 구조 확정 후 정식 구현
-    // ───────────────────────────────────────
-    public void CheckIsFollowing(string userId, System.Action<bool> onResult, System.Action<string> onFailure = null)
-    {
-        Debug.LogWarning($"[FollowManager] CheckIsFollowing stub 호출 (userId={userId}) — 추후 서윤님 구현");
-        onResult?.Invoke(false);
-    }
-
-    // ───────────────────────────────────────
     // 팔로우 요청
     // ───────────────────────────────────────
     public void SendFollowRequest(string targetUid, System.Action onSuccess = null, System.Action<string> onFailure = null)
