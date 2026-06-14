@@ -31,21 +31,23 @@ public class UserManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
-    // [STUB] GetUserProfileForFollow — UI에서 호출하지만 구현 누락
-    // TODO: 서윤님 영역 확정 후 정식 구현 (GetMyProfile과 유사 패턴 가능)
+    // 팔로우 목록/요청용 유저 프로필 읽기
+    //   이미 연결된 관계(친구 목록, 받은 요청) 기준이라 IsPublic 여부와 무관하게 반환
     // ───────────────────────────────────────
     public void GetUserProfileForFollow(string userId, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
     {
-        Debug.LogWarning($"[UserManager] GetUserProfileForFollow stub 호출 (userId={userId}) — 추후 서윤님 구현");
-        // 간이 구현: users/{userId} 문서를 그대로 반환
         if (db == null) { onFailure?.Invoke("Firestore not ready"); return; }
+
         db.Collection("users").Document(userId).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted || !task.Result.Exists)
             {
-                onFailure?.Invoke(task.Exception?.Message ?? "user not found");
+                string err = task.Exception?.Message ?? "user not found";
+                Debug.LogError("팔로우 대상 프로필 읽기 실패: " + err);
+                onFailure?.Invoke(err);
                 return;
             }
+
             onSuccess?.Invoke(task.Result.ConvertTo<UserProfile>());
         });
     }
