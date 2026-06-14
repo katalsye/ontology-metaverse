@@ -11,7 +11,8 @@ public class FurnitureShopCatalog : ScriptableObject
     public class ColorData
     {
         public Sprite thumbnail;
-        // TODO: DB 연동 후 구매 여부 설정
+        // Inspector 기본값 — 실제 구매 여부는 FurnitureCarouselUI.FurnitureVariant.isPurchased
+        // (purchasedFurniture Firestore 필드 기반)를 따름
         public bool   isPurchased;
     }
 

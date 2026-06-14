@@ -26,7 +26,7 @@ public class AddFurnitureSelectionUI : MonoBehaviour
     public Color lockedColor   = new Color(0.4f, 0.4f, 0.4f, 0.8f);
 
     // 구매 여부 배열 — catalog.furnitures 인덱스와 1:1 대응
-    // TODO: 실제 서비스에서는 DB/서버에서 받아온 구매 목록으로 SetPurchased() 호출
+    // 기본값은 InitDefaultPurchased(), 실제 값은 LoadPurchasesFromFirestore()가 SetPurchased()로 덮어씀
     bool[]   _purchased;
     Button[] _buttons;
     int      _lastSelected = -1;
@@ -70,9 +70,9 @@ public class AddFurnitureSelectionUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 기본 구매 상태 초기화.
+    /// 기본 구매 상태 초기화 (Firestore 응답 도착 전 표시용).
     /// 현재: 일반 가구 중 첫 번째 1개 + 천장 가구 중 첫 번째 1개만 구매 완료로 설정.
-    /// TODO: DB 연동 후 서버에서 받아온 구매 목록으로 SetPurchased() 호출할 것.
+    /// LoadPurchasesFromFirestore()가 실제 구매 목록으로 SetPurchased()를 호출해 덮어씀.
     /// </summary>
     void InitDefaultPurchased()
     {
@@ -84,8 +84,7 @@ public class AddFurnitureSelectionUI : MonoBehaviour
 
         _purchased = new bool[catalog.furnitures.Length];
 
-        // TODO: DB 연동 후 서버에서 받아온 구매 목록으로 대체
-        // 디폴트: BedsideLight, CeilingLight 구매 완료 처리
+        // Firestore 로딩 전 디폴트: BedsideLight, CeilingLight 구매 완료 처리
         for (int i = 0; i < catalog.furnitures.Length; i++)
         {
             string n = catalog.furnitures[i].displayName ?? "";

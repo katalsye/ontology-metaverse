@@ -29,7 +29,8 @@ public class FurnitureCarouselUI : MonoBehaviour
     public class FurnitureVariant
     {
         public string         displayName;
-        // TODO: DB 연동 후 서버에서 받아온 구매 목록으로 설정할 것 (현재는 Inspector 디버그용)
+        // Inspector 기본값 — 런타임에는 FurnitureSelectionUI.SetPurchased() /
+        // FurnitureCarouselController.LoadPurchasedFlagsAndShow()가 덮어씀
         public bool           isPurchased;
         public FurnitureModel model;
         [Tooltip("색상별 썸네일 — colorThumbnails[n] 이 materials[n] 과 1:1 대응. [0]이 대표 썸네일로 사용됨")]

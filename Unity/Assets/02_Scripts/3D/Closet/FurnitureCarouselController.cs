@@ -315,7 +315,7 @@ public class FurnitureCarouselController : MonoBehaviour
             if (cc.materialIndex < mats.Length) mats[cc.materialIndex] = cc.materials[ci];
             cc.renderer.sharedMaterials = mats;
         }
-        // TODO: DB 저장 시 data.furnitures[fi].variants[vi].isPurchased 체크 후 미구매면 저장 차단
+        // 미구매 variant 저장 차단은 ClosetSaveUI.HasUnpurchased()에서 처리
         saveUI?.MarkFurnitureDirty();
     }
 
