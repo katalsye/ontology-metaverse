@@ -37,16 +37,6 @@ public class QuestScreenController : MonoBehaviour
     private Label detailRewardAmount;
     private Button btnClaim;
     private Button btnComplete;
-
-    // A1 — 센서로 측정 불가능해 "완료하기" 버튼으로 직접 완료 처리하는 삶 개선형 퀘스트.
-    // inference_rules.sparql의 burnout_warning / late_caffeine_sleep_quality / schedule_overload prod:title과 1:1 대응.
-    private static readonly HashSet<string> ManuallyCompletableTitles = new HashSet<string>
-    {
-        "가벼운 스트레칭 10분",
-        "오후엔 디카페인 어때요?",
-        "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?",
-    };
-
     // 답변 입력 (데이터 보완형 퀘스트)
     private VisualElement answerSection;
     private TextField inputAnswer;
@@ -170,14 +160,7 @@ public class QuestScreenController : MonoBehaviour
 
     private QuestData MapToQuestData(Quest q)
     {
-        var type = q.QuestType switch
-        {
-            "데이터 보완형" => QuestType.DataFill,
-            "삶 개선형" => QuestType.LifeImprove,
-            "운동" => QuestType.LifeImprove,
-            "일일"  => QuestType.Daily,
-            _       => QuestType.DataFill,
-        };
+        var type = QuestUiRules.MapQuestType(q.QuestType);
         var status = q.IsCompleted ? QuestStatus.Done : QuestStatus.Active;
         float progress = q.IsCompleted ? 1f : 0f;
 
@@ -262,21 +245,9 @@ public class QuestScreenController : MonoBehaviour
         var title = new Label(quest.title);
         title.AddToClassList("quest-card-title");
 
-        var typePill = new Label(quest.type switch
-        {
-            QuestType.DataFill => "보완형",
-            QuestType.LifeImprove => "개선형",
-            QuestType.Daily => "일일",
-            _ => "",
-        });
+        var typePill = new Label(QuestUiRules.GetTypeLabel(quest.type));
         typePill.AddToClassList("quest-type-pill");
-        typePill.AddToClassList(quest.type switch
-        {
-            QuestType.DataFill => "quest-type--data",
-            QuestType.LifeImprove => "quest-type--life",
-            QuestType.Daily => "quest-type--daily",
-            _ => "",
-        });
+        typePill.AddToClassList(QuestUiRules.GetTypeStyleClass(quest.type));
 
         header.Add(title);
         header.Add(typePill);
@@ -335,27 +306,21 @@ public class QuestScreenController : MonoBehaviour
 
         // 유형 라벨
         detailTypePill.Clear();
-        var pillLabel = new Label(quest.type switch
-        {
-            QuestType.DataFill => "보완형",
-            QuestType.LifeImprove => "개선형",
-            QuestType.Daily => "일일",
-            _ => "",
-        });
+        var pillLabel = new Label(QuestUiRules.GetTypeLabel(quest.type));
         pillLabel.AddToClassList("quest-type-pill");
         detailTypePill.Add(pillLabel);
 
         // 보상 수령 버튼 (완료 + 미수령일 때만)
-        btnClaim.style.display = (quest.status == QuestStatus.Done && !quest.claimed)
+        btnClaim.style.display = QuestUiRules.ShouldShowClaimButton(quest.status, quest.claimed)
             ? DisplayStyle.Flex : DisplayStyle.None;
 
         // 완료 버튼 (A1: 측정 불가능한 삶 개선형 퀘스트 + 미완료일 때만)
-        bool showComplete = quest.status == QuestStatus.Active && ManuallyCompletableTitles.Contains(quest.title);
+        bool showComplete = QuestUiRules.ShouldShowCompleteButton(quest.title, quest.status);
         btnComplete.style.display = showComplete ? DisplayStyle.Flex : DisplayStyle.None;
         btnComplete.SetEnabled(true);
 
         // 답변 입력 (데이터 보완형 + 미완료일 때만)
-        bool showAnswer = quest.type == QuestType.DataFill && quest.status == QuestStatus.Active;
+        bool showAnswer = QuestUiRules.ShouldShowAnswerSection(quest.type, quest.status);
         answerSection.EnableInClassList("answer-section--visible", showAnswer);
         inputAnswer.value = "";
         answerFeedback.text = "";
