@@ -9,7 +9,7 @@ using Firebase.Extensions;
 /// [저장 클릭 시]
 /// ① 변경사항 있음 + 전부 구매 → 저장(주석) + Panel1 표시 → 확인 버튼으로 닫기
 /// ② 변경사항 있음 + 미구매 있음 → Panel2 표시
-///      Button1: 상점 씬 이동 (현재는 SampleScene)
+///      Button1: 상점 씬 이동
 ///      Button2: Panel2만 닫기
 /// ③ 변경사항 없음 → 아무것도 하지 않음
 ///
@@ -31,11 +31,11 @@ public class FurnitureSaveUI : MonoBehaviour
 
     [Header("참조")]
     public FurnitureCarouselController furnitureCarousel;
-    // public CharacterColorController characterController; // 필요 시 연결
+    public HatSelectionUI              hatSelectionUI; // 모자 구매 여부 체크용
 
     [Header("씬")]
-    [Tooltip("상점 씬 이름 (현재는 SampleScene으로 임시 연결)")]
-    public string shopSceneName = "SampleScene";
+    [Tooltip("상점 씬 이름 — Build Settings에 등록된 씬 이름으로 Inspector에서 지정")]
+    public string shopSceneName = "Shop";
 
     // ── 변경사항 플래그 ───────────────────────────────────────
     bool _furnitureDirty = false;
@@ -128,9 +128,9 @@ public class FurnitureSaveUI : MonoBehaviour
             }
         }
 
-        // TODO: 캐릭터(모자 등) 미구매 체크 추가
-        // if (characterController != null && !characterController.IsCurrentHatPurchased())
-        //     return true;
+        // 모자 미구매 체크
+        if (hatSelectionUI != null && !hatSelectionUI.IsCurrentHatPurchased())
+            return true;
 
         return false;
     }
@@ -140,8 +140,7 @@ public class FurnitureSaveUI : MonoBehaviour
     void OnGoShop()
     {
         panel2.SetActive(false);
-        // TODO: 실제 상점 씬으로 교체
-        SceneManager.LoadScene(shopSceneName); // 현재는 SampleScene
+        SceneManager.LoadScene(shopSceneName);
     }
 
     // ── 외부에서 dirty 표시 ───────────────────────────────────
