@@ -447,12 +447,17 @@ def _apply_rules(g: Graph, rules: dict[str, str]) -> list[tuple]:
 # ── Firestore 저장 ───────────────────────────────────────────────────────────
 
 def _collect_new_quests(g: Graph, new_triples: list[tuple]) -> list[URIRef]:
-    """이번 추론에서 새로 생성된 Quest 노드만 반환."""
-    new_subjects = {s for s, _, _ in new_triples}
-    return [
-        s for s in new_subjects
-        if (s, PROD.questType, None) in g
-    ]
+    """이번 추론에서 새로 생성된 Quest 노드만 반환.
+
+    questType 트리플 자체가 이번 배치 new_triples에 있는 노드만 신규 퀘스트로 인정.
+    complete_* 규칙은 isCompleted 트리플만 추가하므로 필터에서 제외됨.
+    (기존: new_subjects 전체에서 questType 보유 노드를 반환 → complete_* 발동 시
+     기존 퀘스트가 오인되어 Firestore quests 배열 전체 교체 버그 발생)
+    """
+    return list({
+        s for s, p, _ in new_triples
+        if p == PROD.questType
+    })
 
 
 def _clear_existing_room_objects(g: Graph, user_uri: URIRef) -> int:
@@ -529,9 +534,16 @@ def _save_results_to_firestore(
     if all_obj_subjects:
         room_objs = []
         for obj in all_obj_subjects:
+            object_type   = str(g.value(obj, PROD.objectType) or "")
+            inferred_from = str(g.value(obj, PROD.inferredFrom) or "")
+            # objectId를 inferredFrom 로컬명 + objectType 조합으로 결정론적 생성
+            # Unity RoomObjectManager.FindIndex(o => o.ObjectId == ...) 에서 사용
+            _from_local = inferred_from.split("#")[-1] if "#" in inferred_from else inferred_from
+            object_id = f"{_from_local}_{object_type}".replace(" ", "_")
             room_objs.append({
-                "objectType":           str(g.value(obj, PROD.objectType) or ""),
-                "inferredFrom":         str(g.value(obj, PROD.inferredFrom) or ""),
+                "objectId":             object_id,
+                "objectType":           object_type,
+                "inferredFrom":         inferred_from,
                 "placementZone":        str(g.value(obj, PROD.placementZone) or "floor"),
                 "inferredFromConcept":  str(g.value(obj, PROD.inferredFromConcept) or ""),
             })
@@ -548,8 +560,10 @@ def _save_results_to_firestore(
             .collection("snapshots") \
             .document(snapshot_date) \
             .set({
-                "objects":   room_objs,
-                "createdAt": datetime.now(timezone.utc),
+                "objects":    room_objs,
+                "createdAt":  datetime.now(timezone.utc),
+                "Date":       snapshot_date,
+                "SnapshotId": snapshot_date,
             })
         logger.info("Saved room_snapshot for uid=%s date=%s (%d objects)",
                     uid, snapshot_date, len(room_objs))
