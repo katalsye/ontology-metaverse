@@ -165,7 +165,7 @@ public class ClosetSaveUI : MonoBehaviour
 
     void OnSaveClick()
     {
-        // TODO: dirty 체크 복원 → if (!IsDirty) return;
+        if (!IsDirty) return;
         if (HasUnpurchased())
             StartCoroutine(ShowPanel(panel2));   // ② 미구매
         else
