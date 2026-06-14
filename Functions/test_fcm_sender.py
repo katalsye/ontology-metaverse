@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fcm_sender
 from fcm_sender import (
     send_room_updated_to_followers,
+    send_quest_completed_notification,
     _get_follower_uids,
     _get_fcm_tokens,
     _send_in_chunks,
@@ -237,6 +238,73 @@ class TestSendRoomUpdatedToFollowers(unittest.TestCase):
         print(f"  [{PASS}] 501개 → send_each 2회 (500+1 청크 분할), {total}건 성공")
 
 
+class TestSendQuestCompleted(unittest.TestCase):
+
+    def test_01_empty_titles_no_call(self):
+        """completed_titles 빈 리스트 → send_each 미호출, 0 반환."""
+        db = _make_db_with_tokens(followers={}, tokens={"uid_a": ["tok_a"]})
+        messaging = _make_messaging()
+
+        result = send_quest_completed_notification(db, messaging, "uid_a", [])
+
+        self.assertEqual(result, 0)
+        messaging.send_each.assert_not_called()
+        print(f"  [{PASS}] 빈 titles → 0건, send_each 미호출")
+
+    def test_02_sends_to_owner_tokens(self):
+        """완료 퀘스트 있음 → 방 주인(uid) 토큰에 quest_completed 발송."""
+        db = _make_db_with_tokens(followers={}, tokens={"uid_a": ["tok_a1", "tok_a2"]})
+        messaging = _make_messaging(success_flags=[True, True])
+
+        result = send_quest_completed_notification(db, messaging, "uid_a", ["스트레칭 10분"])
+
+        self.assertEqual(result, 2)
+        messaging.send_each.assert_called_once()
+        sent_msgs = messaging.send_each.call_args[0][0]
+        self.assertEqual(len(sent_msgs), 2)
+        self.assertEqual(sent_msgs[0]["data"]["type"], "quest_completed")
+        self.assertEqual(sent_msgs[0]["data"]["uid"], "uid_a")
+        self.assertEqual(sent_msgs[0]["data"]["count"], "1")
+        print(f"  [{PASS}] 퀘스트 1건 완료 → 토큰 2개에 quest_completed 발송")
+
+    def test_03_count_reflects_multiple_completions(self):
+        """완료 퀘스트 3건 → data.count='3'."""
+        db = _make_db_with_tokens(followers={}, tokens={"uid_b": ["tok_b"]})
+        messaging = _make_messaging(success_flags=[True])
+
+        result = send_quest_completed_notification(
+            db, messaging, "uid_b", ["퀘스트A", "퀘스트B", "퀘스트C"]
+        )
+
+        self.assertEqual(result, 1)
+        sent_msgs = messaging.send_each.call_args[0][0]
+        self.assertEqual(sent_msgs[0]["data"]["count"], "3")
+        print(f"  [{PASS}] 퀘스트 3건 → data.count='3'")
+
+    def test_04_no_tokens_returns_zero(self):
+        """방 주인 FCM 토큰 없음 → 0 반환, send_each 미호출."""
+        db = _make_db_with_tokens(followers={}, tokens={"uid_a": []})
+        messaging = _make_messaging()
+
+        result = send_quest_completed_notification(db, messaging, "uid_a", ["퀘스트X"])
+
+        self.assertEqual(result, 0)
+        messaging.send_each.assert_not_called()
+        print(f"  [{PASS}] 토큰 없음 → 0건, send_each 미호출")
+
+    def test_05_exception_returns_zero(self):
+        """send_each 예외 → 0 반환, 예외 전파 안 함."""
+        db = _make_db_with_tokens(followers={}, tokens={"uid_a": ["tok_a"]})
+        messaging = MagicMock()
+        messaging.Message.side_effect = lambda **kwargs: kwargs
+        messaging.send_each.side_effect = RuntimeError("network error")
+
+        result = send_quest_completed_notification(db, messaging, "uid_a", ["퀘스트X"])
+
+        self.assertEqual(result, 0)
+        print(f"  [{PASS}] send_each 예외 → 0 반환 (예외 전파 없음)")
+
+
 class TestHelpers(unittest.TestCase):
 
     def test_get_follower_uids_empty(self):
@@ -276,6 +344,7 @@ if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     suite.addTests(loader.loadTestsFromTestCase(TestSendRoomUpdatedToFollowers))
+    suite.addTests(loader.loadTestsFromTestCase(TestSendQuestCompleted))
     suite.addTests(loader.loadTestsFromTestCase(TestHelpers))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

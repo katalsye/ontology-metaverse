@@ -65,6 +65,43 @@ def send_room_updated_to_followers(
         return 0
 
 
+def send_quest_completed_notification(
+    db: Any,
+    messaging_client: Any,
+    uid: str,
+    completed_titles: list[str],
+) -> int:
+    """complete_* 규칙으로 자동 완료된 퀘스트를 방 주인에게 FCM 알림.
+
+    data.type = "quest_completed"
+    Unity ToastController.ScreenForType("quest_completed") => "quest".
+    """
+    if not completed_titles:
+        return 0
+
+    try:
+        tokens = _get_fcm_tokens(db, uid)
+        if not tokens:
+            return 0
+
+        messages = [
+            messaging_client.Message(
+                data={
+                    "type":  "quest_completed",
+                    "uid":   uid,
+                    "count": str(len(completed_titles)),
+                },
+                token=token,
+            )
+            for token in tokens
+        ]
+        return _send_in_chunks(messaging_client, messages)
+
+    except Exception as exc:
+        logger.warning("send_quest_completed_notification 실패 (무시): %s", exc)
+        return 0
+
+
 def _get_follower_uids(db: Any, uid: str) -> list[str]:
     """follows/{uid}/followers 서브컬렉션에서 팔로워 uid 목록 조회.
 

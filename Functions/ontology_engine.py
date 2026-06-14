@@ -529,6 +529,19 @@ def _save_results_to_firestore(
         )
         logger.info("Saved %d new quests for uid=%s", len(quests_payload), uid)
 
+    # complete_* 규칙이 이번 사이클에 isCompleted=True를 추가한 퀘스트 → 방 주인에게 FCM
+    _completed_nodes = [s for s, p, o in new_triples if p == PROD.isCompleted and str(o).lower() == "true"]
+    if _completed_nodes:
+        _completed_titles = [str(g.value(q, PROD.title)) for q in _completed_nodes if g.value(q, PROD.title)]
+        if _completed_titles:
+            try:
+                from fcm_sender import send_quest_completed_notification
+                sent = send_quest_completed_notification(db, messaging, uid, _completed_titles)
+                if sent > 0:
+                    logger.info("FCM quest_completed: %d msgs for uid=%s", sent, uid)
+            except Exception as exc:
+                logger.warning("FCM quest_completed 전송 실패 (무시): %s", exc)
+
     # room_objects — 그래프에서 직접 순회 (new_triples blank node ID 불일치 버그 수정)
     all_obj_subjects = list(g.objects(user_uri, PROD.hasRoomObject))
     if all_obj_subjects:
