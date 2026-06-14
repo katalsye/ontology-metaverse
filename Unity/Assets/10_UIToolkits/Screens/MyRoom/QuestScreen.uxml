@@ -83,6 +83,9 @@
                             class="btn btn--md btn--rose btn--full" />
                     <ui:Label name="answer-feedback" text="" class="answer-feedback" />
                 </ui:VisualElement>
+                <!-- 완료 버튼 (A1: 센서로 측정 불가능한 삶 개선형 퀘스트) -->
+                <ui:Button name="btn-complete" text="완료하기"
+                           class="btn btn--md btn--rose btn--full" style="display: none;" />
                 <!-- 보상 수령 버튼 (완료된 퀘스트만) -->
                 <ui:Button name="btn-claim" text="보상 수령"
                            class="btn btn--md btn--rose btn--full" style="display: none;" />

@@ -159,8 +159,11 @@ public class QuestManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
-    // 퀘스트 완료 처리 (DEBUG 전용)
-    // 운영 시에는 ontology_engine.py가 자동으로 isCompleted=true를 기록한다.
+    // 퀘스트 완료 처리
+    // A2(추론 기반 자동완료) 퀘스트는 ontology_engine.py가 다음 batch에서
+    // isCompleted=true를 기록하지만, 스트레칭/디카페인/일정 조절처럼 센서로
+    // 측정할 수 없는 A1 퀘스트는 QuestScreenController의 "완료하기" 버튼을 통해
+    // 이 메서드로 직접 완료 처리한다.
     // ───────────────────────────────────────
     public void CompleteQuest(int index, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {

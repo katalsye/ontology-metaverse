@@ -36,6 +36,16 @@ public class QuestScreenController : MonoBehaviour
     private VisualElement detailTypePill, detailProgressFill;
     private Label detailRewardAmount;
     private Button btnClaim;
+    private Button btnComplete;
+
+    // A1 — 센서로 측정 불가능해 "완료하기" 버튼으로 직접 완료 처리하는 삶 개선형 퀘스트.
+    // inference_rules.sparql의 burnout_warning / late_caffeine_sleep_quality / schedule_overload prod:title과 1:1 대응.
+    private static readonly HashSet<string> ManuallyCompletableTitles = new HashSet<string>
+    {
+        "가벼운 스트레칭 10분",
+        "오후엔 디카페인 어때요?",
+        "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?",
+    };
 
     // 답변 입력 (데이터 보완형 퀘스트)
     private VisualElement answerSection;
@@ -74,9 +84,11 @@ public class QuestScreenController : MonoBehaviour
         detailProgressFill = root.Q("detail-progress-fill");
         detailRewardAmount = root.Q<Label>("detail-reward-amount");
         btnClaim = root.Q<Button>("btn-claim");
+        btnComplete = root.Q<Button>("btn-complete");
 
         root.Q<Button>("btn-close-detail").clicked += CloseDetail;
         btnClaim.clicked += OnClaimReward;
+        btnComplete.clicked += OnCompleteQuest;
 
         // 답변 입력
         answerSection = root.Q("answer-section");
@@ -337,6 +349,11 @@ public class QuestScreenController : MonoBehaviour
         btnClaim.style.display = (quest.status == QuestStatus.Done && !quest.claimed)
             ? DisplayStyle.Flex : DisplayStyle.None;
 
+        // 완료 버튼 (A1: 측정 불가능한 삶 개선형 퀘스트 + 미완료일 때만)
+        bool showComplete = quest.status == QuestStatus.Active && ManuallyCompletableTitles.Contains(quest.title);
+        btnComplete.style.display = showComplete ? DisplayStyle.Flex : DisplayStyle.None;
+        btnComplete.SetEnabled(true);
+
         // 답변 입력 (데이터 보완형 + 미완료일 때만)
         bool showAnswer = quest.type == QuestType.DataFill && quest.status == QuestStatus.Active;
         answerSection.EnableInClassList("answer-section--visible", showAnswer);
@@ -372,6 +389,22 @@ public class QuestScreenController : MonoBehaviour
             {
                 Debug.LogError($"[Quest] 보상 수령 실패: {err}");
                 btnClaim.SetEnabled(true);
+            }
+        );
+    }
+
+    private void OnCompleteQuest()
+    {
+        if (selectedQuest == null) return;
+
+        btnComplete.SetEnabled(false);
+
+        QuestManager.Instance.CompleteQuest(selectedQuest.id,
+            onSuccess: CloseDetail,
+            onFailure: err =>
+            {
+                Debug.LogError($"[Quest] 완료 처리 실패: {err}");
+                btnComplete.SetEnabled(true);
             }
         );
     }
