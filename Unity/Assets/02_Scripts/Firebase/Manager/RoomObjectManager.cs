@@ -153,6 +153,68 @@ public class RoomObjectManager : MonoBehaviour
     }
 
     // ───────────────────────────────────────
+    // 내 room_custom_positions 전체 읽기
+    // ───────────────────────────────────────
+    public void GetCustomPositions(Action<List<RoomCustomPosition>> onSuccess, Action<string> onFailure = null)
+    {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("GetCustomPositions: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("room_custom_positions")
+            .Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("room_custom_positions 읽기 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+                onSuccess?.Invoke(ParseCustomPositions(task.Result));
+            });
+    }
+
+    // ───────────────────────────────────────
+    // 커스텀 위치 저장 (배열 전체 덮어쓰기)
+    // ───────────────────────────────────────
+    public void SaveCustomPositions(List<RoomCustomPosition> positions, Action onSuccess = null, Action<string> onFailure = null)
+    {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("SaveCustomPositions: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
+        string uid = auth.CurrentUser.UserId;
+        var docData = new Dictionary<string, object>
+        {
+            { "positions", SerializeCustomPositions(positions) }
+        };
+
+        db.Collection("room_custom_positions")
+            .Document(uid)
+            .SetAsync(docData, SetOptions.MergeAll)
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("커스텀 위치 저장 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+                Debug.Log($"커스텀 위치 저장 완료: {positions.Count}개");
+                onSuccess?.Invoke();
+            });
+    }
+
+    // ───────────────────────────────────────
     // 내 방 실시간 리스너 시작
     // ───────────────────────────────────────
     public void StartRoomListener()
@@ -303,6 +365,52 @@ public class RoomObjectManager : MonoBehaviour
             if (!string.IsNullOrEmpty(o.ObjectId))
                 d["objectId"] = o.ObjectId;
             list.Add(d);
+        }
+        return list;
+    }
+
+    private List<RoomCustomPosition> ParseCustomPositions(DocumentSnapshot doc)
+    {
+        var result = new List<RoomCustomPosition>();
+        if (!doc.Exists || !doc.ContainsField("positions")) return result;
+
+        try
+        {
+            var rawList = doc.GetValue<List<object>>("positions");
+            if (rawList == null) return result;
+
+            foreach (var item in rawList)
+            {
+                if (item is Dictionary<string, object> dict)
+                    result.Add(new RoomCustomPosition
+                    {
+                        ObjectId  = GetStr(dict, "objectId"),
+                        PositionX = GetFloat(dict, "positionX"),
+                        PositionY = GetFloat(dict, "positionY"),
+                        PositionZ = GetFloat(dict, "positionZ"),
+                    });
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("positions 파싱 오류: " + e.Message);
+        }
+
+        return result;
+    }
+
+    private List<object> SerializeCustomPositions(List<RoomCustomPosition> positions)
+    {
+        var list = new List<object>(positions.Count);
+        foreach (var p in positions)
+        {
+            list.Add(new Dictionary<string, object>
+            {
+                { "objectId",  p.ObjectId },
+                { "positionX", p.PositionX },
+                { "positionY", p.PositionY },
+                { "positionZ", p.PositionZ },
+            });
         }
         return list;
     }

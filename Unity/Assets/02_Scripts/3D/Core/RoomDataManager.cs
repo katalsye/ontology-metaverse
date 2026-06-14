@@ -37,10 +37,28 @@ public class RoomDataManager : MonoBehaviour
         RoomObjectManager.Instance.GetRoomObjects(
             objects =>
             {
-                var data = new RoomData();
-                foreach (var obj in objects)
-                    data.furnitures.Add(ToFurnitureItemData(obj));
-                Load(data);
+                RoomObjectManager.Instance.GetCustomPositions(
+                    positions =>
+                    {
+                        var positionMap = new Dictionary<string, RoomCustomPosition>();
+                        foreach (var p in positions)
+                            if (!string.IsNullOrEmpty(p.ObjectId))
+                                positionMap[p.ObjectId] = p;
+
+                        var data = new RoomData();
+                        foreach (var obj in objects)
+                            data.furnitures.Add(ToFurnitureItemData(obj, positionMap));
+                        Load(data);
+                    },
+                    err =>
+                    {
+                        Debug.LogWarning("[RoomDataManager] 커스텀 위치 로드 실패: " + err);
+                        var data = new RoomData();
+                        foreach (var obj in objects)
+                            data.furnitures.Add(ToFurnitureItemData(obj, null));
+                        Load(data);
+                    }
+                );
             },
             err => Debug.LogWarning("[RoomDataManager] Firestore 로드 실패: " + err)
         );
@@ -111,13 +129,21 @@ public class RoomDataManager : MonoBehaviour
         RoomObjectManager.Instance.SaveCustomLayout(objects);
     }
 
-    private static FurnitureItemData ToFurnitureItemData(RoomObject obj) => new FurnitureItemData
+    private static FurnitureItemData ToFurnitureItemData(RoomObject obj, Dictionary<string, RoomCustomPosition> positionMap)
     {
-        furnitureType       = obj.ObjectType,
-        designIndex         = 0,
-        position            = new Vector3(obj.PositionX, obj.PositionY, obj.PositionZ),
-        rotation            = Vector3.zero,
-        inferredFrom        = obj.InferredFrom,
-        inferredFromConcept = obj.InferredFromConcept,
-    };
+        Vector3 position = Vector3.zero;
+        if (positionMap != null && !string.IsNullOrEmpty(obj.ObjectId)
+            && positionMap.TryGetValue(obj.ObjectId, out var p))
+            position = new Vector3(p.PositionX, p.PositionY, p.PositionZ);
+
+        return new FurnitureItemData
+        {
+            furnitureType       = obj.ObjectType,
+            designIndex         = 0,
+            position            = position,
+            rotation            = Vector3.zero,
+            inferredFrom        = obj.InferredFrom,
+            inferredFromConcept = obj.InferredFromConcept,
+        };
+    }
 }

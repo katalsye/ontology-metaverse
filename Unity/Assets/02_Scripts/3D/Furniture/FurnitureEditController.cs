@@ -362,7 +362,7 @@ public class FurnitureEditController : MonoBehaviour
         RefreshEditableItems();
         // Firestore에서 저장된 가구 위치 적용 (비동기 — 완료되면 씬 오브젝트 위치 갱신)
         if (RoomObjectManager.Instance != null)
-            RoomObjectManager.Instance.GetRoomObjects(
+            RoomObjectManager.Instance.GetCustomPositions(
                 ApplyLoadedPositions,
                 err => Debug.LogWarning("[FurnitureEditController] 가구 위치 로드 실패: " + err)
             );
@@ -915,25 +915,24 @@ public class FurnitureEditController : MonoBehaviour
 
         if (RoomObjectManager.Instance != null && editableItems != null)
         {
-            var objects   = new System.Collections.Generic.List<RoomObject>();
+            var positions  = new System.Collections.Generic.List<RoomCustomPosition>();
             var addedNames = new System.Collections.Generic.List<string>();
             foreach (var cfg in editableItems)
             {
                 if (cfg?.target == null) continue;
                 var t = cfg.target.transform;
-                objects.Add(new RoomObject
+                positions.Add(new RoomCustomPosition
                 {
-                    ObjectId   = cfg.target.name,
-                    ObjectType = cfg.target.name,
-                    PositionX  = t.position.x,
-                    PositionY  = t.position.y,
-                    PositionZ  = t.position.z,
+                    ObjectId  = cfg.target.name,
+                    PositionX = t.position.x,
+                    PositionY = t.position.y,
+                    PositionZ = t.position.z,
                 });
                 if (cfg.isAdded) addedNames.Add(cfg.target.name);
             }
-            RoomObjectManager.Instance.SaveCustomLayout(objects, onSuccess: () =>
+            RoomObjectManager.Instance.SaveCustomPositions(positions, onSuccess: () =>
             {
-                // 추가 가구 이름 목록도 같은 문서에 병합 저장
+                // 추가 가구 이름 목록은 room_objects 문서에 병합 저장 (위치는 room_custom_positions에 별도 저장)
                 var auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
                 if (auth?.CurrentUser == null) return;
                 var extra = new System.Collections.Generic.Dictionary<string, object>
@@ -1963,7 +1962,7 @@ if (cfg != null && cfg.wallMounted) return; // Board 류는 회전 불가 (벽�
             });
     }
 
-    void ApplyLoadedPositions(System.Collections.Generic.List<RoomObject> objects)
+    void ApplyLoadedPositions(System.Collections.Generic.List<RoomCustomPosition> objects)
     {
         if (editableItems == null || objects == null) return;
         foreach (var obj in objects)
