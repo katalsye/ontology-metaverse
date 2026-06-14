@@ -212,10 +212,10 @@ public class AddFurnitureSelectionUI : MonoBehaviour
             _buttons[i].colors = colors;
         }
 
-        SpawnFurniture(catalog.furnitures[index]);
+        SpawnFurniture(catalog.furnitures[index], index);
     }
 
-    void SpawnFurniture(FurnitureCatalog.FurnitureData item)
+    void SpawnFurniture(FurnitureCatalog.FurnitureData item, int furnitureId)
     {
         if (item.prefab == null)
         {
@@ -241,6 +241,10 @@ public class AddFurnitureSelectionUI : MonoBehaviour
             Vector3 spawnPos = new Vector3(centerX, ctrl.ceilingY, centerZ);
             var instance = Instantiate(item.prefab, spawnPos, Quaternion.identity, parent);
 
+            var shopTag = instance.AddComponent<ShopItemInstance>();
+            shopTag.furnitureId = furnitureId;
+            shopTag.colorId = 0;
+
             // editableItems 사전 추가는 EnterCeilingEditMode()가 재진입 가드로 막힐 때를 대비해 유지.
             // EnterCeilingEditMode()가 정상 진입할 경우 내부에서 editableItems를 ceilingItemParent 자식 기반으로 재구성하므로 중복되지 않음.
             var list = new System.Collections.Generic.List<FurnitureEditConfig>(
@@ -263,6 +267,10 @@ public class AddFurnitureSelectionUI : MonoBehaviour
 
             // 먼저 부모 없이 instantiate → 인스턴스에서 태그 검사가 가장 신뢰성 있음
             var instance = Instantiate(item.prefab, spawnPos, Quaternion.identity);
+
+            var shopTag = instance.AddComponent<ShopItemInstance>();
+            shopTag.furnitureId = furnitureId;
+            shopTag.colorId = 0;
 
             // PostIt(generic_marker)은 벽 부착 가구 → hangerItemParent 아래에 두고 wallMounted=true 등록
             bool isPostIt = instance.CompareTag("PostIt");

@@ -25,8 +25,9 @@ using Firebase.Extensions;
 ///   - 현재 표시 중인 루트(클론 또는 본체)에서 rendererPath로 Renderer를 찾아 material 교체.
 ///
 /// 적용 시점:
-///   - 지금은 방 진입(Start) 시 Inspector 값을 그대로 적용 (저장/불러오기 자리는 주석).
-///   - 추후 DB 불러오기로 modelIndex/colorIndex를 덮어쓰면 됨. 불러오기 실패 시 Inspector 값 사용.
+///   - 방 진입(Start) 시 room_skins/{uid}에서 modelIndex/colorIndex를 불러와 적용.
+///     불러오기 실패 또는 데이터 없으면 Inspector 기본값으로 ApplyAll.
+///   - 같은 시점에 room_shop_items/{uid}에 저장된 상점 가구 배치도 불러와 재소환.
 /// </summary>
 public class RoomFurnitureCustomizer : MonoBehaviour
 {
@@ -77,6 +78,7 @@ public class RoomFurnitureCustomizer : MonoBehaviour
     void Start()
     {
         LoadSkinsFromFirestore();
+        LoadShopItemsFromFirestore();
     }
 
     // ── 공개 적용 함수 ─────────────────────────────────────────
@@ -226,6 +228,10 @@ public class RoomFurnitureCustomizer : MonoBehaviour
         if (s.scale != Vector3.zero)
             instance.transform.localScale = s.scale;
 
+        var shopTag = instance.AddComponent<ShopItemInstance>();
+        shopTag.furnitureId = s.furnitureId;
+        shopTag.colorId = s.colorId;
+
         // ── 3) 부모 컨테이너 배치 ──
         //   isCeiling → ceilingItemParent, 그 외 → furnitureParent
         Transform parent = null;
@@ -258,8 +264,7 @@ public class RoomFurnitureCustomizer : MonoBehaviour
     }
 
     /// <summary>
-    /// 불러오기 일괄 처리 (완성형). 저장된 상점템 목록을 받아 전부 재소환한다.
-    /// 호출부(DB/서버 로드)는 추후 연결 — 데이터를 받았다고 가정하고 이 함수에 넘기면 된다.
+    /// 불러오기 일괄 처리. 저장된 상점템 목록을 받아 전부 재소환한다.
     /// </summary>
     public void LoadSavedShopItems(IList<SavedShopItem> saved)
     {
@@ -269,12 +274,30 @@ public class RoomFurnitureCustomizer : MonoBehaviour
 
         foreach (var s in saved)
             SpawnSavedShopItem(s);
+    }
 
-        // ── DB 연동 자리 (추후) ──────────────────────────────────
-        // 실제로는 RoomDataManager 등이 서버에서 List<SavedShopItem>을 만들어
-        // 이 함수를 호출하게 된다. 예:
-        //   var saved = RoomDataManager.Instance?.LoadShopItems();
-        //   customizer.LoadSavedShopItems(saved);
+    /// <summary>room_shop_items/{uid}에서 저장된 상점템 배치를 불러와 재소환.</summary>
+    void LoadShopItemsFromFirestore()
+    {
+        if (RoomObjectManager.Instance == null) return;
+
+        RoomObjectManager.Instance.GetShopItems(
+            items =>
+            {
+                var saved = new List<SavedShopItem>(items.Count);
+                foreach (var it in items)
+                    saved.Add(new SavedShopItem
+                    {
+                        furnitureId   = it.FurnitureId,
+                        colorId       = it.ColorId,
+                        position      = new Vector3(it.PositionX, it.PositionY, it.PositionZ),
+                        eulerRotation = new Vector3(it.RotationX, it.RotationY, it.RotationZ),
+                        scale         = new Vector3(it.ScaleX, it.ScaleY, it.ScaleZ),
+                    });
+                LoadSavedShopItems(saved);
+            },
+            err => Debug.LogWarning("[RoomFurnitureCustomizer] 상점템 배치 로드 실패: " + err)
+        );
     }
 
     // ── Firestore 스킨 저장/로드 ───────────────────────────────

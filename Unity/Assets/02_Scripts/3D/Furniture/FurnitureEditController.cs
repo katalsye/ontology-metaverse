@@ -917,6 +917,7 @@ public class FurnitureEditController : MonoBehaviour
         {
             var positions  = new System.Collections.Generic.List<RoomCustomPosition>();
             var addedNames = new System.Collections.Generic.List<string>();
+            var shopItems  = new System.Collections.Generic.List<RoomShopItem>();
             foreach (var cfg in editableItems)
             {
                 if (cfg?.target == null) continue;
@@ -929,7 +930,27 @@ public class FurnitureEditController : MonoBehaviour
                     PositionZ = t.position.z,
                 });
                 if (cfg.isAdded) addedNames.Add(cfg.target.name);
+
+                var shopTag = cfg.target.GetComponent<ShopItemInstance>();
+                if (shopTag != null)
+                {
+                    shopItems.Add(new RoomShopItem
+                    {
+                        FurnitureId = shopTag.furnitureId,
+                        ColorId     = shopTag.colorId,
+                        PositionX   = t.position.x,
+                        PositionY   = t.position.y,
+                        PositionZ   = t.position.z,
+                        RotationX   = t.eulerAngles.x,
+                        RotationY   = t.eulerAngles.y,
+                        RotationZ   = t.eulerAngles.z,
+                        ScaleX      = t.localScale.x,
+                        ScaleY      = t.localScale.y,
+                        ScaleZ      = t.localScale.z,
+                    });
+                }
             }
+            RoomObjectManager.Instance.SaveShopItems(shopItems);
             RoomObjectManager.Instance.SaveCustomPositions(positions, onSuccess: () =>
             {
                 // 추가 가구 이름 목록은 room_objects 문서에 병합 저장 (위치는 room_custom_positions에 별도 저장)

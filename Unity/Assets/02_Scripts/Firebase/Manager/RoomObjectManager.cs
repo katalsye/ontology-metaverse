@@ -25,6 +25,7 @@ public class RoomObjectManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        DontDestroyOnLoad(gameObject);
         FirebaseBootstrap.RunWhenReady(Init);
     }
 
@@ -148,6 +149,68 @@ public class RoomObjectManager : MonoBehaviour
                     return;
                 }
                 Debug.Log($"커스텀 레이아웃 저장 완료: {roomObjects.Count}개");
+                onSuccess?.Invoke();
+            });
+    }
+
+    // ───────────────────────────────────────
+    // 내 room_shop_items 전체 읽기 (EditMode에서 추가 배치한 상점 가구)
+    // ───────────────────────────────────────
+    public void GetShopItems(Action<List<RoomShopItem>> onSuccess, Action<string> onFailure = null)
+    {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("GetShopItems: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
+        string uid = auth.CurrentUser.UserId;
+        db.Collection("room_shop_items")
+            .Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("room_shop_items 읽기 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+                onSuccess?.Invoke(ParseShopItems(task.Result));
+            });
+    }
+
+    // ───────────────────────────────────────
+    // 상점 가구 배치 저장 (배열 전체 덮어쓰기)
+    // ───────────────────────────────────────
+    public void SaveShopItems(List<RoomShopItem> items, Action onSuccess = null, Action<string> onFailure = null)
+    {
+        if (auth?.CurrentUser == null)
+        {
+            Debug.LogWarning("SaveShopItems: 로그인 상태 아님");
+            onFailure?.Invoke("로그인 필요");
+            return;
+        }
+
+        string uid = auth.CurrentUser.UserId;
+        var docData = new Dictionary<string, object>
+        {
+            { "items", SerializeShopItems(items) }
+        };
+
+        db.Collection("room_shop_items")
+            .Document(uid)
+            .SetAsync(docData, SetOptions.MergeAll)
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("상점 가구 배치 저장 실패: " + task.Exception);
+                    onFailure?.Invoke(task.Exception.Message);
+                    return;
+                }
+                Debug.Log($"상점 가구 배치 저장 완료: {items.Count}개");
                 onSuccess?.Invoke();
             });
     }
@@ -410,6 +473,66 @@ public class RoomObjectManager : MonoBehaviour
                 { "positionX", p.PositionX },
                 { "positionY", p.PositionY },
                 { "positionZ", p.PositionZ },
+            });
+        }
+        return list;
+    }
+
+    private List<RoomShopItem> ParseShopItems(DocumentSnapshot doc)
+    {
+        var result = new List<RoomShopItem>();
+        if (!doc.Exists || !doc.ContainsField("items")) return result;
+
+        try
+        {
+            var rawList = doc.GetValue<List<object>>("items");
+            if (rawList == null) return result;
+
+            foreach (var item in rawList)
+            {
+                if (item is Dictionary<string, object> dict)
+                    result.Add(new RoomShopItem
+                    {
+                        FurnitureId = (int)GetFloat(dict, "furnitureId"),
+                        ColorId     = (int)GetFloat(dict, "colorId"),
+                        PositionX   = GetFloat(dict, "positionX"),
+                        PositionY   = GetFloat(dict, "positionY"),
+                        PositionZ   = GetFloat(dict, "positionZ"),
+                        RotationX   = GetFloat(dict, "rotationX"),
+                        RotationY   = GetFloat(dict, "rotationY"),
+                        RotationZ   = GetFloat(dict, "rotationZ"),
+                        ScaleX      = GetFloat(dict, "scaleX"),
+                        ScaleY      = GetFloat(dict, "scaleY"),
+                        ScaleZ      = GetFloat(dict, "scaleZ"),
+                    });
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("items 파싱 오류: " + e.Message);
+        }
+
+        return result;
+    }
+
+    private List<object> SerializeShopItems(List<RoomShopItem> items)
+    {
+        var list = new List<object>(items.Count);
+        foreach (var s in items)
+        {
+            list.Add(new Dictionary<string, object>
+            {
+                { "furnitureId", s.FurnitureId },
+                { "colorId",     s.ColorId },
+                { "positionX",   s.PositionX },
+                { "positionY",   s.PositionY },
+                { "positionZ",   s.PositionZ },
+                { "rotationX",   s.RotationX },
+                { "rotationY",   s.RotationY },
+                { "rotationZ",   s.RotationZ },
+                { "scaleX",      s.ScaleX },
+                { "scaleY",      s.ScaleY },
+                { "scaleZ",      s.ScaleZ },
             });
         }
         return list;
