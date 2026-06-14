@@ -20,7 +20,7 @@ namespace OntologyMetaverse.DataCollection
     ///   2. collectionIntervalSeconds 마다 수집 사이클:
     ///      - LocationCollector.CollectCurrentLocation()
     ///      - StepCollector.CollectCurrentSteps()
-    ///      - (추후) AppUsageCollector, GalleryEXIFCollector
+    ///      - AppUsageCollector.CollectTopApps(), GalleryEXIFCollector.CollectRecentPhotos()
     ///      → SQLite raw_data 에 누적
     ///   3. batchIntervalSeconds 마다 batch 사이클:
     ///      - RawDataToTripleConverter.ConvertBatch() → SQLite triples
