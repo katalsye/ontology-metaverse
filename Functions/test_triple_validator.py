@@ -11,7 +11,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from triple_validator import TripleValidator, validate_required_properties, _validate_subject_uri
+from rdflib.term import Literal as RdfLiteral
+from rdflib.namespace import XSD as RDF_XSD
+
+from triple_validator import TripleValidator, validate_required_properties, _validate_subject_uri, _XSD_PREFIX_MAP
 
 PROD  = "http://7team.dev/ontology#"
 XSD   = "http://www.w3.org/2001/XMLSchema#"
@@ -1586,6 +1589,84 @@ def test_validate_subject_uri() -> None:
     assert all(r)
 
 
+# ── Test 18: xsd 단축형 → full URI 변환 ──────────────────────────────────────
+
+def test_xsd_shortform_normalization() -> None:
+    print("\n[Test 18] xsd 단축형 → full XSD URI 변환 (_XSD_PREFIX_MAP / _coerce)")
+    r = []
+
+    # _XSD_PREFIX_MAP 상수 직접 검증
+    r.append(check("xsd:float → XSD.float",
+                   _XSD_PREFIX_MAP["xsd:float"] == str(RDF_XSD.float)))
+    r.append(check("xsd:integer → XSD.integer",
+                   _XSD_PREFIX_MAP["xsd:integer"] == str(RDF_XSD.integer)))
+    r.append(check("xsd:date → XSD.date",
+                   _XSD_PREFIX_MAP["xsd:date"] == str(RDF_XSD.date)))
+    r.append(check("xsd:dateTime → XSD.dateTime",
+                   _XSD_PREFIX_MAP["xsd:dateTime"] == str(RDF_XSD.dateTime)))
+    r.append(check("xsd:boolean → XSD.boolean",
+                   _XSD_PREFIX_MAP["xsd:boolean"] == str(RDF_XSD.boolean)))
+
+    # validate()를 통해 _coerce 경로 검증: 단축형 datatype → full URI로 저장
+    v = V()
+    valid, warnings = v.validate([{
+        "subject":   PROD + "user_test",
+        "predicate": PROD + "duration",
+        "object":    "5.50",
+        "datatype":  "xsd:float",
+    }])
+    r.append(check("validate(): xsd:float 입력 시 트리플 통과",
+                   len(valid) == 1, f"valid count={len(valid)}, warnings={warnings}"))
+    if valid:
+        got_dt = valid[0].get("datatype", "")
+        r.append(check("validate(): datatype → full URI 변환됨",
+                       got_dt == str(RDF_XSD.float),
+                       f"실제 datatype: {got_dt!r}"))
+        # RdfLiteral.toPython()이 Python float을 반환하는지 확인
+        from rdflib import URIRef
+        lit = RdfLiteral(valid[0]["object"], datatype=URIRef(got_dt))
+        r.append(check("Literal.toPython()이 Python float 반환",
+                       isinstance(lit.toPython(), float),
+                       f"실제 toPython()={lit.toPython()!r} ({type(lit.toPython()).__name__})"))
+
+    # xsd:integer 경로
+    valid2, _ = v.validate([{
+        "subject":   PROD + "user_test",
+        "predicate": PROD + "count",
+        "object":    "6000",
+        "datatype":  "xsd:integer",
+    }])
+    if valid2:
+        got_dt2 = valid2[0].get("datatype", "")
+        r.append(check("xsd:integer → full URI 변환됨",
+                       got_dt2 == str(RDF_XSD.integer),
+                       f"실제 datatype: {got_dt2!r}"))
+        from rdflib import URIRef
+        lit2 = RdfLiteral(valid2[0]["object"], datatype=URIRef(got_dt2))
+        r.append(check("Literal.toPython()이 Python int 반환",
+                       isinstance(lit2.toPython(), int),
+                       f"실제 toPython()={lit2.toPython()!r} ({type(lit2.toPython()).__name__})"))
+
+    # 이미 full URI인 경우 그대로 유지
+    full_uri = str(RDF_XSD.float)
+    valid3, _ = v.validate([{
+        "subject":   PROD + "user_test",
+        "predicate": PROD + "duration",
+        "object":    "7.0",
+        "datatype":  full_uri,
+    }])
+    if valid3:
+        r.append(check("이미 full URI datatype → 그대로 유지",
+                       valid3[0].get("datatype") == full_uri,
+                       f"실제 datatype: {valid3[0].get('datatype')!r}"))
+
+    # 알 수 없는 datatype → 그대로 통과 (변환 없음)
+    r.append(check("_XSD_PREFIX_MAP.get('unknown', 'unknown') → 'unknown' 유지",
+                   _XSD_PREFIX_MAP.get("unknown_dt", "unknown_dt") == "unknown_dt"))
+
+    assert all(r)
+
+
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -1611,6 +1692,7 @@ def main() -> None:
         ("필수 속성 누락 감지",               test_validate_required_properties),
         ("listenDuration 범위 검증",         test_listen_duration_range),
         ("subject URI 형식 검증",            test_validate_subject_uri),
+        ("xsd 단축형 → full URI 변환",       test_xsd_shortform_normalization),
     ]
 
     passed = 0

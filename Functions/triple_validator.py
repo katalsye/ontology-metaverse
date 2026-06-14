@@ -30,6 +30,19 @@ TTL_PATH = Path("Functions/ontology/core.ttl")
 
 RDF_TYPE_URI = str(RDF.type)
 
+# Android RawDataToTripleConverter가 전송하는 단축형 datatype → full XSD URI 변환 테이블
+# URIRef("xsd:float") ≠ XSD.float → RDFLib이 타입 미인식 → SPARQL FILTER 수치 비교 실패
+_XSD_PREFIX_MAP: dict[str, str] = {
+    "xsd:float":    str(XSD.float),
+    "xsd:integer":  str(XSD.integer),
+    "xsd:string":   str(XSD.string),
+    "xsd:date":     str(XSD.date),
+    "xsd:dateTime": str(XSD.dateTime),
+    "xsd:boolean":  str(XSD.boolean),
+    "xsd:decimal":  str(XSD.decimal),
+    "xsd:long":     str(XSD.long),
+}
+
 # 범위 제약: 속성 로컬명 → (min, max, python_type)   max=None은 상한 없음
 RANGE_BOUNDS: dict[str, tuple] = {
     "duration":       (0.0,    24.0,        float),
@@ -132,7 +145,7 @@ class TripleValidator:
         val_str = str(value)
 
         if datatype:
-            return val_str, datatype
+            return val_str, _XSD_PREFIX_MAP.get(datatype, datatype)
 
         range_uri = self._range_map.get(prop_uri, "")
 
