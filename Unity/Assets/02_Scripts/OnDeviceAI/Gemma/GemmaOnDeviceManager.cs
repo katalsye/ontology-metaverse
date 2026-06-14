@@ -67,10 +67,10 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
 
             try
             {
-                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-                nativeBridge = new AndroidJavaObject("com.ontology.metaverse.GemmaBridge", activity);
-                bool success = nativeBridge.Call<bool>("initialize", absolutePath);
+                // GemmaInference.init() 내부에서 UnityPlayer.currentActivity로 Context를 직접 가져오므로
+                // 여기서는 인자 없이 생성한다.
+                nativeBridge = new AndroidJavaObject("com.ontology.metaverse.gemma.GemmaInference");
+                bool success = nativeBridge.Call<bool>("init", absolutePath);
 
                 if (success)
                 {
