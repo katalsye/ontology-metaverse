@@ -142,8 +142,8 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
         // ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// 멀티모달 입력. 현재 네이티브 브릿지에 vision API 미구현 — 텍스트만 전달.
-        /// MediaPipe LlmInferenceSession.addImage() 추가 후 GemmaInference.java 보강 필요.
+        /// 멀티모달 입력. 실기기에서는 GemmaInference.generateResponseWithImage(prompt, imageBytes)
+        /// (LlmInferenceSession + vision modality)를 호출.
         /// </summary>
         public string GenerateResponseWithImage(string prompt, byte[] imageBytes)
         {
@@ -162,10 +162,16 @@ namespace OntologyMetaverse.OnDeviceAI.Gemma
             Debug.Log($"[GemmaManager] 멀티모달 호출 (이미지 {imageBytes.Length}B, prompt 길이={prompt?.Length ?? 0})");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // TODO: GemmaInference.java에 generateResponseWithImage(byte[], String) 추가 후 연결.
-            // 현재는 텍스트만 전달.
-            Debug.LogWarning("[GemmaManager] 실기기 비전 API 미구현 - 텍스트만 전달");
-            return GenerateResponse(prompt);
+            if (nativeBridge == null) return "";
+            try
+            {
+                return nativeBridge.Call<string>("generateResponseWithImage", prompt, imageBytes) ?? "";
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GemmaManager] 네이티브 generateResponseWithImage 실패: {e}");
+                return "";
+            }
 #else
             // Editor mock: 갤러리 사진 트리플
             return @"{""triples"": [

@@ -1,10 +1,17 @@
 package com.ontology.metaverse.gemma;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.google.mediapipe.framework.image.BitmapImageBuilder;
+import com.google.mediapipe.framework.image.MPImage;
+import com.google.mediapipe.tasks.genai.llminference.GraphOptions;
 import com.google.mediapipe.tasks.genai.llminference.LlmInference;
 import com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions;
+import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession;
+import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession.LlmInferenceSessionOptions;
 
 /**
  * Unity ↔ MediaPipe LlmInference 네이티브 브릿지.
@@ -44,6 +51,7 @@ public class GemmaInference {
                     .setModelPath(modelPath)
                     .setMaxTokens(1024)        // 입력+출력 합산 토큰 상한. 트리플 추출은 짧음.
                     .setMaxTopK(40)            // 0.10.27 신규 API. 디코딩 topK 상한.
+                    .setMaxNumImages(1)        // Gemma 3n 비전 모달리티 활성화 (갤러리 사진 1장씩 처리)
                     .setPreferredBackend(LlmInference.Backend.GPU)  // CPU 대신 GPU
                     .build();
 
@@ -82,6 +90,60 @@ public class GemmaInference {
         } catch (Throwable t) {
             Log.e(TAG, "generateResponse 실패: " + t.getMessage(), t);
             return "";
+        }
+    }
+
+    /**
+     * 이미지 + 텍스트 프롬프트를 받아 동기적으로 응답 문자열 반환 (멀티모달).
+     * 메인 스레드에서 호출 금지 (몇 초 걸림). Unity 쪽에서 Coroutine + Thread로 감싸야 함.
+     * @param prompt 함께 전달할 텍스트 프롬프트
+     * @param imageBytes 이미지 파일 바이트(PNG/JPEG 등 BitmapFactory가 디코딩 가능한 포맷)
+     * @return 응답 문자열, 실패 시 빈 문자열.
+     */
+    public String generateResponseWithImage(String prompt, byte[] imageBytes) {
+        if (llmInference == null) {
+            Log.w(TAG, "generateResponseWithImage: 초기화 안 됨");
+            return "";
+        }
+        if (imageBytes == null || imageBytes.length == 0) {
+            return generateResponse(prompt);
+        }
+
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        if (bitmap == null) {
+            Log.w(TAG, "generateResponseWithImage: 이미지 디코딩 실패 - 텍스트만 전달");
+            return generateResponse(prompt);
+        }
+
+        LlmInferenceSession session = null;
+        try {
+            LlmInferenceSessionOptions sessionOptions = LlmInferenceSessionOptions.builder()
+                    .setTopK(40)
+                    .setTemperature(0.8f)
+                    .setGraphOptions(GraphOptions.builder().setEnableVisionModality(true).build())
+                    .build();
+
+            session = LlmInferenceSession.createFromOptions(llmInference, sessionOptions);
+            session.addQueryChunk(prompt == null ? "" : prompt);
+
+            MPImage image = new BitmapImageBuilder(bitmap).build();
+            session.addImage(image);
+
+            String response = session.generateResponse();
+            Log.d(TAG, "generateResponseWithImage 길이=" + (response == null ? 0 : response.length()));
+            return response == null ? "" : response;
+        } catch (Throwable t) {
+            Log.e(TAG, "generateResponseWithImage 실패: " + t.getMessage(), t);
+            return "";
+        } finally {
+            if (session != null) {
+                try {
+                    session.close();
+                } catch (Throwable t) {
+                    Log.e(TAG, "session close 실패: " + t.getMessage(), t);
+                }
+            }
+            bitmap.recycle();
         }
     }
 
