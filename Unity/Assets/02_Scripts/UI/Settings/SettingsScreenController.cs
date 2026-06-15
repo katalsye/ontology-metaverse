@@ -222,8 +222,8 @@ public class SettingsScreenController : MonoBehaviour
     {
         AuthService.Instance.SignOut(() =>
         {
-            PlayerPrefs.DeleteKey("onboarding_complete");
-            ScreenManager.Instance.GoTo("splash");
+            ScreenManager.Instance.ClearHistory();
+            ScreenManager.Instance.GoTo("login");
         });
     }
 
@@ -233,7 +233,8 @@ public class SettingsScreenController : MonoBehaviour
             onSuccess: () =>
             {
                 PlayerPrefs.DeleteAll();
-                ScreenManager.Instance.GoTo("splash");
+                ScreenManager.Instance.ClearHistory();
+                ScreenManager.Instance.GoTo("onboarding");
             },
             onFailure: err =>
             {
