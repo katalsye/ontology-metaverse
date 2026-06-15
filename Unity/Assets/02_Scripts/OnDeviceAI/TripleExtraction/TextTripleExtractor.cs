@@ -16,6 +16,9 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
         [Tooltip("Inspector에서 GemmaOnDeviceManager가 붙은 GameObject 드래그")]
         public GemmaOnDeviceManager gemmaManager;
 
+        // 무성님 온톨로지 네임스페이스. RawDataToTripleConverter와 동일.
+        private const string OntologyBaseUri = "http://7team.dev/ontology#";
+
         private string testUserUid =>
             Firebase.Auth.FirebaseAuth.DefaultInstance.CurrentUser?.UserId ?? "user_001";
 
@@ -56,6 +59,11 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
             int savedCount = 0;
             foreach (var t in triples)
             {
+                // #149: prod: 단축형 → full URI 정규화.
+                //   서버 triple_validator가 http:// 미시작 subject/object를 전량 제외하므로 필수.
+                //   RawDataToTripleConverter.NormalizeUri와 동일 로직 (자동수집 경로는 이미 통과 중).
+                NormalizeTriple(t);
+
                 // 새 TripleValidator로 검증 (실패 사유까지 받음)
                 ValidationResult result = TripleValidator.Validate(t);
     
@@ -92,7 +100,7 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 예시 1) 입력: ""오늘 스타벅스 강남점 갔다""
 출력:
 {""triples"": [
-  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:visited"", ""o"": ""prod:loc_" + testUserUid + @"_001"", ""datatype"": null},
+  {""s"": ""prod:user_" + testUserUid + @""", ""p"": ""prod:hasLocation"", ""o"": ""prod:loc_" + testUserUid + @"_001"", ""datatype"": null},
   {""s"": ""prod:loc_" + testUserUid + @"_001"", ""p"": ""prod:placeName"", ""o"": ""스타벅스 강남점"", ""datatype"": ""xsd:string""},
   {""s"": ""prod:loc_" + testUserUid + @"_001"", ""p"": ""prod:placeType"", ""o"": ""cafe"", ""datatype"": ""xsd:string""}
 ]}
@@ -167,6 +175,32 @@ namespace OntologyMetaverse.OnDeviceAI.TripleExtraction
 
             SQLiteManager.Instance.Connection.Insert(triple);
             Debug.Log($"[TextTripleExtractor] DB 저장: Id={triple.Id}, {triple.Subject} {triple.Predicate} {triple.Object}");
+        }
+
+        /// <summary>
+        /// prod: 단축형 URI를 full URI로 정규화한다 (#149).
+        /// RawDataToTripleConverter.NormalizeUriString과 동일 로직.
+        /// </summary>
+        private void NormalizeTriple(TripleJson t)
+        {
+            t.s = NormalizeUriString(t.s);
+            t.p = NormalizeUriString(t.p);
+            t.o = NormalizeUriString(t.o);
+        }
+
+        private string NormalizeUriString(string uri)
+        {
+            if (string.IsNullOrEmpty(uri)) return uri;
+
+            // 슬래시 누락 보정 (LLM 출력 보호)
+            if (uri.Contains("7team.devontology"))
+                uri = uri.Replace("7team.devontology", "7team.dev/ontology");
+
+            // prod: prefix → full URI expand
+            if (uri.StartsWith("prod:"))
+                uri = OntologyBaseUri + uri.Substring("prod:".Length);
+
+            return uri;
         }
     }
 }
