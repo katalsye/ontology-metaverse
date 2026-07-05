@@ -96,6 +96,7 @@ Unity가 실시간 리스너(Firestore Snapshot)로 수신. 추론 실행 후 `m
 | `questType` | `string` | `"삶 개선형"`, `"데이터 보완형"` | 퀘스트 분류 |
 | `rewardAmount` | `integer` | `30`, `50` | 완료 시 지급 코인. 데이터 보완형=30, 삶 개선형=50 ✅ |
 | `isCompleted` | `boolean` | `true`, `false` | Android 앱에서 완료 처리 후 `true`로 갱신 |
+| `completable` | `boolean` | `true`, `false` | 센서로 측정 불가해 "완료하기" 버튼으로 직접 완료하는 퀘스트(#187). 엔진 규칙의 `prod:completable` |
 | `createdAt` | `string` | ISO 8601 | 생성 시각 (`"2026-05-21T12:00:00"` 형식) |
 | `targetEntityUri` | `string` | URI 또는 `""` | 데이터 보완형 전용. 빈 노드 대상 엔티티 URI |
 | `targetValue` | `string` | Literal 또는 `""` | 데이터 보완형 전용. 빈 노드 대상 Literal 값 |

@@ -17,6 +17,9 @@ public class Quest
     public bool IsCompleted { get; set; }
     public string CreatedAt { get; set; }
 
+    // 센서로 측정 불가해 "완료하기" 버튼으로 직접 완료하는 퀘스트 (엔진 prod:completable, #187)
+    public bool Completable { get; set; }
+
     // 자동 완료 추론 시 엔진이 기록하는 필드
     public string CompletedAt { get; set; }       // ISO 8601, 완료 시각
     public string TargetEntityUri { get; set; }   // 완료 판정에 쓰인 엔티티 URI
@@ -34,6 +37,7 @@ public class Quest
             QuestType       = map.TryGetValue("questType", out var questType) ? questType as string ?? "" : "",
             RewardAmount    = map.TryGetValue("rewardAmount", out var reward) ? Convert.ToInt32(reward) : 0,
             IsCompleted     = map.TryGetValue("isCompleted", out var completed) && completed is bool b1 && b1,
+            Completable     = map.TryGetValue("completable", out var comp) && comp is bool cb && cb,
             CreatedAt       = map.TryGetValue("createdAt", out var createdAt) ? createdAt?.ToString() ?? "" : "",
             CompletedAt     = map.TryGetValue("completedAt", out var completedAt) ? completedAt?.ToString() ?? "" : "",
             TargetEntityUri = map.TryGetValue("targetEntityUri", out var uri) ? uri as string ?? "" : "",
@@ -50,6 +54,7 @@ public class Quest
             { "questType", QuestType },
             { "rewardAmount", RewardAmount },
             { "isCompleted", IsCompleted },
+            { "completable", Completable },
             { "createdAt", CreatedAt },
             { "completedAt", CompletedAt ?? "" },
             { "targetEntityUri", TargetEntityUri ?? "" },

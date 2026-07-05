@@ -1,22 +1,9 @@
-using System.Collections.Generic;
-
 /// <summary>
 /// 퀘스트 카드/상세 화면의 유형별 표시 규칙 (라벨, 버튼/입력 노출 여부).
 /// QuestScreenController에서 분리해 유닛 테스트로 검증한다.
 /// </summary>
 public static class QuestUiRules
 {
-    // A1 — 센서로 측정 불가능해 "완료하기" 버튼으로 직접 완료 처리하는 삶 개선형 퀘스트.
-    // inference_rules.sparql의 burnout_warning / late_caffeine_sleep_quality /
-    // schedule_overload / high_resting_hr_stress(Rule 30) prod:title과 1:1 대응.
-    public static readonly HashSet<string> ManuallyCompletableTitles = new HashSet<string>
-    {
-        "가벼운 스트레칭 10분",
-        "오후엔 디카페인 어때요?",
-        "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?",
-        "오늘 심박수가 높네요. 잠깐 쉬어볼까요?",
-    };
-
     // 엔진 questType 값(camelCase questType 필드) → 화면 표시용 QuestType
     public static QuestType MapQuestType(string questType) => questType switch
     {
@@ -43,9 +30,10 @@ public static class QuestUiRules
         _ => "",
     };
 
-    // 완료 버튼 (A1: 측정 불가능한 삶 개선형 퀘스트 + 미완료일 때만)
-    public static bool ShouldShowCompleteButton(string title, QuestStatus status) =>
-        status == QuestStatus.Active && ManuallyCompletableTitles.Contains(title);
+    // 완료 버튼 — 센서 측정 불가로 엔진이 completable=true로 표시한 퀘스트 + 미완료일 때만 (#187).
+    // (기존: 하드코딩된 title 집합과 대조 → 엔진 문구 변경 시 조용히 깨짐. 엔진 필드 기반으로 전환.)
+    public static bool ShouldShowCompleteButton(bool completable, QuestStatus status) =>
+        status == QuestStatus.Active && completable;
 
     // 답변 입력 (데이터 보완형 + 미완료일 때만)
     public static bool ShouldShowAnswerSection(QuestType type, QuestStatus status) =>

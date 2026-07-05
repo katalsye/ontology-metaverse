@@ -167,6 +167,7 @@ public class QuestScreenController : MonoBehaviour
         return new QuestData(q.Index, q.Title, "", type, status, progress, q.RewardAmount, q.Claimed, q.CompletedAt ?? "")
         {
             source = q,
+            completable = q.Completable,
         };
     }
 
@@ -315,7 +316,7 @@ public class QuestScreenController : MonoBehaviour
             ? DisplayStyle.Flex : DisplayStyle.None;
 
         // 완료 버튼 (A1: 측정 불가능한 삶 개선형 퀘스트 + 미완료일 때만)
-        bool showComplete = QuestUiRules.ShouldShowCompleteButton(quest.title, quest.status);
+        bool showComplete = QuestUiRules.ShouldShowCompleteButton(quest.completable, quest.status);
         btnComplete.style.display = showComplete ? DisplayStyle.Flex : DisplayStyle.None;
         btnComplete.SetEnabled(true);
 
@@ -404,6 +405,7 @@ public class QuestData
     public int rewardCoins;
     public bool claimed;
     public string completedAt;  // ISO 8601, done탭 정렬용
+    public bool completable;    // 엔진 prod:completable — "완료하기" 버튼 노출 여부 (#187)
     public Quest source;        // 답변 제출 시 targetEntityUri/targetValue 참조용
 
     public QuestData(int id, string title, string description,

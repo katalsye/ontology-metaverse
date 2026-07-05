@@ -1179,6 +1179,46 @@ def test_causal_chain(rules: dict[str, str]) -> bool:
     assert all(results)
 
 
+# ── Test: quest completable 필드 (#187) ──────────────────────────────────────
+
+def test_quest_completable_field(rules: dict[str, str]) -> bool:
+    """센서 측정 불가 퀘스트만 prod:completable=true 방출 (#187).
+    Unity가 '완료하기' 버튼 노출을 하드코딩 title 대신 이 필드로 판단한다."""
+    print("\n[Test] Quest completable 필드 (#187)")
+    results = []
+    TRUE = Literal(True)
+
+    def has_completable(g: Graph, user: URIRef) -> bool:
+        return any((q, PROD.completable, TRUE) in g
+                   for q in g.objects(user, PROD.receivesQuest))
+
+    # burnout_warning(스트레칭, 측정 불가) → completable=true
+    g = load_base_graph()
+    user = _add_user(g, "cmp_bw")
+    g.add((user, PROD.hasState, PROD.FatigueRisk))
+    for i in range(3):  # 운동 퀘스트 미완료 3건 (버너아웃 조건)
+        q = PROD[f"cmp_eq_{i}"]
+        g.add((q, RDF.type, PROD.Quest))
+        g.add((q, PROD.questType, Literal("운동")))
+        g.add((q, PROD.isCompleted, Literal(False)))
+        g.add((user, PROD.receivesQuest, q))
+    apply_rule(g, rules["burnout_warning"])
+    results.append(check("burnout_warning → completable=true (측정 불가)",
+                         has_completable(g, user)))
+
+    # sedentary_pattern("30분 산책하기", 걸음수로 측정 가능) → completable 미부여
+    g = load_base_graph()
+    user = _add_user(g, "cmp_sp")
+    g.add((user, PROD.hasConsecutiveLowStepDays, Literal(3, datatype=XSD.integer)))
+    apply_rule(g, rules["sedentary_pattern"])
+    results.append(check("sedentary_pattern 산책 퀘스트 생성됨",
+                         any(True for _ in g.objects(user, PROD.receivesQuest))))
+    results.append(check("sedentary_pattern → completable 미부여 (측정 가능)",
+                         not has_completable(g, user)))
+
+    assert all(results)
+
+
 # ── Test 11: persona rules (P1–P6) ───────────────────────────────────────────
 
 def test_persona_rules(rules: dict[str, str]) -> bool:
