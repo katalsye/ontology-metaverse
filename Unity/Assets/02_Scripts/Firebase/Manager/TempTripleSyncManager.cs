@@ -20,9 +20,6 @@ public class TempTripleSyncManager : MonoBehaviour
     // Firestore WriteBatch 최대 500 operations
     private const int BATCH_LIMIT = 500;
 
-    // 무성님 온톨로지 네임스페이스 (TempTripleManager와 동일)
-    private const string OntologyBaseUri = "http://7team.dev/ontology#";
-
     private FirebaseAuth _auth;
     private FirebaseFirestore _db;
 
@@ -112,9 +109,9 @@ public class TempTripleSyncManager : MonoBehaviour
             {
                 // #150: user_* 노드를 실제 uid로 정규화 (TempTripleManager와 동일).
                 //       이 경로(OnApplicationPause 자동 업로드)엔 정규화가 누락돼 있었음.
-                { "subject",   NormalizeUserUri(t.Subject, uid) },
+                { "subject",   TripleUri.NormalizeUserUri(t.Subject, uid) },
                 { "predicate", t.Predicate },
-                { "object",    NormalizeUserUri(t.Object, uid) },
+                { "object",    TripleUri.NormalizeUserUri(t.Object, uid) },
                 { "datatype",  t.Datatype },
                 { "CreatedAt", FieldValue.ServerTimestamp }
             });
@@ -145,16 +142,4 @@ public class TempTripleSyncManager : MonoBehaviour
         });
     }
 
-    /// <summary>
-    /// user_* 로 시작하는 노드 URI를 실제 로그인 uid 기준으로 통일 (#150).
-    /// TempTripleManager.NormalizeUserUri와 동일 로직.
-    /// </summary>
-    private string NormalizeUserUri(string uri, string realUid)
-    {
-        if (!string.IsNullOrEmpty(uri) && uri.StartsWith(OntologyBaseUri + "user_"))
-        {
-            return OntologyBaseUri + "user_" + realUid;
-        }
-        return uri;
-    }
 }
