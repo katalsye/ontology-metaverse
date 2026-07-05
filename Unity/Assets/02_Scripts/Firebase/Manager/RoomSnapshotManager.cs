@@ -100,8 +100,10 @@ public class RoomSnapshotManager : MonoBehaviour
         {
             { "SnapshotId", today },
             { "Date", today },
-            { "Objects", objects },
-            { "CreatedAt", FieldValue.ServerTimestamp }
+            // 읽기 모델 RoomSnapshot의 [FirestoreProperty] 이름과 대소문자 일치 필수
+            // (Firestore 필드명은 대소문자 구분 — 불일치 시 읽기에서 오브젝트 유실)
+            { "objects", objects },
+            { "createdAt", FieldValue.ServerTimestamp }
         };
 
         db.Collection(FirestoreCollections.RoomSnapshots)
