@@ -817,6 +817,59 @@ class TestOntologyPipeline(unittest.TestCase):
         print(f"  [{PASS}] room_snapshots 데이터 검증 성공 "
               f"(date={snapshot_date}, {len(snapshot_objects)}개 오브젝트)")
 
+    def test_scenario_14_routine_no_garbage_room_object(self):
+        """[Scenario 14] routine_detection의 prod:Routine 마커가 빈 objectType
+        가비지 RoomObject로 저장되지 않는지 저장부(saver)에서 직접 검증 (#182)."""
+        print("\n[Scenario 14] routine 마커 → 빈 objectType 가비지 저장 방지 (#182)")
+
+        import ontology_engine as oe
+
+        g = Graph()
+        uid = "u_routine"
+        user = URIRef(f"http://7team.dev/ontology#user_{uid}")
+
+        # P5 카운팅용 prod:Routine 마커 (RoomObject 아님, objectType 없음)
+        r = URIRef("http://7team.dev/ontology#_routine_marker_9h")
+        g.add((r, RDF.type, PROD.Routine))
+        g.add((r, PROD.routineHour, Literal(9)))
+        g.add((user, PROD.hasRoomObject, r))
+
+        # 정상 RoomObject
+        obj = URIRef("http://7team.dev/ontology#obj_alarm")
+        g.add((obj, RDF.type, PROD.RoomObject))
+        g.add((obj, PROD.objectType, Literal("alarm_clock")))
+        g.add((obj, PROD.placementZone, Literal("desk")))
+        g.add((obj, PROD.inferredFrom, Literal("Routine")))
+        g.add((user, PROD.hasRoomObject, obj))
+
+        # Firestore 없이 저장부만 호출해 room_objects payload 캡처
+        class _FakeDoc:
+            def __init__(self, store, key): self.store = store; self.key = key
+            def set(self, data, merge=False): self.store[self.key] = data
+            def collection(self, name): return _FakeCol(self.store, self.key + "/" + name)
+
+        class _FakeCol:
+            def __init__(self, store, prefix): self.store = store; self.prefix = prefix
+            def document(self, doc_id): return _FakeDoc(self.store, self.prefix + "/" + doc_id)
+
+        class _FakeDB:
+            def __init__(self): self.store = {}
+            def collection(self, name): return _FakeCol(self.store, name)
+
+        db = _FakeDB()
+        oe._save_results_to_firestore(db, uid, g, [])
+
+        saved = db.store.get(f"room_objects/{uid}", {}).get("objects", [])
+        self.assertTrue(saved, "room_objects가 저장되지 않음")
+        # 핵심: 저장된 모든 오브젝트는 objectType이 비어있지 않아야 한다(가비지 제외).
+        self.assertTrue(
+            all(o["objectType"] for o in saved),
+            f"빈 objectType 가비지 저장됨: {[o['objectType'] for o in saved]}")
+        self.assertEqual(len(saved), 1, "정상 RoomObject 1개만 저장돼야 함")
+
+        print(f"  [{PASS}] routine 마커 제외, 저장 objectTypes="
+              f"{[o['objectType'] for o in saved]}")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 메인 실행
