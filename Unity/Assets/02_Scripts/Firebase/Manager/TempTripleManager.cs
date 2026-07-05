@@ -23,7 +23,7 @@ public class TempTripleManager : MonoBehaviour
     private FirebaseFirestore db;
 
     // 온톨로지 base URI (명세서 §2)
-    private const string OntologyBaseUri = "http://7team.dev/ontology#";
+    private const string OntologyBaseUri = TripleUri.OntologyBaseUri;
 
     void Awake()
     {
@@ -154,9 +154,9 @@ public class TempTripleManager : MonoBehaviour
             // subject/object의 user_* 노드는 실제 uid로 정규화
             Dictionary<string, object> data = new Dictionary<string, object>
             {
-                { "subject", NormalizeUserUri(triple.Subject, uid) },
+                { "subject", TripleUri.NormalizeUserUri(triple.Subject, uid) },
                 { "predicate", triple.Predicate },
-                { "object", NormalizeUserUri(triple.Object, uid) },
+                { "object", TripleUri.NormalizeUserUri(triple.Object, uid) },
                 { "datatype", triple.Datatype },
                 { "CreatedAt", FieldValue.ServerTimestamp }
             };
@@ -191,19 +191,6 @@ public class TempTripleManager : MonoBehaviour
                 }
             });
         }
-    }
-
-    /// <summary>
-    /// user_* 로 시작하는 노드 URI를 실제 로그인 uid 기준으로 통일.
-    /// (추출 단계의 user_001 하드코딩 / 중복 prefix 등을 흡수)
-    /// </summary>
-    private string NormalizeUserUri(string uri, string realUid)
-    {
-        if (!string.IsNullOrEmpty(uri) && uri.StartsWith(OntologyBaseUri + "user_"))
-        {
-            return OntologyBaseUri + "user_" + realUid;
-        }
-        return uri;
     }
 
     /// <summary>
