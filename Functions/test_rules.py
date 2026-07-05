@@ -1440,8 +1440,9 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
 
     # ── P4 경계값/예외 테스트 ─────────────────────────────────────────────────
 
-    # P4-E1: 정확히 70% 혼자 방문 (7/10) → 발동 (경계값 포함)
-    # 조건: soloVisits*10 >= totalVisits*7 → 7*10=70 >= 10*7=70 → True
+    # P4-E1 (#183): 70% 혼자 방문(7 solo) + companion 3회 → social/solitary 조건이
+    # 동시에 성립하는 겹침 케이스. 상호배타 수정으로 social이 우선하고 solitary는
+    # 미발동해야 한다(동일 데이터에서 socialPreference가 비결정적으로 저장되던 문제 방지).
     g = load_base_graph()
     user = _add_user(g, "pe_p4e1")
     for i in range(7):  # 혼자 방문 7개
@@ -1449,17 +1450,19 @@ def test_persona_edge_cases(rules: dict[str, str]) -> bool:
         g.add((loc, RDF.type, PROD.Location))
         g.add((loc, PROD.placeName, Literal(f"장소{i}")))
         g.add((user, PROD.hasLocation, loc))
-    for i in range(3):  # 동반 방문 3개
+    for i in range(3):  # 동반 방문 3개 (companion >= 3 → social 성립)
         loc = PROD[f"loc_pe_p4e1_comp_{i}"]
         g.add((loc, RDF.type, PROD.Location))
         g.add((loc, PROD.companion, Literal("친구")))
         g.add((user, PROD.hasLocation, loc))
+    apply_rule(g, rules["persona_social"])
     apply_rule(g, rules["persona_solitary"])
+    social_prefs = {str(v)
+                    for p in g.objects(user, PROD.hasPersona)
+                    for v in g.objects(p, PROD.socialPreference)}
     results.append(check(
-        "P4-E1: 혼자 방문 70% (7/10) → Persona(solitary) 발동 (경계값 포함)",
-        any(str(v) == "solitary"
-            for p in g.objects(user, PROD.hasPersona)
-            for v in g.objects(p, PROD.socialPreference))
+        "P4-E1 (#183): 70% solo + companion 3회 → social만 발동, solitary 미발동 (상호배타)",
+        social_prefs == {"social"}
     ))
 
     # P4-E2: 69% 혼자 방문 (69/100) → 미발동
