@@ -163,6 +163,13 @@ public class ShopScreenController : MonoBehaviour
         detailName.text = item.name;
         detailDesc.text = item.description;
         detailPrice.text = item.price.ToString();
+
+        // 상세를 열 때마다 구매 버튼 상태를 보유 여부로 초기화한다.
+        // (구매 성공 시 OnBuyClicked에서 비활성화된 공유 버튼이 재활성화되지 않아
+        //  세션 내 추가 구매가 막히던 문제 수정 — 여기서 매번 정상 복원)
+        var buyBtn = root.Q<Button>("btn-buy");
+        if (buyBtn != null) buyBtn.SetEnabled(!ownedItems.Contains(item.id));
+
         detailOverlay.style.display = DisplayStyle.Flex;
     }
 
