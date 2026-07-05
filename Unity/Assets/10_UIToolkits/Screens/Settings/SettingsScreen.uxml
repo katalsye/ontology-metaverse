@@ -52,6 +52,10 @@
                     <ui:Label text="생활 패턴" class="setting-label" />
                     <ui:Label name="label-life-pattern" text="-" class="setting-value" />
                 </ui:VisualElement>
+                <ui:VisualElement class="setting-row row">
+                    <ui:Label text="회복력" class="setting-label" />
+                    <ui:Label name="label-recovery-level" text="-" class="setting-value" />
+                </ui:VisualElement>
             </ui:VisualElement>
 
             <!-- 알림 -->

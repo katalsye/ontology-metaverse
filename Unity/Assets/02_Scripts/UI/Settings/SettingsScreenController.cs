@@ -22,6 +22,7 @@ public class SettingsScreenController : MonoBehaviour
     private Label _labelEnergyType;
     private Label _labelSocialPref;
     private Label _labelLifePattern;
+    private Label _labelRecovery;
 
     private void OnEnable()
     {
@@ -34,6 +35,7 @@ public class SettingsScreenController : MonoBehaviour
         _labelEnergyType = root.Q<Label>("label-energy-type");
         _labelSocialPref = root.Q<Label>("label-social-pref");
         _labelLifePattern = root.Q<Label>("label-life-pattern");
+        _labelRecovery = root.Q<Label>("label-recovery-level");
 
         if (_personaSection != null)
             _personaSection.style.display = DisplayStyle.None;
@@ -117,6 +119,7 @@ public class SettingsScreenController : MonoBehaviour
         if (_labelEnergyType  != null) _labelEnergyType.text  = p.EnergyType      ?? "-";
         if (_labelSocialPref  != null) _labelSocialPref.text  = p.SocialPreference ?? "-";
         if (_labelLifePattern != null) _labelLifePattern.text = p.LifePattern      ?? "-";
+        if (_labelRecovery    != null) _labelRecovery.text    = p.RecoveryLevel    ?? "-";
 
         if (_personaSection != null)
             _personaSection.style.display = DisplayStyle.Flex;
