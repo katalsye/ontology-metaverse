@@ -44,7 +44,7 @@ public class FollowManager : MonoBehaviour
             { "CreatedAt", FieldValue.ServerTimestamp }
         };
 
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .Document(docId)
             .SetAsync(data)
             .ContinueWithOnMainThread(task =>
@@ -71,7 +71,7 @@ public class FollowManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         string docId = fromUid + "_" + uid;
 
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .Document(docId)
             .UpdateAsync("Status", "accepted")
             .ContinueWithOnMainThread(task =>
@@ -98,7 +98,7 @@ public class FollowManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         string docId = fromUid + "_" + uid;
 
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .Document(docId)
             .UpdateAsync("Status", "rejected")
             .ContinueWithOnMainThread(task =>
@@ -125,7 +125,7 @@ public class FollowManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         string docId = uid + "_" + targetUid;
 
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .Document(docId)
             .DeleteAsync()
             .ContinueWithOnMainThread(task =>
@@ -150,7 +150,7 @@ public class FollowManager : MonoBehaviour
         if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .WhereEqualTo("FromUid", uid)
             .WhereEqualTo("Status", "accepted")
             .GetSnapshotAsync()
@@ -181,7 +181,7 @@ public class FollowManager : MonoBehaviour
         if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .WhereEqualTo("ToUid", uid)
             .WhereEqualTo("Status", "accepted")
             .GetSnapshotAsync()
@@ -212,7 +212,7 @@ public class FollowManager : MonoBehaviour
         if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("follows")
+        db.Collection(FirestoreCollections.Follows)
             .WhereEqualTo("ToUid", uid)
             .WhereEqualTo("Status", "pending")
             .GetSnapshotAsync()
@@ -244,7 +244,7 @@ public class FollowManager : MonoBehaviour
 
         string myUid = auth.CurrentUser.UserId;
         string docId = myUid + "_" + targetUid;
-        db.Collection("follows").Document(docId).GetSnapshotAsync()
+        db.Collection(FirestoreCollections.Follows).Document(docId).GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
             {
                 if (task.IsFaulted || !task.Result.Exists) { onResult?.Invoke(false); return; }
@@ -258,12 +258,12 @@ public class FollowManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetFollowCounts(string targetUid, System.Action<int, int> onSuccess, System.Action<string> onFailure = null)
     {
-        var followerTask = db.Collection("follows")
+        var followerTask = db.Collection(FirestoreCollections.Follows)
             .WhereEqualTo("ToUid", targetUid)
             .WhereEqualTo("Status", "accepted")
             .GetSnapshotAsync();
 
-        var followingTask = db.Collection("follows")
+        var followingTask = db.Collection(FirestoreCollections.Follows)
             .WhereEqualTo("FromUid", targetUid)
             .WhereEqualTo("Status", "accepted")
             .GetSnapshotAsync();
@@ -301,7 +301,7 @@ public class FollowManager : MonoBehaviour
         CheckFollowAccess(targetUid,
             onAllowed: () =>
             {
-                db.Collection("follows")
+                db.Collection(FirestoreCollections.Follows)
                     .WhereEqualTo("ToUid", targetUid)
                     .WhereEqualTo("Status", "accepted")
                     .GetSnapshotAsync()
@@ -333,7 +333,7 @@ public class FollowManager : MonoBehaviour
         CheckFollowAccess(targetUid,
             onAllowed: () =>
             {
-                db.Collection("follows")
+                db.Collection(FirestoreCollections.Follows)
                     .WhereEqualTo("FromUid", targetUid)
                     .WhereEqualTo("Status", "accepted")
                     .GetSnapshotAsync()
@@ -368,7 +368,7 @@ public class FollowManager : MonoBehaviour
 
         if (myUid == targetUid) { onAllowed?.Invoke(); return; }
 
-        db.Collection("users").Document(targetUid).GetSnapshotAsync()
+        db.Collection(FirestoreCollections.Users).Document(targetUid).GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
             {
                 if (task.IsFaulted || !task.Result.Exists) { onDenied?.Invoke(); return; }
@@ -377,7 +377,7 @@ public class FollowManager : MonoBehaviour
                 if (isPublic) { onAllowed?.Invoke(); return; }
 
                 string docId = myUid + "_" + targetUid;
-                db.Collection("follows").Document(docId).GetSnapshotAsync()
+                db.Collection(FirestoreCollections.Follows).Document(docId).GetSnapshotAsync()
                     .ContinueWithOnMainThread(followTask =>
                     {
                         if (followTask.IsFaulted || !followTask.Result.Exists) { onDenied?.Invoke(); return; }

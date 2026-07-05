@@ -51,9 +51,9 @@ public class DiaryManager : MonoBehaviour
     {
         string uid = auth.CurrentUser.UserId;
         string today = System.DateTime.Now.ToString("yyyy-MM-dd");
-        DocumentReference diaryDoc = db.Collection("diary_entries")
+        DocumentReference diaryDoc = db.Collection(FirestoreCollections.DiaryEntries)
             .Document(uid)
-            .Collection("entries")
+            .Collection(FirestoreCollections.Entries)
             .Document(today);
 
         diaryDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
@@ -102,9 +102,9 @@ public class DiaryManager : MonoBehaviour
     public void GetDiary(string date, System.Action<DiaryEntry> onSuccess, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
-        db.Collection("diary_entries")
+        db.Collection(FirestoreCollections.DiaryEntries)
             .Document(uid)
-            .Collection("entries")
+            .Collection(FirestoreCollections.Entries)
             .Document(date)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -136,9 +136,9 @@ public class DiaryManager : MonoBehaviour
         string startDate = yearMonth + "-01";
         string endDate = yearMonth + "-31";
 
-        db.Collection("diary_entries")
+        db.Collection(FirestoreCollections.DiaryEntries)
             .Document(uid)
-            .Collection("entries")
+            .Collection(FirestoreCollections.Entries)
             .WhereGreaterThanOrEqualTo("Date", startDate)
             .WhereLessThanOrEqualTo("Date", endDate)
             .GetSnapshotAsync()
@@ -167,9 +167,9 @@ public class DiaryManager : MonoBehaviour
     public void ClaimDiaryReward(string date, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
-        DocumentReference diaryDoc = db.Collection("diary_entries")
+        DocumentReference diaryDoc = db.Collection(FirestoreCollections.DiaryEntries)
             .Document(uid)
-            .Collection("entries")
+            .Collection(FirestoreCollections.Entries)
             .Document(date);
 
         diaryDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
