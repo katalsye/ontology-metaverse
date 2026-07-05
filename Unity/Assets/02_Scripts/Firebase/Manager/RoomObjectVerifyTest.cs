@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -65,3 +66,4 @@ public class RoomObjectVerifyTest : MonoBehaviour
     private string GetStr(Dictionary<string, object> d, string key)
         => d.TryGetValue(key, out var v) ? v?.ToString() : null;
 }
+#endif

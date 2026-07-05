@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections;
 using UnityEngine;
 using OntologyMetaverse.DataCollection.SQLite;
@@ -134,3 +135,4 @@ public class TempTripleSyncTest : MonoBehaviour
         Debug.Log($"[TempTripleSyncTest] {label}: Pending={pending}, Synced={synced}");
     }
 }
+#endif

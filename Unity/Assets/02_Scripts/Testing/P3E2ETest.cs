@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections;
 using UnityEngine;
 using OntologyMetaverse.OnDeviceAI.Gemma;
@@ -171,3 +172,4 @@ namespace OntologyMetaverse.Testing
         }
     }
 }
+#endif
