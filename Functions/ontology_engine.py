@@ -507,11 +507,16 @@ def _save_results_to_firestore(
             title_str = str(title) if title else ""
             reward_amt = g.value(quest, PROD.rewardAmount)
             is_done_bool = is_done.toPython() if is_done is not None else False
+            # 센서로 측정 불가해 "완료하기" 버튼으로 직접 완료해야 하는 퀘스트 표시(#187).
+            # 규칙 CONSTRUCT에서 prod:completable true 로 지정. Unity가 이 값으로 버튼 노출.
+            completable = g.value(quest, PROD.completable)
+            completable_bool = completable.toPython() if completable is not None else False
             quests_payload.append({
                 "title":           title_str,
                 "questType":       str(q_type) if q_type else "",
                 "rewardAmount":    int(reward_amt.toPython()) if reward_amt is not None else 0,
                 "isCompleted":     is_done_bool,
+                "completable":     completable_bool,
                 "createdAt":       str(created) if created else "",
                 "targetEntityUri": str(g.value(quest, PROD.targetEntity)) if g.value(quest, PROD.targetEntity) else "",
                 "targetValue":     str(g.value(quest, PROD.targetValue)) if g.value(quest, PROD.targetValue) else "",

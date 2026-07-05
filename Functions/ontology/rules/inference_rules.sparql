@@ -87,6 +87,7 @@ CONSTRUCT {
     ?user prod:hasState prod:BurnoutWarning .
     _:q   a prod:Quest ;
           prod:title "가벼운 스트레칭 10분" ;
+          prod:completable true ;
           prod:questType "삶 개선형" ;
           prod:rewardAmount 50 ;
           prod:isCompleted false .
@@ -228,6 +229,7 @@ WHERE {
 CONSTRUCT {
     _:q a prod:Quest ;
         prod:title "오후엔 디카페인 어때요?" ;
+        prod:completable true ;
         prod:questType "삶 개선형" ;
         prod:rewardAmount 50 ;
         prod:isCompleted false .
@@ -1163,6 +1165,7 @@ CONSTRUCT {
     ?user prod:hasState prod:ScheduleOverload .
     _:q   a prod:Quest ;
           prod:title "오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?" ;
+          prod:completable true ;
           prod:questType "삶 개선형" ;
           prod:rewardAmount 50 ;
           prod:isCompleted false .
@@ -1204,6 +1207,7 @@ CONSTRUCT {
     ?user prod:hasState prod:HighRestingHR .
     _:q a prod:Quest ;
         prod:title "오늘 심박수가 높네요. 잠깐 쉬어볼까요?" ;
+        prod:completable true ;
         prod:questType "삶 개선형" ;
         prod:rewardAmount 50 ;
         prod:isCompleted false .
