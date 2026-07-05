@@ -7,25 +7,39 @@ import sys
 import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
-# ── 무거운 의존성 사전 Mock (임포트 전에 삽입) ────────────────────────────────
-for _mod in [
-    "firebase_admin",
-    "firebase_admin.firestore",
-    "firebase_admin.messaging",
-    "firebase_admin.storage",
-    "rdflib",
-    "rdflib.graph",
-    "rdflib.namespace",
-    "rdflib.term",
-    "duckdb",
-    "firebase_functions",
-    "firebase_functions.firestore_fn",
-]:
-    sys.modules.setdefault(_mod, MagicMock())
-
-# ontology_engine mock — _handle_triple_written 내 지연 임포트가 이 mock을 사용함
+# ── 무거운 의존성 Mock — 테스트 실행 스코프에 한정 (#179) ──────────────────────
+# triggers.py는 firebase_admin / ontology_engine을 함수 내부에서 지연 임포트하므로
+# `import triggers`(pytest 수집 시점)에는 Mock이 필요 없다. Mock은 테스트가 트리거
+# 함수를 호출할 때만 필요하므로 setUpModule/tearDownModule로 주입·복원한다.
+#
+# 과거엔 모듈 로드(수집) 시 sys.modules.setdefault(...)로 전역 주입했는데,
+# duckdb를 지연 임포트하는 test_ontology_engine이 가짜 duckdb를 잡아
+# `pytest Functions` 전체 실행 시 DuckDB 시나리오 2건이 거짓 실패했다.
 _mock_engine = MagicMock()
-sys.modules["ontology_engine"] = _mock_engine
+
+_MOD_MOCKS = {
+    name: MagicMock()
+    for name in [
+        "firebase_admin",
+        "firebase_admin.firestore",
+        "firebase_admin.messaging",
+        "firebase_admin.storage",
+        "firebase_functions",
+        "firebase_functions.firestore_fn",
+    ]
+}
+_MOD_MOCKS["ontology_engine"] = _mock_engine
+
+_sys_modules_patch = patch.dict(sys.modules, _MOD_MOCKS)
+
+
+def setUpModule() -> None:
+    _sys_modules_patch.start()
+
+
+def tearDownModule() -> None:
+    _sys_modules_patch.stop()
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
