@@ -31,13 +31,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetCurrency(System.Action<int> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
@@ -63,13 +57,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void AddCurrency(int amount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
@@ -101,13 +89,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void PurchaseItem(string itemId, int price, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
@@ -160,8 +142,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetGems(System.Action<int> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted) { onFailure?.Invoke(task.Exception.Message); return; }
@@ -176,8 +157,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void AddGems(int amount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
@@ -203,13 +183,7 @@ public class RewardManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetItems(System.Action<List<string>> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
         db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)

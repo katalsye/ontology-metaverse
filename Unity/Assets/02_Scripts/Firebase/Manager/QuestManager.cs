@@ -93,14 +93,7 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetQuests(bool completedFilter, System.Action<List<Quest>> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("GetQuests: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(GetQuests), onFailure)) return;
         db.Collection(FirestoreCollections.Quests)
             .Document(uid)
             .GetSnapshotAsync()
@@ -126,14 +119,7 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetQuest(int index, System.Action<Quest> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("GetQuest: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(GetQuest), onFailure)) return;
         db.Collection(FirestoreCollections.Quests)
             .Document(uid)
             .GetSnapshotAsync()
@@ -167,14 +153,7 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void CompleteQuest(int index, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("CompleteQuest: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(CompleteQuest), onFailure)) return;
         DocumentReference questDoc = db.Collection(FirestoreCollections.Quests).Document(uid);
 
         db.RunTransactionAsync(transaction =>
@@ -207,12 +186,7 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void ClaimReward(int index, int rewardAmount, System.Action onSuccess = null, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("ClaimReward: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(ClaimReward), onFailure)) return;
 
         if (rewardManager == null)
         {
@@ -304,11 +278,7 @@ public class QuestManager : MonoBehaviour
     // ───────────────────────────────────────
     public void StartQuestListener()
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("StartQuestListener: 로그인 상태 아님");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(StartQuestListener))) return;
 
         StopQuestListener();
         string uid = auth.CurrentUser.UserId;
