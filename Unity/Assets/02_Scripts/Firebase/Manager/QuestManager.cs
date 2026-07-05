@@ -257,24 +257,45 @@ public class QuestManager : MonoBehaviour
                 return;
             }
 
-            // RewardManager로 재화 증가
-            rewardManager.AddCurrency(rewardAmount,
-                onSuccess: () =>
-                {
-                    // claimed 표시 — 배열 전체를 다시 써서 중복 수령 방지
-                    quest.Claimed = true;
-                    questDoc.UpdateAsync("quests", quests.Select(q => q.ToMap()).ToList())
-                        .ContinueWithOnMainThread(updateTask =>
-                        {
-                            if (updateTask.IsFaulted)
-                                Debug.LogError("claimed 갱신 실패: " + updateTask.Exception);
-                        });
+            // 금액은 클라 파라미터(rewardAmount)가 아니라 엔진이 Firestore에 기록한
+            // quest.RewardAmount를 신뢰값으로 사용(변조 방지).
+            int trustedAmount = quest.RewardAmount;
 
-                    Debug.Log($"보상 수령 완료: {rewardAmount}");
-                    onSuccess?.Invoke();
-                },
-                onFailure: onFailure
-            );
+            // claim-first: claimed=true를 먼저 커밋해 중복 지급을 원천 차단.
+            // (지급 먼저 → claimed 갱신 실패 시 재수령으로 중복 지급되던 문제 수정)
+            quest.Claimed = true;
+            questDoc.UpdateAsync("quests", quests.Select(q => q.ToMap()).ToList())
+                .ContinueWithOnMainThread(updateTask =>
+                {
+                    if (updateTask.IsFaulted)
+                    {
+                        // claimed 커밋 실패 → 코인 미지급 상태라 안전하게 재시도 가능
+                        Debug.LogError("claimed 갱신 실패(지급 안 함): " + updateTask.Exception);
+                        onFailure?.Invoke("보상 처리 실패 (재시도 가능)");
+                        return;
+                    }
+
+                    // claimed 확정 후 코인 지급
+                    rewardManager.AddCurrency(trustedAmount,
+                        onSuccess: () =>
+                        {
+                            Debug.Log($"보상 수령 완료: {trustedAmount}");
+                            onSuccess?.Invoke();
+                        },
+                        onFailure: err =>
+                        {
+                            // 지급 실패 → claimed 롤백해 재시도 허용(중복보다 유실 방지)
+                            quest.Claimed = false;
+                            questDoc.UpdateAsync("quests", quests.Select(q => q.ToMap()).ToList())
+                                .ContinueWithOnMainThread(rb =>
+                                {
+                                    if (rb.IsFaulted)
+                                        Debug.LogError("claimed 롤백 실패(수동 확인 필요): " + rb.Exception);
+                                });
+                            Debug.LogError("코인 지급 실패, claimed 롤백: " + err);
+                            onFailure?.Invoke(err);
+                        });
+                });
         });
     }
 
