@@ -543,7 +543,13 @@ def _save_results_to_firestore(
                 logger.warning("FCM quest_completed 전송 실패 (무시): %s", exc)
 
     # room_objects — 그래프에서 직접 순회 (new_triples blank node ID 불일치 버그 수정)
-    all_obj_subjects = list(g.objects(user_uri, PROD.hasRoomObject))
+    # hasRoomObject로 연결됐어도 실제 prod:RoomObject 노드만 저장한다.
+    # (routine_detection이 P5 카운팅용 prod:Routine 마커를 hasRoomObject로 연결해
+    #  objectType 빈 가비지 오브젝트가 섞이던 문제 방지 — #182)
+    all_obj_subjects = [
+        o for o in g.objects(user_uri, PROD.hasRoomObject)
+        if (o, RDF.type, PROD.RoomObject) in g
+    ]
     if all_obj_subjects:
         room_objs = []
         for obj in all_obj_subjects:
