@@ -224,78 +224,72 @@ public class QuestManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         DocumentReference questDoc = db.Collection(FirestoreCollections.Quests).Document(uid);
 
-        questDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        // 완료+미수령 확인과 claimed=true 세팅을 트랜잭션으로 원자화 → 동시 요청 중복 지급 차단.
+        // 금액은 클라 파라미터(rewardAmount)가 아니라 엔진 기록값(quest.RewardAmount)을 신뢰값으로 사용.
+        int trustedAmount = 0;
+        db.RunTransactionAsync(transaction =>
+        {
+            return transaction.GetSnapshotAsync(questDoc).ContinueWith(snapTask =>
+            {
+                var quests = ParseQuests(snapTask.Result);
+                if (index < 0 || index >= quests.Count)
+                    throw new InvalidOperationException("퀘스트 없음");
+
+                Quest quest = quests[index];
+                if (!quest.IsCompleted)
+                    throw new InvalidOperationException("완료되지 않은 퀘스트");
+                if (quest.Claimed)
+                    throw new InvalidOperationException("이미 수령한 보상");
+
+                trustedAmount = quest.RewardAmount;
+                quest.Claimed = true;
+                transaction.Update(questDoc, "quests", quests.Select(q => q.ToMap()).ToList());
+            });
+        }).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
-                Debug.LogError("퀘스트 조회 실패: " + task.Exception);
-                onFailure?.Invoke(task.Exception.Message);
+                var ex = task.Exception?.Flatten().InnerException ?? task.Exception;
+                string msg = ex?.Message ?? "보상 수령 실패";
+                Debug.LogWarning("보상 수령 실패: " + msg);
+                onFailure?.Invoke(msg);
                 return;
             }
 
-            var quests = ParseQuests(task.Result);
-            if (index < 0 || index >= quests.Count)
-            {
-                Debug.LogWarning("퀘스트 없음: index=" + index);
-                onFailure?.Invoke("퀘스트 없음");
-                return;
-            }
-
-            Quest quest = quests[index];
-
-            if (!quest.IsCompleted)
-            {
-                Debug.LogWarning("완료되지 않은 퀘스트입니다.");
-                onFailure?.Invoke("완료되지 않은 퀘스트");
-                return;
-            }
-
-            if (quest.Claimed)
-            {
-                Debug.LogWarning("이미 보상을 수령한 퀘스트입니다.");
-                onFailure?.Invoke("이미 수령한 보상");
-                return;
-            }
-
-            // 금액은 클라 파라미터(rewardAmount)가 아니라 엔진이 Firestore에 기록한
-            // quest.RewardAmount를 신뢰값으로 사용(변조 방지).
-            int trustedAmount = quest.RewardAmount;
-
-            // claim-first: claimed=true를 먼저 커밋해 중복 지급을 원천 차단.
-            // (지급 먼저 → claimed 갱신 실패 시 재수령으로 중복 지급되던 문제 수정)
-            quest.Claimed = true;
-            questDoc.UpdateAsync("quests", quests.Select(q => q.ToMap()).ToList())
-                .ContinueWithOnMainThread(updateTask =>
+            // claimed가 트랜잭션으로 확정됨(경합/중복 차단) → 이제 코인 지급.
+            rewardManager.AddCurrency(trustedAmount,
+                onSuccess: () =>
                 {
-                    if (updateTask.IsFaulted)
-                    {
-                        // claimed 커밋 실패 → 코인 미지급 상태라 안전하게 재시도 가능
-                        Debug.LogError("claimed 갱신 실패(지급 안 함): " + updateTask.Exception);
-                        onFailure?.Invoke("보상 처리 실패 (재시도 가능)");
-                        return;
-                    }
-
-                    // claimed 확정 후 코인 지급
-                    rewardManager.AddCurrency(trustedAmount,
-                        onSuccess: () =>
-                        {
-                            Debug.Log($"보상 수령 완료: {trustedAmount}");
-                            onSuccess?.Invoke();
-                        },
-                        onFailure: err =>
-                        {
-                            // 지급 실패 → claimed 롤백해 재시도 허용(중복보다 유실 방지)
-                            quest.Claimed = false;
-                            questDoc.UpdateAsync("quests", quests.Select(q => q.ToMap()).ToList())
-                                .ContinueWithOnMainThread(rb =>
-                                {
-                                    if (rb.IsFaulted)
-                                        Debug.LogError("claimed 롤백 실패(수동 확인 필요): " + rb.Exception);
-                                });
-                            Debug.LogError("코인 지급 실패, claimed 롤백: " + err);
-                            onFailure?.Invoke(err);
-                        });
+                    Debug.Log($"보상 수령 완료: {trustedAmount}");
+                    onSuccess?.Invoke();
+                },
+                onFailure: err =>
+                {
+                    // 지급 실패 → claimed 롤백해 재수령 허용(중복보다 유실 방지).
+                    RollbackClaim(questDoc, index);
+                    Debug.LogError("코인 지급 실패, claimed 롤백 시도: " + err);
+                    onFailure?.Invoke(err);
                 });
+        });
+    }
+
+    // 코인 지급 실패 시 claimed=true를 되돌려 재수령을 허용(best-effort).
+    private void RollbackClaim(DocumentReference questDoc, int index)
+    {
+        db.RunTransactionAsync(transaction =>
+            transaction.GetSnapshotAsync(questDoc).ContinueWith(snapTask =>
+            {
+                var quests = ParseQuests(snapTask.Result);
+                if (index >= 0 && index < quests.Count)
+                {
+                    quests[index].Claimed = false;
+                    transaction.Update(questDoc, "quests", quests.Select(q => q.ToMap()).ToList());
+                }
+            })
+        ).ContinueWithOnMainThread(t =>
+        {
+            if (t.IsFaulted)
+                Debug.LogError("claimed 롤백 실패(수동 확인 필요): " + t.Exception);
         });
     }
 
