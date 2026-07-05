@@ -10,7 +10,9 @@ using UnityEngine;
 [RequireComponent(typeof(FurnitureInteraction))]
 public class OntologyItem : MonoBehaviour
 {
-    public enum OntologyZone { Floor, TableSurface, Wall, Ceiling, Ignore }
+    // ※ 직렬화(int) 보존을 위해 새 값은 반드시 끝에 추가할 것.
+    //   Floor=0, TableSurface=1, Wall=2, Ceiling=3, Ignore=4, Shelf=5, Window=6
+    public enum OntologyZone { Floor, TableSurface, Wall, Ceiling, Ignore, Shelf, Window }
 
     [Header("소환 구역 (겹쳤을 때 랜덤 배치 범위)")]
     [Tooltip("Ignore = 겹침 체크 없이 항상 현재 위치에서 소환 (예: moon_lamp)")]

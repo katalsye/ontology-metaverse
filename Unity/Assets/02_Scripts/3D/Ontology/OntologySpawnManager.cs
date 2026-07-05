@@ -13,6 +13,8 @@ using UnityEngine;
 ///   Ceiling → roomMinX/MaxX, roomMinZ/MaxZ, ceilingY
 ///   Table   → deskObject renderer bounds 위 표면
 ///   Wall    → wallSpawnPoints X/Z + hangerMinY~hangerMaxY
+///   Shelf   → shelfObject bounds 윗면 (없으면 Table 폴백)
+///   Window  → windowObject bounds 면   (없으면 Wall 폴백)
 ///
 /// ── 백엔드에서 불러온 후 호출 예시 ──────────────────────────
 /// var item = ontologyGameObject.GetComponent&lt;OntologyItem&gt;();
@@ -34,6 +36,15 @@ public class OntologySpawnManager : MonoBehaviour
 
     [Tooltip("랜덤 위치 탐색 최대 시도 횟수")]
     public int maxTries = 20;
+
+    // ── Shelf / Window 앵커 (선택) ────────────────────────────
+
+    [Header("Shelf / Window 앵커 (선택)")]
+    [Tooltip("Shelf 구역 오브젝트가 배치될 선반. 비우면 TableSurface(책상 표면)로 폴백.")]
+    public Transform shelfObject;
+
+    [Tooltip("Window 구역 오브젝트가 배치될 창문. 비우면 Wall(벽)로 폴백.")]
+    public Transform windowObject;
 
     // ── 라이프사이클 ──────────────────────────────────────────
 
@@ -138,11 +149,62 @@ public class OntologySpawnManager : MonoBehaviour
                 }
             }
 
+            case OntologyItem.OntologyZone.Shelf:
+                // 선반 윗면. 앵커 없으면 책상 표면으로 폴백(그 안에서 다시 Floor 폴백).
+                if (shelfObject != null && TryGetTopSurface(shelfObject, out var shelfPos))
+                    return shelfPos;
+                goto case OntologyItem.OntologyZone.TableSurface;
+
+            case OntologyItem.OntologyZone.Window:
+                // 창문 면. 앵커 없으면 벽으로 폴백.
+                if (windowObject != null && TryGetBoundsPoint(windowObject, out var windowPos))
+                    return windowPos;
+                goto case OntologyItem.OntologyZone.Wall;
+
             default:
                 return new Vector3(
                     Random.Range(fec.roomMinX, fec.roomMaxX),
                     fec.floorY,
                     Random.Range(fec.roomMinZ, fec.roomMaxZ));
         }
+    }
+
+    // 앵커의 렌더러 bounds 윗면(y=max)에서 랜덤 위치. 렌더러 없으면 실패.
+    static bool TryGetTopSurface(Transform anchor, out Vector3 pos)
+    {
+        if (TryGetWorldBounds(anchor, out Bounds b))
+        {
+            pos = new Vector3(Random.Range(b.min.x, b.max.x), b.max.y, Random.Range(b.min.z, b.max.z));
+            return true;
+        }
+        pos = anchor.position;
+        return false;
+    }
+
+    // 앵커의 렌더러 bounds 면 위 랜덤 위치(가장 얇은 축은 중앙 고정 → 창문 면 근사).
+    static bool TryGetBoundsPoint(Transform anchor, out Vector3 pos)
+    {
+        if (TryGetWorldBounds(anchor, out Bounds b))
+        {
+            Vector3 s = b.size;
+            if (s.z <= s.x && s.z <= s.y)      // 얇은 축 = z (X-Y 면)
+                pos = new Vector3(Random.Range(b.min.x, b.max.x), Random.Range(b.min.y, b.max.y), b.center.z);
+            else if (s.x <= s.y)               // 얇은 축 = x (Y-Z 면)
+                pos = new Vector3(b.center.x, Random.Range(b.min.y, b.max.y), Random.Range(b.min.z, b.max.z));
+            else                               // 얇은 축 = y (X-Z 면)
+                pos = new Vector3(Random.Range(b.min.x, b.max.x), b.center.y, Random.Range(b.min.z, b.max.z));
+            return true;
+        }
+        pos = anchor.position;
+        return false;
+    }
+
+    static bool TryGetWorldBounds(Transform anchor, out Bounds bounds)
+    {
+        var rens = anchor.GetComponentsInChildren<Renderer>();
+        if (rens.Length == 0) { bounds = default; return false; }
+        bounds = rens[0].bounds;
+        for (int i = 1; i < rens.Length; i++) bounds.Encapsulate(rens[i].bounds);
+        return true;
     }
 }
