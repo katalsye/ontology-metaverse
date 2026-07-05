@@ -395,40 +395,14 @@ public class RoomObjectManager : MonoBehaviour
         return result;
     }
 
-    private RoomObject ParseRoomObject(Dictionary<string, object> d)
-    {
-        return new RoomObject
-        {
-            ObjectId            = GetStr(d, "objectId"),
-            ObjectType          = GetStr(d, "objectType"),
-            PlacementZone       = GetStr(d, "placementZone"),
-            PositionX           = GetFloat(d, "positionX"),
-            PositionY           = GetFloat(d, "positionY"),
-            PositionZ           = GetFloat(d, "positionZ"),
-            InferredFrom        = GetStr(d, "inferredFrom"),
-            InferredFromConcept = GetStr(d, "inferredFromConcept"),
-        };
-    }
+    // 필드명 단일 소스는 RoomObject.FromMap/ToMap(RoomObject.cs)에 있음.
+    private RoomObject ParseRoomObject(Dictionary<string, object> d) => RoomObject.FromMap(d);
 
     private List<object> SerializeObjects(List<RoomObject> objects)
     {
         var list = new List<object>(objects.Count);
         foreach (var o in objects)
-        {
-            var d = new Dictionary<string, object>
-            {
-                { "objectType",          o.ObjectType },
-                { "placementZone",       o.PlacementZone },
-                { "positionX",           o.PositionX },
-                { "positionY",           o.PositionY },
-                { "positionZ",           o.PositionZ },
-                { "inferredFrom",        o.InferredFrom },
-                { "inferredFromConcept", o.InferredFromConcept },
-            };
-            if (!string.IsNullOrEmpty(o.ObjectId))
-                d["objectId"] = o.ObjectId;
-            list.Add(d);
-        }
+            list.Add(o.ToMap());
         return list;
     }
 
