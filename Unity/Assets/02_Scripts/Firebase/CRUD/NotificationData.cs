@@ -7,7 +7,7 @@ public class NotificationData
     public string NotificationId { get; set; }
 
     [FirestoreProperty]
-    public string Type { get; set; }  // follow_request / room_update / new_quest
+    public string Type { get; set; }  // follow_request / room_updated / quest_completed / new_quest
 
     [FirestoreProperty]
     public string Title { get; set; }
