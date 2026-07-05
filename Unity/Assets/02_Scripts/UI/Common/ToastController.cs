@@ -16,6 +16,10 @@ public class ToastController : MonoBehaviour
     private Label toastBody;
     private string targetScreen;
 
+    // 현재 자동 숨김 코루틴 — 토스트가 겹칠 때 이전 코루틴이 나중 토스트를
+    // 조기에 숨기지 않도록, 새 토스트마다 이전 것을 중지하고 교체한다.
+    private Coroutine _autoHideCo;
+
     private void Awake()
     {
         var root = uiDocument.rootVisualElement;
@@ -81,7 +85,8 @@ public class ToastController : MonoBehaviour
         toastContainer.style.display = DisplayStyle.Flex;
         AudioManager.Instance?.PlaySFX(5);
 
-        StartCoroutine(AutoHide(duration));
+        if (_autoHideCo != null) StopCoroutine(_autoHideCo);
+        _autoHideCo = StartCoroutine(AutoHide(duration));
     }
 
     private IEnumerator AutoHide(float duration)
