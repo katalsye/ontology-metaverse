@@ -32,9 +32,9 @@ public class RoomSnapshotManager : MonoBehaviour
         string startDate = yearMonth + "-01";
         string endDate = yearMonth + "-31";
 
-        db.Collection("room_snapshots")
+        db.Collection(FirestoreCollections.RoomSnapshots)
             .Document(uid)
-            .Collection("snapshots")
+            .Collection(FirestoreCollections.Snapshots)
             .WhereGreaterThanOrEqualTo("Date", startDate)
             .WhereLessThanOrEqualTo("Date", endDate)
             .GetSnapshotAsync()
@@ -63,9 +63,9 @@ public class RoomSnapshotManager : MonoBehaviour
     public void GetSnapshotByDate(string date, System.Action<RoomSnapshot> onSuccess, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
-        db.Collection("room_snapshots")
+        db.Collection(FirestoreCollections.RoomSnapshots)
             .Document(uid)
-            .Collection("snapshots")
+            .Collection(FirestoreCollections.Snapshots)
             .Document(date)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -104,9 +104,9 @@ public class RoomSnapshotManager : MonoBehaviour
             { "CreatedAt", FieldValue.ServerTimestamp }
         };
 
-        db.Collection("room_snapshots")
+        db.Collection(FirestoreCollections.RoomSnapshots)
             .Document(uid)
-            .Collection("snapshots")
+            .Collection(FirestoreCollections.Snapshots)
             .Document(today)
             .SetAsync(data)
             .ContinueWithOnMainThread(task =>
@@ -129,7 +129,7 @@ public class RoomSnapshotManager : MonoBehaviour
     public void GetOtherUserSnapshot(string targetUid, string date, System.Action<RoomSnapshot> onSuccess, System.Action<string> onFailure = null)
     {
         // 상대방 공개 여부 확인 후 스냅샷 조회
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .Document(targetUid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -157,9 +157,9 @@ public class RoomSnapshotManager : MonoBehaviour
                 }
 
                 // 공개 계정이면 스냅샷 조회
-                db.Collection("room_snapshots")
+                db.Collection(FirestoreCollections.RoomSnapshots)
                     .Document(targetUid)
-                    .Collection("snapshots")
+                    .Collection(FirestoreCollections.Snapshots)
                     .Document(date)
                     .GetSnapshotAsync()
                     .ContinueWithOnMainThread(snapshotTask =>

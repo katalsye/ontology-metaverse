@@ -25,4 +25,5 @@ public static class FirestoreCollections
     public const string FcmTokens     = "fcmTokens";      // users/{uid}/fcmTokens
     public const string Items         = "items";          // temp_triples/{uid}/items
     public const string Entries       = "entries";        // diary_entries/{uid}/entries
+    public const string Snapshots     = "snapshots";      // room_snapshots/{uid}/snapshots
 }

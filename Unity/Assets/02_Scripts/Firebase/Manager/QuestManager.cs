@@ -101,7 +101,7 @@ public class QuestManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("quests")
+        db.Collection(FirestoreCollections.Quests)
             .Document(uid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -134,7 +134,7 @@ public class QuestManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("quests")
+        db.Collection(FirestoreCollections.Quests)
             .Document(uid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -175,7 +175,7 @@ public class QuestManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        DocumentReference questDoc = db.Collection("quests").Document(uid);
+        DocumentReference questDoc = db.Collection(FirestoreCollections.Quests).Document(uid);
 
         db.RunTransactionAsync(transaction =>
         {
@@ -222,7 +222,7 @@ public class QuestManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        DocumentReference questDoc = db.Collection("quests").Document(uid);
+        DocumentReference questDoc = db.Collection(FirestoreCollections.Quests).Document(uid);
 
         questDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -294,7 +294,7 @@ public class QuestManager : MonoBehaviour
         _questListenerInitialized = false;
         _previousStates.Clear();
 
-        _questListener = db.Collection("quests")
+        _questListener = db.Collection(FirestoreCollections.Quests)
             .Document(uid)
             .Listen(snapshot =>
             {

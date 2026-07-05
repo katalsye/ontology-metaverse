@@ -62,7 +62,7 @@ public class RoomObjectManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("room_objects")
+        db.Collection(FirestoreCollections.RoomObjects)
             .Document(uid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -137,7 +137,7 @@ public class RoomObjectManager : MonoBehaviour
             { "objects", SerializeObjects(roomObjects) }
         };
 
-        db.Collection("room_objects")
+        db.Collection(FirestoreCollections.RoomObjects)
             .Document(uid)
             .SetAsync(docData, SetOptions.MergeAll)
             .ContinueWithOnMainThread(task =>
@@ -166,7 +166,7 @@ public class RoomObjectManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("room_shop_items")
+        db.Collection(FirestoreCollections.RoomShopItems)
             .Document(uid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -199,7 +199,7 @@ public class RoomObjectManager : MonoBehaviour
             { "items", SerializeShopItems(items) }
         };
 
-        db.Collection("room_shop_items")
+        db.Collection(FirestoreCollections.RoomShopItems)
             .Document(uid)
             .SetAsync(docData, SetOptions.MergeAll)
             .ContinueWithOnMainThread(task =>
@@ -228,7 +228,7 @@ public class RoomObjectManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("room_custom_positions")
+        db.Collection(FirestoreCollections.RoomCustomPositions)
             .Document(uid)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
@@ -261,7 +261,7 @@ public class RoomObjectManager : MonoBehaviour
             { "positions", SerializeCustomPositions(positions) }
         };
 
-        db.Collection("room_custom_positions")
+        db.Collection(FirestoreCollections.RoomCustomPositions)
             .Document(uid)
             .SetAsync(docData, SetOptions.MergeAll)
             .ContinueWithOnMainThread(task =>
@@ -292,7 +292,7 @@ public class RoomObjectManager : MonoBehaviour
         string uid = auth.CurrentUser.UserId;
         _listeningUid = uid;
 
-        _roomListener = db.Collection("room_objects")
+        _roomListener = db.Collection(FirestoreCollections.RoomObjects)
             .Document(uid)
             .Listen(snapshot =>
             {
@@ -322,7 +322,7 @@ public class RoomObjectManager : MonoBehaviour
         StopRoomListener();
         _listeningUid = targetUid;
 
-        _roomListener = db.Collection("room_objects")
+        _roomListener = db.Collection(FirestoreCollections.RoomObjects)
             .Document(targetUid)
             .Listen(snapshot =>
             {
