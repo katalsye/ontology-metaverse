@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using UnityEngine;
 using OntologyMetaverse.DataCollection.SQLite;
@@ -71,3 +72,4 @@ public class PlaceHabitTestUploader : MonoBehaviour
         );
     }
 }
+#endif

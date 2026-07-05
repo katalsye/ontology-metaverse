@@ -186,6 +186,11 @@ public class FcmManager : MonoBehaviour
         {
             msg.Data.TryGetValue("type", out type);
             msg.Data.TryGetValue("payload", out payload);
+
+            // 신규 퀘스트 토픽 푸시(ontology_engine.py)는 type 없이 questCount만 보냄.
+            // 탭 시 퀘스트 화면으로 라우팅되도록 type을 보정한다.
+            if (string.IsNullOrEmpty(type) && msg.Data.ContainsKey("questCount"))
+                type = "new_quest";
         }
 
         NotificationData data = new NotificationData

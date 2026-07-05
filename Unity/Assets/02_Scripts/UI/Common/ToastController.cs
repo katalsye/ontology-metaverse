@@ -57,12 +57,20 @@ public class ToastController : MonoBehaviour
             ScreenManager.Instance.GoTo(screen);
     }
 
+    // 추론 엔진(Functions/fcm_sender.py, ontology_engine.py)이 실제 보내는 data.type과 정렬.
+    //   room_updated   : 팔로워 방 갱신 (fcm_sender.py)
+    //   quest_completed: 자동 완료된 퀘스트 알림 (fcm_sender.py)
+    //   new_quest      : 신규 퀘스트 토픽 푸시. 엔진은 type 없이 questCount만 보내므로
+    //                    FcmManager.OnMessageReceived에서 questCount 감지 시 이 값으로 세팅함.
+    // 과거 오타 값(room_update)도 하위호환으로 함께 매핑.
     private static string ScreenForType(string type) => type switch
     {
-        "follow_request" => "feed",
-        "room_update"    => "myroom",
-        "new_quest"      => "quest",
-        _                => ""
+        "follow_request"  => "feed",
+        "room_updated"    => "myroom",
+        "room_update"     => "myroom",  // legacy alias
+        "quest_completed" => "quest",
+        "new_quest"       => "quest",
+        _                 => ""
     };
 
     public void Show(string title, string body, string screen, float duration = 3f)

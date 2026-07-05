@@ -127,3 +127,9 @@ keystore.properties
 
 # Unity 크래시 복구 캐시 (로컬 전용, 추적 제외)
 Unity/Assets/_Recovery/
+
+# 편집기 백업/임시 잔재 (실수 커밋 방지)
+*.bak
+*.bak[0-9]
+Unity/Assets/**/*.tmp.*
+*.meta.bak

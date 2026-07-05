@@ -91,11 +91,30 @@ public class RoomDataManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(objectType)) return null;
 
-        foreach (var item in FindObjectsOfType<OntologyItem>(true))
-            if (item.gameObject.name == objectType)
-                return item;
+        string target = NormalizeName(objectType);
+        OntologyItem fallback = null;
 
-        return null;
+        foreach (var item in FindObjectsOfType<OntologyItem>(true))
+        {
+            string name = item.gameObject.name;
+            if (name == objectType) return item;                 // 정확 일치 우선
+
+            // 대소문자·공백·Unity 복제 접미사(" (1)") 무시 후보.
+            // Rule 4가 복수 오브젝트를 만들 때 씬 복제본이 "coffee_cup (1)"이 되는 경우 대응.
+            if (fallback == null && NormalizeName(name) == target)
+                fallback = item;
+        }
+
+        return fallback;
+    }
+
+    // 매칭용 이름 정규화: Unity 복제 접미사 제거 + trim + 소문자.
+    private static string NormalizeName(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        int p = s.IndexOf(" (");
+        if (p > 0 && s.EndsWith(")")) s = s.Substring(0, p);
+        return s.Trim().ToLowerInvariant();
     }
 
     private ToastController _toastController;
