@@ -37,13 +37,6 @@ namespace OntologyMetaverse.Tests.Editor
             Assert.IsFalse(QuestUiRules.ShouldShowAnswerSection(QuestType.DataFill, QuestStatus.Done));
         }
 
-        [TestCase("오늘 테스트카페 누구랑 갔어?", QuestStatus.Active)]
-        [TestCase("오늘 테스트카페 누구랑 갔어?", QuestStatus.Done)]
-        public void DataFill_NeverShowsCompleteButton(string title, QuestStatus status)
-        {
-            Assert.IsFalse(QuestUiRules.ShouldShowCompleteButton(title, status));
-        }
-
         // ═══════════════════════════════════════════════════════════════
         // 삶 개선형 (LifeImprove)
         // ═══════════════════════════════════════════════════════════════
@@ -73,32 +66,18 @@ namespace OntologyMetaverse.Tests.Editor
             Assert.IsFalse(QuestUiRules.ShouldShowAnswerSection(QuestType.LifeImprove, QuestStatus.Done));
         }
 
-        // A1 — burnout_warning / late_caffeine_sleep_quality / schedule_overload
-        [TestCase("가벼운 스트레칭 10분")]
-        [TestCase("오후엔 디카페인 어때요?")]
-        [TestCase("오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?")]
-        public void LifeImprove_A1Title_Active_ShowsCompleteButton(string title)
+        // 완료 버튼 — 엔진 completable 플래그 + 미완료(Active)일 때만 노출 (#187).
+        // 어느 퀘스트가 completable인지는 엔진 규칙이 결정하며
+        // (Functions/test_rules.py::test_quest_completable_field에서 검증),
+        // Unity는 그 플래그를 받아 버튼 노출만 판단한다.
+        [TestCase(true,  QuestStatus.Active, true)]   // 측정 불가(completable) + 미완료 → 노출
+        [TestCase(true,  QuestStatus.Done,   false)]  // completable + 완료 → 숨김
+        [TestCase(false, QuestStatus.Active, false)]  // 측정 가능(자동완료 대상) → 숨김
+        [TestCase(false, QuestStatus.Done,   false)]
+        public void ShouldShowCompleteButton_OnlyWhenCompletableAndActive(
+            bool completable, QuestStatus status, bool expected)
         {
-            Assert.IsTrue(QuestUiRules.ShouldShowCompleteButton(title, QuestStatus.Active));
-        }
-
-        [TestCase("가벼운 스트레칭 10분")]
-        [TestCase("오후엔 디카페인 어때요?")]
-        [TestCase("오늘 일정이 빡빡해 보여요. 잠깐 쉬어가는 건 어때요?")]
-        public void LifeImprove_A1Title_Done_HidesCompleteButton(string title)
-        {
-            Assert.IsFalse(QuestUiRules.ShouldShowCompleteButton(title, QuestStatus.Done));
-        }
-
-        // A2 — 센서 추론으로 자동 완료되는 삶 개선형 퀘스트는 완료 버튼이 없어야 함
-        [TestCase("30분 산책하기")]
-        [TestCase("이번 주 활동량이 많이 줄었어요. 짧은 산책부터 시작해볼까요?")]
-        [TestCase("날씨가 맑아요! 지금 딱 산책하기 좋아요")]
-        [TestCase("오늘 심박수가 높네요. 잠깐 쉬어볼까요?")]
-        public void LifeImprove_A2AutoCompleteTitle_NeverShowsCompleteButton(string title)
-        {
-            Assert.IsFalse(QuestUiRules.ShouldShowCompleteButton(title, QuestStatus.Active));
-            Assert.IsFalse(QuestUiRules.ShouldShowCompleteButton(title, QuestStatus.Done));
+            Assert.AreEqual(expected, QuestUiRules.ShouldShowCompleteButton(completable, status));
         }
 
         // ═══════════════════════════════════════════════════════════════
