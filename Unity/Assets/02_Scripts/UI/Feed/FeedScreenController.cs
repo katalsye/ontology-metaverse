@@ -29,6 +29,10 @@ public class FeedScreenController : MonoBehaviour
     // 카드 데이터 (실제 구현 시 Firestore에서 가져옴)
     private List<FeedCardData> feedData = new List<FeedCardData>();
 
+    // 비동기 로드 세대 카운터 — 빠른 재진입 시 이전 로드의 stale 콜백을 무시
+    // (FriendsScreenController와 동일 패턴)
+    private int _feedLoadGen;
+
     private void OnEnable()
     {
         root = uiDocument.rootVisualElement;
@@ -76,9 +80,13 @@ public class FeedScreenController : MonoBehaviour
             return;
         }
 
+        int gen = ++_feedLoadGen;
+
         FollowManager.Instance.GetFollowings(
             onSuccess: followings =>
             {
+                if (!isActiveAndEnabled || _feedLoadGen != gen) return;
+
                 if (followings.Count == 0)
                 {
                     ApplySortAndRender();
@@ -91,6 +99,8 @@ public class FeedScreenController : MonoBehaviour
                     UserManager.Instance.GetUserProfileForFollow(relation.ToUid,
                         onSuccess: profile =>
                         {
+                            if (!isActiveAndEnabled || _feedLoadGen != gen) return;
+
                             var lastActive = profile.CreatedAt.ToDateTime().ToLocalTime();
                             feedData.Add(new FeedCardData(
                                 profile.Uid,
@@ -105,6 +115,8 @@ public class FeedScreenController : MonoBehaviour
                         },
                         onFailure: _ =>
                         {
+                            if (!isActiveAndEnabled || _feedLoadGen != gen) return;
+
                             remaining--;
                             if (remaining == 0) ApplySortAndRender();
                         }
