@@ -87,25 +87,41 @@ public class RoomDataManager : MonoBehaviour
         }
     }
 
+    // objectType(정규화 이름) → 씬의 OntologyItem 레지스트리.
+    // 최초 조회 시 1회 구축하고, 미스가 나면 1회만 재구축해 런타임 추가/씬 전환에 대응.
+    private Dictionary<string, OntologyItem> _itemIndex;
+
     private OntologyItem FindOntologyItemByType(string objectType)
     {
         if (string.IsNullOrEmpty(objectType)) return null;
-
         string target = NormalizeName(objectType);
-        OntologyItem fallback = null;
 
+        var hit = Lookup(target);
+        if (hit != null) return hit;
+
+        // 미스: 캐시가 비었거나 오래됐을 수 있음 → 1회 재구축 후 재시도.
+        RebuildItemIndex();
+        return Lookup(target);
+    }
+
+    private OntologyItem Lookup(string normalizedKey)
+    {
+        if (_itemIndex != null && _itemIndex.TryGetValue(normalizedKey, out var it) && it != null)
+            return it;   // it == null : 씬 전환으로 파괴된 참조 → 미스 처리해 재구축 유도
+        return null;
+    }
+
+    // 씬의 모든 OntologyItem을 정규화 이름으로 인덱싱. 접미사 없는 정확 이름을 우선 채택.
+    private void RebuildItemIndex()
+    {
+        _itemIndex = new Dictionary<string, OntologyItem>();
         foreach (var item in FindObjectsOfType<OntologyItem>(true))
         {
-            string name = item.gameObject.name;
-            if (name == objectType) return item;                 // 정확 일치 우선
-
-            // 대소문자·공백·Unity 복제 접미사(" (1)") 무시 후보.
-            // Rule 4가 복수 오브젝트를 만들 때 씬 복제본이 "coffee_cup (1)"이 되는 경우 대응.
-            if (fallback == null && NormalizeName(name) == target)
-                fallback = item;
+            string key = NormalizeName(item.gameObject.name);
+            bool exact = item.gameObject.name.Trim().ToLowerInvariant() == key; // "coffee_cup (1)" 배제
+            if (!_itemIndex.TryGetValue(key, out var existing) || existing == null || exact)
+                _itemIndex[key] = item;
         }
-
-        return fallback;
     }
 
     // 매칭용 이름 정규화: Unity 복제 접미사 제거 + trim + 소문자.
