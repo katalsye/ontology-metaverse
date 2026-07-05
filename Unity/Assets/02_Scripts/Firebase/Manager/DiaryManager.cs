@@ -172,50 +172,50 @@ public class DiaryManager : MonoBehaviour
             .Collection(FirestoreCollections.Entries)
             .Document(date);
 
-        diaryDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        // 존재/미수령 확인과 RewardClaimed=true 세팅을 트랜잭션으로 원자화(중복 수령 차단).
+        // (기존: 플래그 먼저 커밋 → 이후 지급 실패 시 플래그가 true로 남아 보상 영구 유실)
+        db.RunTransactionAsync(transaction =>
+        {
+            return transaction.GetSnapshotAsync(diaryDoc).ContinueWith(snapTask =>
+            {
+                var snap = snapTask.Result;
+                if (!snap.Exists)
+                    throw new System.InvalidOperationException("일기 없음");
+                if (snap.GetValue<bool>("RewardClaimed"))
+                    throw new System.InvalidOperationException("이미 수령한 보상");
+
+                transaction.Update(diaryDoc, "RewardClaimed", true);
+            });
+        }).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
-                Debug.LogError("일기 조회 실패: " + task.Exception);
-                onFailure?.Invoke(task.Exception.Message);
+                var ex = task.Exception?.Flatten().InnerException ?? task.Exception;
+                string msg = ex?.Message ?? "보상 수령 실패";
+                Debug.LogWarning("일기 보상 수령 실패: " + msg);
+                onFailure?.Invoke(msg);
                 return;
             }
 
-            if (!task.Result.Exists)
-            {
-                Debug.LogWarning("해당 날짜 일기 없음: " + date);
-                onFailure?.Invoke("일기 없음");
-                return;
-            }
-
-            bool rewardClaimed = task.Result.GetValue<bool>("RewardClaimed");
-            if (rewardClaimed)
-            {
-                Debug.LogWarning("이미 보상을 수령했습니다.");
-                onFailure?.Invoke("이미 수령한 보상");
-                return;
-            }
-
-            // 보상 플래그 업데이트
-            diaryDoc.UpdateAsync("RewardClaimed", true).ContinueWithOnMainThread(updateTask =>
-            {
-                if (updateTask.IsFaulted)
+            // RewardClaimed 확정 후 코인 지급.
+            rewardManager.AddCurrency(DiaryRewardAmount,
+                onSuccess: () =>
                 {
-                    Debug.LogError("보상 플래그 업데이트 실패: " + updateTask.Exception);
-                    onFailure?.Invoke(updateTask.Exception.Message);
-                    return;
-                }
-
-                // RewardManager로 재화 증가
-                rewardManager.AddCurrency(DiaryRewardAmount,
-                    onSuccess: () =>
-                    {
-                        Debug.Log($"일기 보상 수령 완료: +{DiaryRewardAmount}");
-                        onSuccess?.Invoke();
-                    },
-                    onFailure: onFailure
-                );
-            });
+                    Debug.Log($"일기 보상 수령 완료: +{DiaryRewardAmount}");
+                    onSuccess?.Invoke();
+                },
+                onFailure: err =>
+                {
+                    // 지급 실패 → RewardClaimed 롤백해 재수령 허용(영구 유실 방지).
+                    diaryDoc.UpdateAsync("RewardClaimed", false)
+                        .ContinueWithOnMainThread(rb =>
+                        {
+                            if (rb.IsFaulted)
+                                Debug.LogError("RewardClaimed 롤백 실패(수동 확인 필요): " + rb.Exception);
+                        });
+                    Debug.LogError("일기 코인 지급 실패, RewardClaimed 롤백 시도: " + err);
+                    onFailure?.Invoke(err);
+                });
         });
     }
 }
