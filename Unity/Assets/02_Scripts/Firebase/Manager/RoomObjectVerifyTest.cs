@@ -46,13 +46,7 @@ public class RoomObjectVerifyTest : MonoBehaviour
             foreach (var item in rawList)
             {
                 if (item is Dictionary<string, object> dict)
-                    result.Add(new RoomObject
-                    {
-                        ObjectType          = GetStr(dict, "objectType"),
-                        PlacementZone       = GetStr(dict, "placementZone"),
-                        InferredFrom        = GetStr(dict, "inferredFrom"),
-                        InferredFromConcept = GetStr(dict, "inferredFromConcept"),
-                    });
+                    result.Add(RoomObject.FromMap(dict));
             }
         }
         catch (Exception e)
@@ -62,8 +56,5 @@ public class RoomObjectVerifyTest : MonoBehaviour
 
         return result;
     }
-
-    private string GetStr(Dictionary<string, object> d, string key)
-        => d.TryGetValue(key, out var v) ? v?.ToString() : null;
 }
 #endif
