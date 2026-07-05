@@ -87,7 +87,7 @@ public class TempTripleSyncManager : MonoBehaviour
         Debug.Log($"[TempTripleSync] 동기화 시작: {unsynced.Count}개");
 
         string uid    = _auth.CurrentUser.UserId;
-        var    colRef = _db.Collection("temp_triples").Document(uid).Collection("items");
+        var    colRef = _db.Collection(FirestoreCollections.TempTriples).Document(uid).Collection(FirestoreCollections.Items);
 
         UploadChunk(unsynced, colRef, uid, offset: 0, onComplete, onFailure);
     }

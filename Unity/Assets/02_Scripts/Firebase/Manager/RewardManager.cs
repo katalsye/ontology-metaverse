@@ -38,7 +38,7 @@ public class RewardManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("rewards").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -70,7 +70,7 @@ public class RewardManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        DocumentReference rewardDoc = db.Collection("rewards").Document(uid);
+        DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
         {
@@ -108,7 +108,7 @@ public class RewardManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        DocumentReference rewardDoc = db.Collection("rewards").Document(uid);
+        DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
         {
@@ -162,7 +162,7 @@ public class RewardManager : MonoBehaviour
     {
         if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
         string uid = auth.CurrentUser.UserId;
-        db.Collection("rewards").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted) { onFailure?.Invoke(task.Exception.Message); return; }
             int gems = task.Result.Exists && task.Result.ContainsField("Gems")
@@ -178,7 +178,7 @@ public class RewardManager : MonoBehaviour
     {
         if (auth?.CurrentUser == null) { onFailure?.Invoke("로그인 필요"); return; }
         string uid = auth.CurrentUser.UserId;
-        DocumentReference rewardDoc = db.Collection("rewards").Document(uid);
+        DocumentReference rewardDoc = db.Collection(FirestoreCollections.Rewards).Document(uid);
 
         db.RunTransactionAsync(transaction =>
         {
@@ -210,7 +210,7 @@ public class RewardManager : MonoBehaviour
         }
 
         string uid = auth.CurrentUser.UserId;
-        db.Collection("rewards").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Rewards).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {

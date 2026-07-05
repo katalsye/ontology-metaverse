@@ -38,7 +38,7 @@ public class UserManager : MonoBehaviour
     {
         if (db == null) { onFailure?.Invoke("Firestore not ready"); return; }
 
-        db.Collection("users").Document(userId).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(userId).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted || !task.Result.Exists)
             {
@@ -58,7 +58,7 @@ public class UserManager : MonoBehaviour
     public void GetMyProfile(System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
-        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -84,7 +84,7 @@ public class UserManager : MonoBehaviour
             { "StatusMessage", statusMessage }
         };
 
-        db.Collection("users").Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -104,7 +104,7 @@ public class UserManager : MonoBehaviour
     public void GetPersona(System.Action<Persona> onSuccess, System.Action<string> onFailure = null)
     {
         string uid = auth.CurrentUser.UserId;
-        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -130,7 +130,7 @@ public class UserManager : MonoBehaviour
             { "persona", persona }
         };
 
-        db.Collection("users").Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(uid).UpdateAsync(updates).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -149,7 +149,7 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetUserProfile(string uid, System.Action<UserProfile> onSuccess, System.Action<string> onFailure = null)
     {
-        db.Collection("users").Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        db.Collection(FirestoreCollections.Users).Document(uid).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
@@ -176,7 +176,7 @@ public class UserManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SearchUserByNickname(string nickname, System.Action<List<UserProfile>> onSuccess, System.Action<string> onFailure = null)
     {
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .WhereEqualTo("IsPublic", true)
             .WhereEqualTo("Nickname", nickname)
             .GetSnapshotAsync()
@@ -239,7 +239,7 @@ public class UserManager : MonoBehaviour
             return;
         }
 
-        DocumentReference userDoc = db.Collection("users").Document(user.UserId);
+        DocumentReference userDoc = db.Collection(FirestoreCollections.Users).Document(user.UserId);
         userDoc.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
