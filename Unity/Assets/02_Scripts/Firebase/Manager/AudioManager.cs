@@ -53,7 +53,7 @@ public class AudioManager : MonoBehaviour
         if (auth?.CurrentUser == null) return;
 
         Firebase.Firestore.FirebaseFirestore.DefaultInstance
-            .Collection("users").Document(auth.CurrentUser.UserId)
+            .Collection(FirestoreCollections.Users).Document(auth.CurrentUser.UserId)
             .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
             {
@@ -86,7 +86,7 @@ public class AudioManager : MonoBehaviour
             { "sfxVolume", (double)sfxSource.volume },
         };
         Firebase.Firestore.FirebaseFirestore.DefaultInstance
-            .Collection("users").Document(auth.CurrentUser.UserId)
+            .Collection(FirestoreCollections.Users).Document(auth.CurrentUser.UserId)
             .UpdateAsync(data)
             .ContinueWithOnMainThread(t =>
             {

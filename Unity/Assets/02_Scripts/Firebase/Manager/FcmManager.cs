@@ -81,9 +81,9 @@ public class FcmManager : MonoBehaviour
             { "UpdatedAt", FieldValue.ServerTimestamp }
         };
 
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .Document(uid)
-            .Collection("fcmTokens")
+            .Collection(FirestoreCollections.FcmTokens)
             .Document(token)
             .SetAsync(data)
             .ContinueWithOnMainThread(task =>
@@ -123,9 +123,9 @@ public class FcmManager : MonoBehaviour
             string token = task.Result;
             string uid = auth.CurrentUser.UserId;
 
-            db.Collection("users")
+            db.Collection(FirestoreCollections.Users)
                 .Document(uid)
-                .Collection("fcmTokens")
+                .Collection(FirestoreCollections.FcmTokens)
                 .Document(token)
                 .DeleteAsync()
                 .ContinueWithOnMainThread(deleteTask =>
@@ -234,9 +234,9 @@ public class FcmManager : MonoBehaviour
             { "CreatedAt", FieldValue.ServerTimestamp }
         };
 
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .Document(uid)
-            .Collection("notifications")
+            .Collection(FirestoreCollections.Notifications)
             .AddAsync(doc)
             .ContinueWithOnMainThread(task =>
             {
@@ -254,9 +254,9 @@ public class FcmManager : MonoBehaviour
 
         string uid = auth.CurrentUser.UserId;
 
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .Document(uid)
-            .Collection("notifications")
+            .Collection(FirestoreCollections.Notifications)
             .Document(notificationId)
             .UpdateAsync("IsRead", true)
             .ContinueWithOnMainThread(task =>
@@ -281,9 +281,9 @@ public class FcmManager : MonoBehaviour
 
         string uid = auth.CurrentUser.UserId;
 
-        db.Collection("users")
+        db.Collection(FirestoreCollections.Users)
             .Document(uid)
-            .Collection("notifications")
+            .Collection(FirestoreCollections.Notifications)
             .OrderByDescending("CreatedAt")
             .Limit(50)
             .GetSnapshotAsync()
@@ -322,9 +322,9 @@ public class FcmManager : MonoBehaviour
         StopNotificationListener();
         string uid = auth.CurrentUser.UserId;
 
-        _notificationListener = db.Collection("users")
+        _notificationListener = db.Collection(FirestoreCollections.Users)
             .Document(uid)
-            .Collection("notifications")
+            .Collection(FirestoreCollections.Notifications)
             .WhereEqualTo("IsRead", false)
             .Listen(snapshot =>
             {

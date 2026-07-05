@@ -142,9 +142,9 @@ public class TempTripleManager : MonoBehaviour
         foreach (var triple in triples)
         {
             // Firestore temp_triples/{uid}/items/ 에 추가 (auto_id)
-            DocumentReference docRef = db.Collection("temp_triples")
+            DocumentReference docRef = db.Collection(FirestoreCollections.TempTriples)
                 .Document(uid)
-                .Collection("items")
+                .Collection(FirestoreCollections.Items)
                 .Document();  // auto_id
 
             int currentId = triple.Id;  // 클로저용 저장
@@ -214,9 +214,9 @@ public class TempTripleManager : MonoBehaviour
     {
         string userUri = OntologyBaseUri + "user_" + uid;
 
-        DocumentReference docRef = db.Collection("temp_triples")
+        DocumentReference docRef = db.Collection(FirestoreCollections.TempTriples)
             .Document(uid)
-            .Collection("items")
+            .Collection(FirestoreCollections.Items)
             .Document();  // auto_id
 
         Dictionary<string, object> data = new Dictionary<string, object>
