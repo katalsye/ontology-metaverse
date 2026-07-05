@@ -63,13 +63,7 @@ public class FcmManager : MonoBehaviour
 
     private void SaveTokenToFirestore(string token)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("SaveTokenToFirestore: 로그인 상태 아님");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(SaveTokenToFirestore))) return;
         string platform = Application.platform == RuntimePlatform.Android ? "android"
                         : Application.platform == RuntimePlatform.IPhonePlayer ? "ios"
                         : "editor";
@@ -114,7 +108,7 @@ public class FcmManager : MonoBehaviour
     // 로그아웃 시 이 기기 토큰 제거
     public void RemoveToken()
     {
-        if (auth?.CurrentUser == null) return;
+        if (!AuthGuard.RequireLogin(auth)) return;
 
         FirebaseMessaging.GetTokenAsync().ContinueWithOnMainThread(task =>
         {
@@ -146,7 +140,7 @@ public class FcmManager : MonoBehaviour
     // ───────────────────────────────────────
     private void SubscribeToQuestTopic()
     {
-        if (auth?.CurrentUser == null) return;
+        if (!AuthGuard.RequireLogin(auth)) return;
 
         string topic = $"quests_{auth.CurrentUser.UserId}";
         FirebaseMessaging.SubscribeAsync(topic).ContinueWithOnMainThread(task =>
@@ -160,7 +154,7 @@ public class FcmManager : MonoBehaviour
 
     private void UnsubscribeFromQuestTopic()
     {
-        if (auth?.CurrentUser == null) return;
+        if (!AuthGuard.RequireLogin(auth)) return;
 
         string topic = $"quests_{auth.CurrentUser.UserId}";
         FirebaseMessaging.UnsubscribeAsync(topic).ContinueWithOnMainThread(task =>
@@ -220,9 +214,7 @@ public class FcmManager : MonoBehaviour
     // ───────────────────────────────────────
     private void SaveNotificationToFirestore(NotificationData data)
     {
-        if (auth?.CurrentUser == null) return;
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid)) return;
 
         Dictionary<string, object> doc = new Dictionary<string, object>
         {
@@ -250,9 +242,7 @@ public class FcmManager : MonoBehaviour
     // ───────────────────────────────────────
     public void MarkNotificationRead(string notificationId, System.Action onSuccess = null)
     {
-        if (auth?.CurrentUser == null) return;
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid)) return;
 
         db.Collection(FirestoreCollections.Users)
             .Document(uid)
@@ -273,13 +263,7 @@ public class FcmManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetNotifications(System.Action<List<NotificationData>> onSuccess, System.Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, onFailure: onFailure)) return;
 
         db.Collection(FirestoreCollections.Users)
             .Document(uid)
@@ -313,11 +297,7 @@ public class FcmManager : MonoBehaviour
     // ───────────────────────────────────────
     public void StartNotificationListener()
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("StartNotificationListener: 로그인 상태 아님");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(StartNotificationListener))) return;
 
         StopNotificationListener();
         string uid = auth.CurrentUser.UserId;

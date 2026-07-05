@@ -54,14 +54,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetRoomObjects(Action<List<RoomObject>> onSuccess, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("GetRoomObjects: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(GetRoomObjects), onFailure)) return;
         db.Collection(FirestoreCollections.RoomObjects)
             .Document(uid)
             .GetSnapshotAsync()
@@ -82,12 +75,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SetRoomObject(RoomObject roomObject, Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("SetRoomObject: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(SetRoomObject), onFailure)) return;
 
         GetRoomObjects(objects =>
         {
@@ -105,12 +93,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void DeleteRoomObject(string objectId, Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("DeleteRoomObject: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(DeleteRoomObject), onFailure)) return;
 
         GetRoomObjects(objects =>
         {
@@ -124,14 +107,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SaveCustomLayout(List<RoomObject> roomObjects, Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("SaveCustomLayout: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(SaveCustomLayout), onFailure)) return;
         var docData = new Dictionary<string, object>
         {
             { "objects", SerializeObjects(roomObjects) }
@@ -158,14 +134,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetShopItems(Action<List<RoomShopItem>> onSuccess, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("GetShopItems: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(GetShopItems), onFailure)) return;
         db.Collection(FirestoreCollections.RoomShopItems)
             .Document(uid)
             .GetSnapshotAsync()
@@ -186,14 +155,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SaveShopItems(List<RoomShopItem> items, Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("SaveShopItems: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(SaveShopItems), onFailure)) return;
         var docData = new Dictionary<string, object>
         {
             { "items", SerializeShopItems(items) }
@@ -220,14 +182,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void GetCustomPositions(Action<List<RoomCustomPosition>> onSuccess, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("GetCustomPositions: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(GetCustomPositions), onFailure)) return;
         db.Collection(FirestoreCollections.RoomCustomPositions)
             .Document(uid)
             .GetSnapshotAsync()
@@ -248,14 +203,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void SaveCustomPositions(List<RoomCustomPosition> positions, Action onSuccess = null, Action<string> onFailure = null)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("SaveCustomPositions: 로그인 상태 아님");
-            onFailure?.Invoke("로그인 필요");
-            return;
-        }
-
-        string uid = auth.CurrentUser.UserId;
+        if (!AuthGuard.TryGetUid(auth, out string uid, nameof(SaveCustomPositions), onFailure)) return;
         var docData = new Dictionary<string, object>
         {
             { "positions", SerializeCustomPositions(positions) }
@@ -282,11 +230,7 @@ public class RoomObjectManager : MonoBehaviour
     // ───────────────────────────────────────
     public void StartRoomListener()
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("StartRoomListener: 로그인 상태 아님");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(StartRoomListener))) return;
 
         StopRoomListener();
         string uid = auth.CurrentUser.UserId;
@@ -307,11 +251,7 @@ public class RoomObjectManager : MonoBehaviour
     // 남의 방 진입 시
     public void StartVisitingRoomListener(string targetUid)
     {
-        if (auth?.CurrentUser == null)
-        {
-            Debug.LogWarning("StartVisitingRoomListener: 로그인 상태 아님");
-            return;
-        }
+        if (!AuthGuard.RequireLogin(auth, nameof(StartVisitingRoomListener))) return;
 
         if (string.IsNullOrEmpty(targetUid))
         {
