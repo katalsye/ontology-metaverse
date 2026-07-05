@@ -936,7 +936,12 @@ WHERE {
         }
         GROUP BY ?user
     }
-    FILTER (?totalVisits > 0 && (?soloVisits * 10 >= ?totalVisits * 7))
+    # persona_social과 상호배타: companion 있는 방문 수(= totalVisits - soloVisits)가
+    # 3 미만일 때만 solitary 발동 → 동일 데이터에서 social(>=3)/solitary 동시 발동 및
+    # 비결정적 socialPreference 저장 방지 (#183). social 조건을 우선.
+    FILTER (?totalVisits > 0
+            && (?soloVisits * 10 >= ?totalVisits * 7)
+            && (?totalVisits - ?soloVisits < 3))
 }
 
 # ── Rule P5 — 루틴형 페르소나 ─────────────────────────────────────────────────
